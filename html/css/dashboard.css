@@ -1,0 +1,399 @@
+.container {
+  padding-bottom: 50px;
+
+}
+
+.breadcrumb-nav ol li a {
+  color: #D42124;
+}
+
+.dashboard {
+  display: none;
+}
+
+.arrow-bg {
+  padding: 10px;
+  background-color: #FAE8EA;
+  border-radius: 4px;
+}
+
+
+.menu-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: left;
+
+}
+
+.menu-card {
+  background: #fff;
+  padding: 20px;
+  /* border-right: 1px solid #E6E6E7; */
+}
+
+.menu-card img {
+  max-width: 100%;
+  height: auto;
+}
+
+.menu-card h3 {
+  margin: 18px 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 140%;
+}
+
+.menu-container {
+  border: 1px solid #E6E6E7;
+  width: 100%;
+  border-radius: 20px;
+}
+
+.card1-border {
+  border-radius: 20px 0px 0px 20px;
+}
+
+.border-r {
+  border-right: 1px solid #E6E6E7;
+}
+
+.border-l {
+  border-radius: 0px 20px 20px 0px;
+}
+
+.menu-card.active h3 {
+  color: #D42124;
+}
+
+.menu-card.col.active {
+  border-bottom: 2px solid red;
+}
+
+.card-border {
+  border: 1px solid var(--borderColor);
+  border-radius: 20px;
+}
+
+.dash-navbar {
+  margin-top: 32px;
+  display: flex;
+}
+
+@media only screen and (max-width: 728px) {
+  .dash-navbar {
+    display: block;
+  }
+
+  .dash-navbar .buttons {
+    margin-top: 20px;
+    justify-content: space-between;
+  }
+
+  .border-l {
+    border-radius: 0px 0px 20px 0px;
+  }
+
+  .card1-border {
+    border-radius: 20px 0px 0px 0px;
+  }
+
+  .border-x {
+    border-radius: 0px 0px 0px 20px;
+  }
+
+  .border-y {
+    border-radius: 0px 20px 0px 0px;
+  }
+
+  .menu-card {
+    border-bottom: 1px solid var(--borderColor);
+  }
+
+  .card-border {
+    border: 1px solid var(--borderColor);
+    border-radius: 20px;
+  }
+
+  .icon-up {
+    position: relative;
+    top: 0px !important;
+    left: 4px !important;
+  }
+
+  .icon-down {
+    position: relative;
+    top: 10px !important;
+    left: -8px !important;
+  }
+
+  .dashboard {
+    display: block;
+  }
+
+  .footer h5 {
+    color: var(--Text-Color, #5D616C);
+    font-family: Inter;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: 0.32px;
+    padding: 20px !important;
+  }
+
+}
+
+
+.arrow-white {
+  margin-top: -2px;
+}
+
+.btn-bg2 {
+  border: 1px solid #FAE8EA;
+  background: #ffffff;
+  padding: 13px 22px;
+  border-radius: 12px;
+  height: 48px;
+}
+
+.btn-bg2 h6 {
+  color: #D42124;
+}
+
+.btn-bg2 a img {
+  margin-top: -8px;
+}
+
+.title-line h4 {
+  border-left: 2px solid #D42124;
+  font-weight: 600;
+  color: #595959;
+}
+
+.icon-up {
+  position: relative;
+  top: -6px;
+}
+
+.icon-down {
+  position: relative;
+  top: 3px;
+  left: -12px;
+}
+
+.two-tables {
+  padding-top: 80px;
+  gap: 40px;
+}
+
+.footer h5 {
+  font-weight: 400;
+  padding: 32px;
+}
+
+.footer {
+  background-color: #fff;
+  border-top: 1px solid #E6E6E7;
+  max-width: 1440px;
+  height: auto;
+  padding: 0px 40px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* chart CSS */
+.card-header1 {
+  padding: 16px;
+  background-color: #5D616C;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.graph-1 {
+  padding: 16px;
+}
+
+.card-header1 h5 {
+  color: #fff;
+}
+
+.graph-1 ul li {
+  list-style: none;
+}
+
+.border-line {
+  border-right: 2px solid #D2D2D2;
+  margin-right: 10px;
+}
+
+/* graph CSS */
+.set-1 {
+  height: auto;
+  width: auto;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 20px;
+  padding: 0;
+}
+
+.container1 {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.chart-container {
+  flex: 1;
+  min-width: 300px;
+}
+
+.table-container {
+  flex: 1;
+  min-width: 300px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 20px;
+}
+
+th,
+td {
+  padding: 10px;
+  text-align: center;
+}
+
+table#dataTable {
+  border: 1px solid #E6E6E7;
+}
+
+table#dataTable tbody tr td {
+  border: 1px solid #E6E6E7;
+}
+
+.color-box {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+}
+
+.wrapper {
+  display: block;
+  overflow: hidden;
+  margin: 0 auto;
+  padding: 60px 50px;
+  border-radius: 4px;
+}
+
+canvas {
+  background: #fff;
+  height: 400px;
+}
+
+/* tabs */
+.nav-link.disabled {
+  color: #6c757d;
+  pointer-events: none;
+  cursor: default;
+}
+
+.tab-active .arrow-bg {
+  background: #D42124;
+}
+
+.tab-active {
+  border-bottom: 2px solid #D42124;
+}
+
+/* submenu arrow rotate css */
+.icon {
+  display: inline-block;
+  transition: transform 0.3s;
+}
+
+.menu-item.active .icon {
+  transform: rotate(180deg);
+}
+
+/* tabs hover CSS */
+/* icon */
+.card-tab .on-hover {
+  display: none;
+}
+
+.card-tab:hover .on-hover {
+  display: block;
+}
+
+.card-tab:hover .non-hover {
+  display: none;
+}
+
+/* arrow */
+
+.card-tab .arrow-bg-hover {
+  display: none;
+}
+
+.card-tab:hover .arrow-bg-hover {
+  display: block;
+  padding: 10px;
+  background-color: #D42124;
+  border-radius: 4px;
+}
+
+.card-tab:hover .arrow-bg {
+  display: none;
+}
+
+.card-tab:hover .border-btm {
+  border-bottom: 2px solid #D42124;
+}
+
+/* notification badge CSS */
+/* Style for the notification badge */
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -2px;
+  background-color: #D42124;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 50%;
+}
+
+/* Style for the bell icon */
+.bell-icon {
+  position: relative;
+  display: inline-block;
+  font-size: 24px;
+}
+/* Header sticky CSS */
+#navbar.fixed {
+  top: 0 !important;
+}
+#navbar {
+  transition: top 0.5s ease-in-out;
+}
+.navbar.navbar-expand-lg.navbar-light.navbar-2{
+  position: fixed;
+  right: 0;
+  left: 0;
+  z-index: 1030;
+  background: #fff;
+  top: 80px;
+  width: 1440px;
+  margin: auto;
+}
+/* table css */
+.th-text th{
+  text-align: left;
+  padding-left: 32px;
+}
+.tb-text td{
+  text-align: left;
+  padding-left: 32px;
+}

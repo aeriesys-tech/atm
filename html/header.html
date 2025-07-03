@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+    <link rel="stylesheet" href="css/mainMenu.css" />
+    <link rel="stylesheet" href="css/addunit.css" />
+    <link rel="stylesheet" href="css/dashboard.css">
+
+
+
+</head>
+
+<body>
+    <div class="nav-container">
+        <div class="d-flex justify-content-between align-content-center flex-wrap navbar-1">
+            <div class="pl-60 d-flex">
+                <img src="assets/icons/Component2.svg" style="margin-right: 12px" class="menu-icon">
+                <div class="logo-m">
+                    <a href="Dashboard.html"><img src="assets/icons/logo-m.svg" width="46px" height="29.86px"></a>
+                </div>
+
+                <div class="search-div">
+                    <a href="Dashboard.html"><img src="assets/Navlogo.svg" alt="Logo"></a>
+                    <input type="text" name="search" id="search" placeholder="Search">
+                    <img class="search" src="assets/icons/search1.svg" alt="search">
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-content-center flex-wrap">
+                <div class="bell-icon">
+                    <img src="assets/icons/bellIcon.svg"> <!-- Replace with your bell icon -->
+                    <span class="notification-badge">2</span> <!-- Replace with the actual notification count -->
+                </div>
+                <img src="assets/icons/settings.svg" class="settings">
+                <li class="nav-item dropdown profile-btn">
+                    <a class="nav-link d-flex gap-btwn" href="#" id="navbarDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="assets/icons/fi_1946429.svg">
+                        <span class="mble-hide">Profile Name</span>
+                        <img src="assets/icons/ArrowDown.svg">
+                    </a>
+                    <ul class="dropdown-menu menu-list profile-ul" aria-labelledby="navbarDropdown">
+                        <li>
+                            <a class="dropdown-item d-flex justify-content-start gap-3
+                    " href="profileSettings.html">
+                                <img src="assets/icons/setting(2)1.svg">
+                                <p class="m-0">Profile
+                                    Settings</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex justify-content-start gap-3
+                    " href="globalSettings.html">
+                                <img src="assets/icons/globe(1)1.svg">
+                                <p class="m-0">Global
+                                    Settings</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex justify-content-start gap-3
+                    " href="#">
+                                <img src="assets/icons/setting(3)1.svg">
+                                <p class="m-0">Operational
+                                    Settings</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+            </div>
+        </div>
+        <!-- Header Menu -->
+        <nav id="navbar" class="navbar navbar-expand-lg navbar-light navbar-2">
+            <div class="container-fluid p-0">
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav navbar w-100 mb-2 mb-lg-0 dropdown-text">
+                        <li class="nav-item dropdown topnav">
+                            <a class="nav-link active" href="Dashboard.html" id="navbarDropdown" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="assets/icons/home (3) 1.svg" />
+                                <span>HOME</span>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="link d-flex gap-2" href="#">
+                                        <img src="assets/icons/layout-1.svg" />
+                                        <p class="m-0">Dashboard</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="link d-flex gap-2" href="#">
+                                        <img src="assets/icons/graph-1.svg" />
+                                        <p class="m-0">Analytics</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false" data-bs-auto-close="outside">
+                                <img src="assets/icons/wrench1.svg" />
+                                <span>CONFIGURE</span>
+                                <img src="assets/icons/ArrowDown.svg" />
+                            </a>
+                            <ul class="dropdown-menu menu-list" aria-labelledby="navbarDropdown">
+                                <li id="lineageLi" class="menu-item lineage-parameters" role="button">
+                                    <a class="dropdown-item d-flex" href="#">
+                                        <div class="d-flex gap-3"><img src="assets/icons/adjust(1)1.svg" />
+                                            <p class="m-0">Lineage Parameters</p>
+                                        </div>
+                                        <img class="icon" src="assets/icons/ArrowLineRight.svg" />
+                                    </a>
+                                    <ul class="submenu" id="lineageUl">
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="newconfigureunit.html">Units</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="secotrs.html">Sector</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Cluster</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Plant</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Line</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Section</a></li>
+                                        <li class="p-0 px-4"><button class="li-menu-btn">Add New</button></li>
+                                    </ul>
+
+                                </li>
+                                <li id="attributeLi" class="menu-item attribute-parameters" role="button">
+                                    <a class="dropdown-item d-flex" href="#">
+                                        <div class="d-flex gap-3"><img src="assets/icons/tag(2)1.svg" />
+                                            <p class="m-0">Attribute Parameters</p>
+                                        </div>
+                                        <img class="icon" src="assets/icons/ArrowLineRight.svg" />
+                                    </a>
+                                    <ul class="submenu" id="attributeUl">
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="./equipment-groups.html">Equipment
+                                                Group</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="equipment-types.html">Equipment
+                                                Type</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Equipment Subtype</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Components</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Drive Type</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">OEM List</a></li>
+                                    </ul>
+                                </li>
+                                <li id="variableLi" class="menu-item variable-parameters" role="button">
+                                    <a class="dropdown-item d-flex" href="#">
+                                        <div class="d-flex gap-3"><img src="assets/icons/flag1.svg" />
+                                            <p class="m-0">Variable Parameters</p>
+                                        </div>
+                                        <img class="icon" src="assets/icons/ArrowLineRight.svg" />
+                                    </a>
+                                    <ul class="submenu" id="variableUl">
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Variable Group</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="variables-types.html">Variable
+                                                Type</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Source Type</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">UoM</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Location</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Criticality</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Relevance</a></li>
+                                    </ul>
+                                </li>
+                                <li id="dataSourceLi" class="menu-item data-source-parameters" role="button">
+                                    <a class="dropdown-item d-flex" href="#">
+                                        <div class="d-flex gap-3">
+                                            <img src="assets/icons/big-data1.svg" />
+                                            <p class="m-0" style="font-size: 14px">
+                                                Data Source Parameters
+                                            </p>
+                                        </div>
+                                        <img class="icon" src="assets/icons/ArrowLineRight.svg" />
+                                    </a>
+                                    <ul class="submenu" id="dataSourceUl">
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="./equipment-groups.html">Source
+                                                Group</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Tag Type</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Other</a></li>
+
+                                    </ul>
+                                </li>
+                                <li id="generalLi" class="menu-item general-parameters" role="button">
+                                    <a class="dropdown-item d-flex" href="#">
+                                        <div class="d-flex gap-3"><img src="assets/icons/verified1.svg" />
+                                            <p class="m-0">General Parameters</p>
+                                        </div>
+                                        <img class="icon" src="assets/icons/ArrowLineRight.svg" />
+                                    </a>
+                                    <ul class="submenu" id="generalUl">
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center"
+                                                href="./equipment-groups.html">Frequency</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Color Scheme</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Alerts</a></li>
+
+                                    </ul>
+                                </li>
+                                <li id="modalLi" class="menu-item modal-parameters" role="button">
+                                    <a class="dropdown-item d-flex" href="#">
+                                        <div class="d-flex gap-3"> <img src="assets/icons/3d1.svg" />
+                                            <p class="m-0">Model Parameters</p>
+                                        </div>
+                                        <img class="icon" src="assets/icons/ArrowLineRight.svg" />
+                                    </a>
+                                    <ul class="submenu" id="modalUl">
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="./equipment-groups.html">Types</a>
+                                        </li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Formats</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Platforms</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center"
+                                                href="./equipment-groups.html">Analytics</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Components</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">KPI Metrics</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="#">Data Structure</a></li>
+
+                                    </ul>
+                                </li>
+                                <li id="userLi" class="menu-item user-settings" role="button" role="button">
+                                    <a class="dropdown-item d-flex" href="#">
+                                        <div class="d-flex gap-3">
+                                            <img src="assets/icons/thinking1.svg" />
+                                            <p class="m-0">User Settings</p>
+                                        </div>
+                                        <img class="icon" src="assets/icons/ArrowLineRight.svg" />
+                                    </a>
+                                    <ul class="submenu" id="userUl">
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="roles.html">Roles</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="users.html">Users</a></li>
+                                        <li><img class="icon-rotate" src="assets/icons/ArrowLineRight.svg" /><a
+                                                class="align-content-center" href="permisions.html">Permissions</a></li>
+
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="assets/icons/fi_1828824.svg" />
+                                <span>TEMPLATES</span>
+                                <img src="assets/icons/ArrowDown.svg" />
+                            </a>
+                            <ul class="dropdown-menu menu-list" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="lineage-templates.html">
+                                        <img src="assets/icons/IconSet.svg" />
+                                        <p class="m-0">Lineage Templates</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/bag1.svg" />
+                                        <p class="m-0">Asset Templates</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/layout1.svg" />
+                                        <p class="m-0">Variable Templates</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/box(4)1.svg" />
+                                        <p class="m-0">Model Templates</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/work-schedule1.svg" />
+                                        <p class="m-0">Use Case Templates</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/graph(1)1.svg" />
+                                        <p class="m-0">Analytics Templates</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="assets/icons/fi_3388671.svg" />
+                                <span>ASSETS</span>
+                                <img src="assets/icons/ArrowDown.svg" />
+                            </a>
+                            <ul class="dropdown-menu menu-list" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="assetclass.html">
+                                        <img src="assets/icons/agenda1.svg" />
+                                        <p class="m-0">Asset Class</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="assetgroup.html">
+                                        <img src="assets/icons/package1.svg" />
+                                        <p class="m-0">Asset Modal</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="assets/icons/fi_3199725.svg" />
+                                <span>MODELS</span>
+                                <img src="assets/icons/ArrowDown.svg" />
+                            </a>
+                            <ul class="dropdown-menu menu-list" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="modelclass.html">
+                                        <img src="assets/icons/block1.svg" />
+                                        <p class="m-0">Modal Class</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="assets/icons/fi_621995.svg" />
+                                <span>MY ASSETS</span>
+                                <img src="assets/icons/ArrowDown.svg" />
+                            </a>
+                            <ul class="dropdown-menu menu-list" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="my-assets.html">
+                                        <img src="assets/icons/categories(1)1.svg" />
+                                        <p class="m-0">All Assets</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="assets/icons/fi_2326145.svg" />
+                                <span>REVIEW</span>
+                                <img src="assets/icons/ArrowDown.svg" />
+                            </a>
+                            <ul class="dropdown-menu menu-list" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="reviews.html">
+                                        <img src="assets/icons/agenda1.svg" />
+                                        <p class="m-0">List of Assets</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/flag1.svg" />
+                                        <p class="m-0">List of Variable</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/3d1.svg" />
+                                        <p class="m-0">List of Modals</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/question1.svg" />
+                                        <p class="m-0">Special Query</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="assets/icons/fi_503849.svg" />
+                                <span>UTILITIES</span>
+                                <img src="assets/icons/ArrowDown.svg" />
+                            </a>
+                            <ul class="dropdown-menu menu-list dropdown-w" aria-labelledby="navbarDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/hierachy1.svg" />
+                                        <p class="m-0">Asset Taxonomy</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/tag(3)1.svg" />
+                                        <p class="m-0">Tag Structure</p>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-start gap-3
+                        " href="#">
+                                        <img src="assets/icons/node1.svg" />
+                                        <p class="m-0">Modal Structure</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div class="container">
+        <!--Mobile sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-col">
+                <div class="sidebar-header">
+                    <a href="Dashboard.html"><img class="logo" src="assets/icons/logo-m.svg" alt="logo" /></a>
+                    <img class="close-icon" src="assets/icons/sidebar-close.svg" />
+                </div>
+
+                <ul class="sidebar-menu">
+                    <li class="sidebar-menu-item">
+                        <div class="accordion accordion-flush" id="accordionFlushExample">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="flush-headingOne">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#flush-collapseOne" aria-expanded="false"
+                                        aria-controls="flush-collapseOne">
+                                        HOME
+                                    </button>
+                                </h2>
+                                <div id="flush-collapseOne" class="" aria-labelledby="flush-headingOne"
+                                    data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex mb-0 gap-2">
+                                        <img src="assets/icons/layout-1.svg" />
+                                        <a href="Dashboard.html">
+                                            <p class="m-0">Dashboard</p>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div id="flush-collapseOne" class="" aria-labelledby="flush-headingOne"
+                                    data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex mb-0 gap-2">
+                                        <img src="assets/icons/graph-1.svg" />
+                                        <p class="m-0">Analytics</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="sidebar-menu-item">
+                        <div class="accordion" id="accordionExample">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingOne">
+                                    <button class="accordion-button justify-content-between" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true"
+                                        aria-controls="collapseOne">
+                                        CONFIGURE <span><img src="assets/icons/ArrowLineRight.svg" /></span>
+                                    </button>
+                                </h2>
+                                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne"
+                                    data-bs-parent="#accordionExample">
+                                    <div class="accordion-body">
+                                        <div class="accordion" id="sub-accordionExample">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="sub-headingOne">
+                                                    <button class="accordion-button d-flex justify-content-between pt-0"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#sub-collapseOne" aria-expanded="true"
+                                                        aria-controls="collapseOne">
+                                                        <div class="d-flex justify-content-between gap-2">
+                                                            <img src="assets/icons/adjust(1)1.svg" />
+                                                            <p class="m-0">Lineage Parameters</p>
+                                                        </div>
+                                                        <img src="assets/icons/ArrowLineRight.svg" />
+                                                    </button>
+                                                </h2>
+                                                <div id="sub-collapseOne" class="accordion-collapse collapse show"
+                                                    aria-labelledby="sub-headingOne"
+                                                    data-bs-parent="#sub-accordionExample">
+                                                    <ul class="accordion-body">
+                                                        <li>
+                                                            <a href="newconfigureunit.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Unit</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="secotrs.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Sector</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Cluster</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Plant</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Line</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Section</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="sub-headingTwo">
+                                                    <button class="accordion-button d-flex justify-content-between"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#sub-collapseTwo" aria-expanded="true"
+                                                        aria-controls="collapseTwo">
+                                                        <div class="d-flex gap-2">
+                                                            <img src="assets/icons/tag(2)1.svg" />
+                                                            <p class="m-0">Attribute Parameters</p>
+                                                        </div>
+                                                        <img src="assets/icons/ArrowLineRight.svg" />
+                                                    </button>
+                                                </h2>
+                                                <div id="sub-collapseTwo" class="accordion-collapse collapse "
+                                                    aria-labelledby="sub-headingTwo"
+                                                    data-bs-parent="#sub-accordionExample">
+
+                                                    <ul class="accordion-body">
+                                                        <li>
+                                                            <a href="equipment-groups.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Equipment Group</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="equipment-types.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Equipment Type</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Equipment Subtype</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Components</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Drive Types</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>OEM List</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="sub-headingThree">
+                                                    <button class="accordion-button d-flex justify-content-between"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#sub-collapseThree" aria-expanded="true"
+                                                        aria-controls="collapseThree">
+                                                        <div class="d-flex gap-2">
+                                                            <img src="assets/icons/flag1.svg" />
+                                                            <p class="m-0">Variable Parameters</p>
+                                                        </div>
+                                                        <img src="assets/icons/ArrowLineRight.svg" />
+                                                    </button>
+                                                </h2>
+                                                <div id="sub-collapseThree" class="accordion-collapse collapse "
+                                                    aria-labelledby="sub-headingThree"
+                                                    data-bs-parent="#sub-accordionExample">
+
+                                                    <ul class="accordion-body">
+                                                        <li>
+                                                            <ahref="#">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Variable Group</span>
+                                                                </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="variables-types.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Variable Type</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Source Type</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>UoM</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Location</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Criticality</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Relevance</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="sub-headingFour">
+                                                    <button class="accordion-button d-flex justify-content-between"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#sub-collapseFour" aria-expanded="true"
+                                                        aria-controls="collapseFour">
+                                                        <div class="d-flex gap-2">
+                                                            <img src="assets/icons/big-data1.svg" />
+                                                            <p class="m-0" style="font-size: 14px">
+                                                                Data Source Parameters
+                                                            </p>
+                                                        </div>
+                                                        <img src="assets/icons/ArrowLineRight.svg" />
+                                                    </button>
+                                                </h2>
+                                                <div id="sub-collapseFour" class="accordion-collapse collapse"
+                                                    aria-labelledby="sub-headingFour"
+                                                    data-bs-parent="#sub-accordionExample">
+                                                    <ul class="accordion-body">
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Source Type</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Tag Type</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Other</span>
+                                                            </a>
+                                                        </li>
+
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="sub-headingFive">
+                                                    <button class="accordion-button d-flex justify-content-between"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#sub-collapseFive" aria-expanded="true"
+                                                        aria-controls="collapseFive">
+                                                        <div class="d-flex gap-2">
+                                                            <img src="assets/icons/verified1.svg" />
+                                                            <p class="m-0">General Parameters</p>
+                                                        </div>
+                                                        <img src="assets/icons/ArrowLineRight.svg" />
+                                                    </button>
+                                                </h2>
+                                                <div id="sub-collapseFive" class="accordion-collapse collapse"
+                                                    aria-labelledby="sub-headingFive"
+                                                    data-bs-parent="#sub-accordionExample">
+                                                    <ul class="accordion-body">
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Frequency</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Color Scheme</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Alerts</span>
+                                                            </a>
+                                                        </li>
+
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="sub-headingSix">
+                                                    <button class="accordion-button d-flex justify-content-between"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#sub-collapseSix" aria-expanded="true"
+                                                        aria-controls="collapseSix">
+                                                        <div class="d-flex gap-2">
+                                                            <img src="assets/icons/3d1.svg" />
+                                                            <p class="m-0">Model Parameters</p>
+                                                        </div>
+                                                        <img src="assets/icons/ArrowLineRight.svg" />
+                                                    </button>
+                                                </h2>
+                                                <div id="sub-collapseSix" class="accordion-collapse collapse"
+                                                    aria-labelledby="sub-headingSix"
+                                                    data-bs-parent="#sub-accordionExample">
+                                                    <ul class="accordion-body">
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Types</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Formats</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Platforms</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Analytics</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Components</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>KPI Metrics</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a>
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Data Structure</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="sub-headingSeven">
+                                                    <button class="accordion-button d-flex justify-content-between"
+                                                        type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#sub-collapseSeven" aria-expanded="true"
+                                                        aria-controls="collapseSeven">
+                                                        <div class="d-flex gap-2">
+                                                            <img src="assets/icons/thinking1.svg" />
+                                                            <p class="m-0">User Settings</p>
+                                                        </div>
+                                                        <img src="assets/icons/ArrowLineRight.svg" />
+                                                    </button>
+                                                </h2>
+                                                <div id="sub-collapseSeven" class="accordion-collapse collapse"
+                                                    aria-labelledby="sub-headingSeven"
+                                                    data-bs-parent="#sub-accordionExample">
+                                                    <ul class="accordion-body">
+                                                        <li>
+                                                            <a href="roles.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Roles</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="users.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Users</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="permisions.html">
+                                                                <img src="assets/icons/ArrowLineRight.svg" />
+                                                                <span>Permissions</span>
+                                                            </a>
+                                                        </li>
+
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <div class="accordion accordion-flush" id="accordionFlushExample">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="flush-headingThree">
+                                    <button class="accordion-button collapsed justify-content-between" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#flush-collapseThree"
+                                        aria-expanded="false" aria-controls="flush-collapseThree">
+                                        TEMPLATES<span><img src="assets/icons/ArrowLineRight.svg" /></span>
+                                    </button>
+                                </h2>
+                                <div id="flush-collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/IconSet.svg" />
+                                        <a href="lineage-templates.html">
+                                            <p class="m-0">Lineage Templates</p>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div id="flush-collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/bag1.svg" />
+                                        <p class="m-0">Asset Templates</p>
+                                    </div>
+                                </div>
+                                <div id="flush-collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/layout1.svg" />
+                                        <p class="m-0">Variable Templates</p>
+                                    </div>
+                                </div>
+                                <div id="flush-collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/box(4)1.svg" />
+                                        <p class="m-0">Modal Templates</p>
+                                    </div>
+                                </div>
+                                <div id="flush-collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/work-schedule1.svg" />
+                                        <p class="m-0">Use Case Templates</p>
+                                    </div>
+                                </div>
+                                <div id="flush-collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/graph(1)1.svg" />
+                                        <p class="m-0">Analytics Templates</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <div class="accordion accordion-flush" id="accordionFlushExample">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="flush-headingFour">
+                                    <button class="accordion-button collapsed justify-content-between" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#flush-collapseFour"
+                                        aria-expanded="false" aria-controls="flush-collapseFour">
+                                        ASSETS<span><img src="assets/icons/ArrowLineRight.svg" /></span>
+                                    </button>
+                                </h2>
+                                <div id="flush-collapseFour" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingFour" data-bs-parent="#accordionFlushExample">
+                                    <ul class="accordion-body">
+                                        <li>
+                                            <a href="assetclass.html">
+                                                <img src="assets/icons/agenda1.svg" />
+                                                <span>Asset Class</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="assetgroup.html">
+                                                <img src="assets/icons/package1.svg" />
+                                                <span>Asset Models</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <div class="accordion accordion-flush" id="accordionFlushExample">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="flush-headingFive">
+                                    <button class="accordion-button collapsed justify-content-between" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#flush-collapseFive"
+                                        aria-expanded="false" aria-controls="flush-collapseFive">
+                                        MODALS<span><img src="assets/icons/ArrowLineRight.svg" /></span>
+                                    </button>
+                                </h2>
+                                <div id="flush-collapseFive" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingFive" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/block1.svg" />
+                                        <a href="modelclass.html">
+                                            <p class="m-0">Modal Class</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <div class="accordion accordion-flush" id="accordionFlushExample">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="flush-headingSix">
+                                    <button class="accordion-button collapsed justify-content-between" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#flush-collapseSix"
+                                        aria-expanded="false" aria-controls="flush-collapseSix">
+                                        MY ASSETS <span><img src="assets/icons/ArrowLineRight.svg" /></span>
+                                    </button>
+                                </h2>
+                                <div id="flush-collapseSix" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingFive" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/categories(1)1.svg" />
+                                        <a href="my-assets.html">
+                                            <p class="m-0">All Assets</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <div class="accordion accordion-flush" id="accordionFlushExample">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="flush-headingSeven">
+                                    <button class="accordion-button collapsed justify-content-between" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#flush-collapseSeven"
+                                        aria-expanded="false" aria-controls="flush-collapseSeven">
+                                        REVIEW <span><img src="assets/icons/ArrowLineRight.svg" /></span>
+                                    </button>
+                                </h2>
+                                <div id="flush-collapseSeven" class="accordion-collapse collapse"
+                                    aria-labelledby="flush-headingSeven" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/IconSet1.svg" />
+                                        <a href="">
+                                            <p class="m-0">List of Assets</p>
+                                        </a>
+                                    </div>
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/IconSet2.svg" />
+                                        <p class="m-0">List of Variables</p>
+                                    </div>
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/IconSet3.svg" />
+                                        <p class="m-0">List of Models</p>
+                                    </div>
+                                    <div class="accordion-body d-flex gap-2">
+                                        <img src="assets/icons/IconSet4.svg" />
+                                        <p class="m-0">Special Query</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-footer">
+                <h6 class="m-0">ATM - version 1.0</h6>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // sidebar
+        const bars = document.querySelector(".menu-icon");
+        const sidebar = document.querySelector(".sidebar");
+        const closingButton = document.querySelector(".close-icon");
+
+        bars.addEventListener("click", () => {
+            sidebar.classList.toggle("show-sidebar");
+        });
+
+        closingButton.addEventListener("click", () => {
+            sidebar.classList.remove("show-sidebar");
+        });
+        //menu arrow  rotate JS//
+        //     document.querySelector('.lineage-parameters').addEventListener('click', function() {
+        //     this.classList.toggle('active');
+        // });
+        document.querySelectorAll('.menu-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                this.classList.toggle('active');
+            });
+        });
+        //header Stciky JS //
+        document.addEventListener('DOMContentLoaded', function () {
+            window.addEventListener('scroll', function () {
+                var navbar = document.getElementById('navbar');
+                if (window.scrollY > 0) {
+                    navbar.classList.add('fixed');
+                } else {
+                    navbar.classList.remove('fixed');
+                }
+            });
+        });
+
+    </script>
+    <script src="js/submenu.js"></script>
+
+
+</body>
+
+</html>
