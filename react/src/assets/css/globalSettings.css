@@ -1,0 +1,241 @@
+@import "./index.css";
+
+
+.global-settings-container {
+  max-width: 1440px;
+  height: auto;
+  padding: 0px 40px 20px;
+  margin: 0 auto;
+  position: relative;
+  background: var(--bgColor);
+}
+
+.global-settings-card {
+  max-width: 632px;
+  height: 100%;
+  border: 1px solid var(--borderColor);
+  border-radius: 12px;
+  background-color: var(--white);
+  font-size: 16px;
+
+}
+
+.global-settings-card-popup {
+  display: none;
+  position: fixed;
+  width: 632px;
+  top: 50%;
+  left: 50%;
+  z-index: 100;
+  transform: translate(-50%, -50%);
+  background-color: var(--white);
+  box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  transition: top 0.5s ease;
+
+}
+
+.global-settings-card-header {
+  background-color: var(--primaryText);
+  border-radius: 12px 12px 0 0;
+  color: var(--white);
+  padding: 14px 24px;
+}
+
+.global-settings-card-header button {
+  width: 70px;
+  height: 40px;
+  background-color: var(--white);
+  color: var(--primaryRed);
+  border: 1px solid var(--white);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.global-settings-card-body {
+  padding: 32px 24px;
+}
+
+.edit-settings-form {
+  padding: 32px 24px 40px;
+}
+
+.row input {
+  width: 100%;
+  height: 40px;
+  outline: none;
+  border: 1px solid var(--borderColor);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  outline: none;
+  margin-top: 4px;
+  border: 1px solid var(--borderColor);
+}
+
+.global-settings-edit-card-footer {
+  min-height: 92px;
+  background-color: var(--bgColor);
+  border-radius: 0 0 12px 12px;
+  border-top: 1px solid var(--borderColor);
+  padding: 16px 24px;
+  gap: 10px;
+  text-align: center;
+}
+
+
+.global-settings-edit-card-disbtn {
+  width: 272px;
+  height: 60px;
+  border-radius: 12px;
+  border: 1px solid var(--primaryRed);
+  background-color: var(--white);
+  color: var(--primaryRed);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 18px;
+  letter-spacing: 0.02px;
+  margin-right: 25px;
+}
+
+.global-settings-edit-card-upbtn {
+  width: 272px;
+  height: 60px;
+  color: var(--white);
+  background-color: var(--primaryRed);
+  border-radius: 12px;
+  border: 1px solid var(--primaryRed);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 18px;
+  letter-spacing: 0.02px;
+
+}
+
+#overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9;
+}
+
+/*  */
+.main {
+  display: block;
+  position: relative;
+  padding-left: 32px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.main input[type=checkbox] {
+  visibility: hidden;
+}
+
+.checkbox-container {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  height: 16px;
+  width: 16px;
+  background-color: transparent;
+  border: 1px solid #333232;
+  border-radius: 4px;
+}
+
+.main input:active~.checkbox-container {
+  background-color: #D42124;
+}
+
+
+.main input:checked~.checkbox-container {
+  background-color: #D42124;
+  border-color: #D42124;
+}
+
+
+.checkbox-container::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 4px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+
+.main input:checked~.checkbox-container::after {
+  display: block;
+}
+
+/*  */
+@media only screen and (max-width:576px) {
+  .global-settings-edit-card-upbtn {
+    width: 30vw;
+    height: 50px;
+
+  }
+
+  .global-settings-edit-card-disbtn {
+    width: 30vw;
+    height: 50px;
+    margin-bottom: 12px;
+  }
+
+  .global-settings-card-popup {
+    width: 80vw;
+  }
+
+
+}
+
+@media only screen and(max-width:990px) {
+  .global-settings-card {
+    font-size: 12px;
+  }
+
+}
+
+/* @media only screen and (min-width:576px )and (max-width:990px) {
+    .global-settings-edit-card-upbtn{
+        max-width: 180px;
+        height: 50px;
+       
+    }
+    .global-settings-edit-card-disbtn{
+         max-width: 180px;
+        height: 50px;
+        margin-bottom: 12px;
+    }
+
+    
+    
+  } */
+
+/* @media only screen and (min-width:990px ) {
+    .global-settings-edit-card-upbtn{
+        max-width: 200px;
+        height: 50px;
+       
+    }
+    .global-settings-edit-card-disbtn{
+         max-width: 200px;
+        height: 50px;
+        margin-bottom: 12px;
+    }
+
+   
+    
+  } */
