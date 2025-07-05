@@ -1,0 +1,27 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* dim background */
+    display: flex;
+    justify-content: center;
+    /* center horizontally */
+    align-items: center;
+    /* center vertically */
+    z-index: 9999;
+}
+
+.addunit-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    width: 25%;
+    max-width: 500px;
+    min-width: 300px;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+}

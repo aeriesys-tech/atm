@@ -1,36 +1,41 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import InputField from '../components/InputField';
+import InputField from '../components/common/InputField';
 import '../assets/css/bootstrap.min.css';
 import '../assets/css/sign.css';
 import bg_image from '../assets/main_banner.jpg';
 import adityabirlarao from '../assets/AdityaBirlaGroupLogoVector.svg';
 import navlogo from '../assets/Navlogo.svg';
 import passicon from '../assets/icons/Component 26.svg';
-import ActionButton from '../components/ActionButton';
+import ActionButton from '../components/common/ActionButton';
 
 function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
-console.log(formData)
+  console.log(formData)
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-  
-  const fullEmail = `${formData.email}@adityabirla.com`;
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  const payload = {
-    email: fullEmail,
-    password: formData.password,
+    const fullEmail = `${formData.email}@adityabirla.com`;
+
+    const payload = {
+      email: fullEmail,
+      password: formData.password,
+    };
+
+    console.log('Submitting:', payload);
+
+    // ✅ Store a dummy token (replace with real one after API call)
+    sessionStorage.setItem("token", "dummy-auth-token");
+
+    // Then navigate
+    navigate('/otpverify');
   };
 
-  console.log('Submitting:', payload); // ← you'll now see the full email
-
-  navigate('/otpverify');
-};
 
 
   return (
@@ -52,17 +57,17 @@ const handleSubmit = (e) => {
           <h2>Sign In</h2>
           <p>Enter your details to sign in to your account</p>
           <form className="signin-form" onSubmit={handleSubmit}>
-               <div className="d-flex flex-column" style={{ marginBottom: 16, position: 'relative' }}>
-               <InputField
-              label="Email Id"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="signin-form-input"
-            />
+            <div className="d-flex flex-column" style={{ marginBottom: 16, position: 'relative' }}>
+              <InputField
+                label="Email Id"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="signin-form-input"
+              />
               <p className="email-p">@adityabirla.com</p>
             </div>
-           
+
 
             <InputField
               label="Password"

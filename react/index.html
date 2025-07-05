@@ -5,7 +5,6 @@
 	<meta charset="UTF-8" />
 	<link rel="icon" type="image/svg+xml" href="/vite.svg" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link href="/src/assets/css/bootstrap.min.css" rel="stylesheet" />
 	<script src="/src/assets/js/bootstrap.bundle.min.js"></script>
 	<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
 	<link rel="stylesheet" href="/src/assets/css/mainMenu.css" />
@@ -30,41 +29,7 @@
 	<script src="/src/assets/js/totalUsers.js"></script>
 	<script src="/src/assets/js/test.js"></script>
 	<script src="/src/assets/js/submenu.js"></script>
-	<script>
-		// sidebar
-		const bars = document.querySelector(".menu-icon");
-		const sidebar = document.querySelector(".sidebar");
-		const closingButton = document.querySelector(".close-icon");
-
-		bars.addEventListener("click", () => {
-			sidebar.classList.toggle("show-sidebar");
-		});
-
-		closingButton.addEventListener("click", () => {
-			sidebar.classList.remove("show-sidebar");
-		});
-		//menu arrow  rotate JS//
-		//     document.querySelector('.lineage-parameters').addEventListener('click', function() {
-		//     this.classList.toggle('active');
-		// });
-		document.querySelectorAll('.menu-item').forEach(function (item) {
-			item.addEventListener('click', function () {
-				this.classList.toggle('active');
-			});
-		});
-		//header Stciky JS //
-		document.addEventListener('DOMContentLoaded', function () {
-			window.addEventListener('scroll', function () {
-				var navbar = document.getElementById('navbar');
-				if (window.scrollY > 0) {
-					navbar.classList.add('fixed');
-				} else {
-					navbar.classList.remove('fixed');
-				}
-			});
-		});
-
-	</script>
+	
 	<script type="module" src="./src/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 

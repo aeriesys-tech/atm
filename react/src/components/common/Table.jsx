@@ -28,10 +28,6 @@ function Table({ headers = [], rows = [] }) {
                                 <td>{name}</td>
                                 <td>{name}</td>
                                 <td>{name}</td>
-                                <td>{name}</td>
-                                <td>{name}</td>
-                                <td>{name}</td>
-
                                 <td>
                                     <div className="action-icons ps-2">
                                         <a className="align-content-center" href="#">

@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Breadcrum({ parent = 'Home', current = 'Dashboard' }) {
+function Breadcrum({ parent = '', current = '' }) {
     return (
         <div className="pt-5">
             <h5 className="dashboard">{current}</h5>

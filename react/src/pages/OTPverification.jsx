@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import mainBanner from '../assets/main_banner.jpg';
 import logo from '../assets/AdityaBirlaGroupLogoVector.svg';
-import InputField from '../components/InputField';
-import ActionButton from '../components/ActionButton';
+import InputField from '../components/common/InputField';
+import ActionButton from '../components/common/ActionButton';
 
 function OtpVerification() {
   const [otp, setOtp] = useState('');
@@ -48,7 +48,7 @@ function OtpVerification() {
             <div className="mt-2 text-center">Resend OTP in 60 seconds</div>
 
             {/* <button type="submit" className="signin-form-button">VERIFY</button> */}
-              <ActionButton type="submit">VERIFY</ActionButton>
+            <ActionButton type="submit">VERIFY</ActionButton>
           </form>
         </div>
       </div>
