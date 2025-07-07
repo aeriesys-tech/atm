@@ -36,32 +36,30 @@ function Master() {
 
     const dynamicFields = [
         {
-            label: "Role *",
-            name: "role",
+            label: "Master Name",
             type: "text",
-            placeholder: "Enter the role",
+            name: "masterName",
+            placeholder: "Enter master name",
             required: true,
+            isNumeric: false,
+            maxLength: 50
         },
         {
-            label: "Description",
-            name: "description",
+            label: "Master Description",
             type: "textarea",
-            placeholder: "Enter the description",
-        },
+            name: "description",
+            placeholder: "Enter master description",
+            required: false
+        }
     ];
     return (
         <>
-
-
-
             <Breadcrum parent="Configuration" current="Master" />
-
             <div className="justify-content-between title-line pt-4 dash-navbar">
                 <div className="d-flex gap-3">
                     <div className="search-container">
                         <img src="/src/assets/icons/search2.svg" alt="" />
                         <input type="text" placeholder="Search for Masters" />
-                        {/* <button type="submit"></button> */}
                     </div>
 
                 </div>
@@ -76,7 +74,6 @@ function Master() {
                     />
                     <div id="overlay" />
                     <div>
-                        {/* <Button name="VIEW ALL" /> */}
                         <Button
                             name="Add Master"
                             icon="plus-icon"
@@ -84,8 +81,6 @@ function Master() {
                         />
                     </div>
                 </div>
-
-                {/* <h4 className="align-content-center m-0">&nbsp; Recent Asset List</h4> */}
 
             </div>
             <Table headers={tableHeaders} rows={rowData} />
@@ -95,11 +90,9 @@ function Master() {
                 <Modal
                     onClose={() => setShowPopup(false)}
                     fields={dynamicFields}
+                    title="Add Master"
                 />
             )}
-
-
-
         </>
     )
 }

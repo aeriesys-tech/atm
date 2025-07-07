@@ -44,7 +44,7 @@ function App() {
 				))} */}
 
 				{/* Fallback route if needed */}
-				<Route path="/master" element={
+				<Route path="/" element={
 					<MainLayout>
 						<Master />
 					</MainLayout>

@@ -1,9 +1,16 @@
-// src/components/popups/Modal.jsx
-
 import React from 'react';
-import Button from '../common/Button'; // update path as needed
+import Button from '../common/Button';
+import InputField from '../common/InputField';
 
-function Modal({ onClose, fields = [] }) {
+function Modal({
+    onClose,
+    fields = [],
+    labels = [],
+    onChange,
+    values = {},
+    errors = {},
+    title
+}) {
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div
@@ -12,7 +19,7 @@ function Modal({ onClose, fields = [] }) {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="addunit-header">
-                    <h4>Add Role</h4>
+                    <h4>{title}</h4>
                     <a onClick={onClose} style={{ cursor: "pointer" }}>
                         <img
                             src="src/assets/icons/close.svg"
@@ -22,45 +29,51 @@ function Modal({ onClose, fields = [] }) {
                         />
                     </a>
                 </div>
-                <form>
+
+                {labels.length > 0 && (
                     <div className="addunit-form">
-                        {fields.map((field, index) => (
-                            <div className="d-flex flex-column" key={index}>
-                                <label htmlFor={field.name} className="addunit-form-text">
-                                    {field.label}
-                                </label>
-                                {field.type === 'textarea' ? (
-                                    <textarea
-                                        id={field.name}
-                                        name={field.name}
-                                        placeholder={field.placeholder}
-                                        rows={4}
-                                    />
-                                ) : (
-                                    <input
-                                        type={field.type}
-                                        name={field.name}
-                                        id={field.name}
-                                        placeholder={field.placeholder}
-                                        required={field.required}
-                                    />
-                                )}
+                        {labels.map((label, index) => (
+                            <div key={index} className="mb-3">
+                                <label className="form-label"><b>{label.label}</b>: {label.name}</label>
                             </div>
                         ))}
                     </div>
-                    <div className="addunit-card-footer d-flex gap-2">
-                        <Button
-                            name="DISCARD"
-                            className="discard-btn"
-                            onClick={onClose}
-                        />
-                        <Button
-                            name="UPDATE"
-                            type="submit"
-                            className="update-btn"
-                        />
-                    </div>
-                </form>
+                )}
+                {fields.length > 0 && (
+                    <form>
+                        <div className="addunit-form">
+                            {fields.map((field, index) => (
+                                <InputField
+                                    key={index}
+                                    label={field.label}
+                                    type={field.type}
+                                    name={field.name}
+                                    id={field.name}
+                                    placeholder={field.placeholder}
+                                    value={values[field.name] || ''}
+                                    onChange={onChange}
+                                    isRequired={field.required}
+                                    isNumeric={field.isNumeric}
+                                    maxLength={field.maxLength}
+                                    error={errors[field.name]}
+                                />
+                            ))}
+                        </div>
+
+                        <div className="addunit-card-footer d-flex gap-2">
+                            <Button
+                                name="DISCARD"
+                                className="discard-btn"
+                                onClick={onClose}
+                            />
+                            <Button
+                                name="UPDATE"
+                                type="submit"
+                                className="update-btn"
+                            />
+                        </div>
+                    </form>
+                )}
             </div>
         </div>
     );
