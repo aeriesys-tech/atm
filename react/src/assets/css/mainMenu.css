@@ -86,13 +86,14 @@
   font-weight: 400;
   line-height: 16px;
 }
+
 /* li Button */
-.li-menu-btn{
+.li-menu-btn {
   border: 1px solid #FAE8EA;
   background: #ffffff;
   padding: 13px 22px;
   border-radius: 12px;
-  
+
   color: #595959;
 }
 
@@ -267,22 +268,27 @@
   border-bottom-right-radius: 5px;
   color: var(--primaryRed);
 }
-.option-width{
+
+.option-width {
   min-width: 50px;
 }
-.pagination-btn{
+
+.pagination-btn {
   background-color: #fff;
   padding: 8px 12px;
   text-decoration: none;
   border: 1px solid #ddd;
   border-radius: 5px;
 }
-.dropdown-menu.option-width{
+
+.dropdown-menu.option-width {
   border: 1px solid #ddd !important;
 }
-.pagination-resuls h2{
+
+.pagination-resuls h2 {
   font-size: 16px;
 }
+
 /* Akshay  */
 
 .navbar-3 {
@@ -935,14 +941,17 @@ ul.dropdown-menu.dropdown-w {
       padding: 20px;
       text-align: center;
     }
+
     .sidebar-footer {
       color: var(--Text-Color, #5D616C);
-      text-align: center;/* Desktop/H6 */
+      text-align: center;
+      /* Desktop/H6 */
       font-family: Inter;
       font-size: 18px;
       font-style: normal;
       font-weight: 600;
-      line-height: 140%; /* 25.2px */
+      line-height: 140%;
+      /* 25.2px */
       letter-spacing: 0.36px;
     }
   }
@@ -1027,7 +1036,8 @@ th {
   margin-top: -4px;
   margin-right: 6px;
 }
+
 /* roles page table th-left css */
-th .px-3.col-left{
+th .px-3.col-left {
   padding-left: 40px !important;
 }
