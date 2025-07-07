@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import Breadcrum from "../components/Breadcrum";
-import SubMenu from "../components/SubMenu";
+import Header from "../components/general/Header";
+import Footer from "../components/general/Footer";
+// import Breadcrum from "../components/Breadcrum";
+// import SubMenu from "../components/SubMenu";
 import TemplateBuilderWrapper from "../components/dragflowprovider/FlowProvider";
 
 const AssetName = () => {

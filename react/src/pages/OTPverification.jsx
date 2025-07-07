@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import mainBanner from '../assets/main_banner.jpg';
 import logo from '../assets/AdityaBirlaGroupLogoVector.svg';
-import InputField from '../components/InputField';
-import ActionButton from '../components/ActionButton';
+import InputField from '../components/common/InputField';
+import ActionButton from '../components/common/ActionButton';
 import { useNavigate } from 'react-router';
 
 function OtpVerification() {

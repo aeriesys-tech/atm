@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import InputField from '../components/InputField';
+import InputField from '../components/common/InputField';
 import '../assets/css/bootstrap.min.css';
 import '../assets/css/sign.css';
 import bg_image from '../assets/main_banner.jpg';

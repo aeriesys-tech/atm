@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import InputField from '../components/InputField';
-import ActionButton from '../components/ActionButton';
+import InputField from '../components/common/InputField';
+import ActionButton from '../components/common/ActionButton';
 
 import '../assets/css/bootstrap.min.css';
 import '../assets/css/sign.css';
