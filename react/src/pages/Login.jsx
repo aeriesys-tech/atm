@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import InputField from '../components/InputField';
 import '../assets/css/bootstrap.min.css';
 import '../assets/css/sign.css';
@@ -58,6 +58,7 @@ const handleSubmit = (e) => {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Enter your email"
               className="signin-form-input"
             />
               <p className="email-p">@adityabirla.com</p>
@@ -75,7 +76,7 @@ const handleSubmit = (e) => {
             />
 
             <p className="signin-form-fp-text">
-              <a href="/forgotPassword">Forgot Password?</a>
+              <Link to="/forgotPassword">Forgot Password?</Link>
             </p>
             {/* <button type="submit" className="signin-form-button">SIGN IN</button> */}
             <ActionButton type="submit">SIGN IN</ActionButton>

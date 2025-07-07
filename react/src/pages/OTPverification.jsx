@@ -3,20 +3,22 @@ import mainBanner from '../assets/main_banner.jpg';
 import logo from '../assets/AdityaBirlaGroupLogoVector.svg';
 import InputField from '../components/InputField';
 import ActionButton from '../components/ActionButton';
+import { useNavigate } from 'react-router';
 
 function OtpVerification() {
+    const navigate = useNavigate();
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
+const handleSubmit = (e) => {
+  e.preventDefault();
+  if (otp.length !== 6) {
+    setError('OTP must be 6 digits');
+  } else {
+    setError('');
+    navigate('/dashboard'); // Navigate only if OTP is valid
+  }
+};
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (otp.length !== 6) {
-      setError('OTP must be 6 digits');
-    } else {
-      setError('');
-      // handle valid OTP
-    }
-  };
 
   return (
     <div className="container bg-white">
@@ -40,12 +42,11 @@ function OtpVerification() {
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               placeholder="Enter OTP"
-              isRequired
               isNumeric
               maxLength={6}
               error={error}
             />
-            <div className="mt-2 text-center">Resend OTP in 60 seconds</div>
+            <div className="mt-2 mb-2 text-center">Resend OTP in 60 seconds</div>
 
             {/* <button type="submit" className="signin-form-button">VERIFY</button> */}
               <ActionButton type="submit">VERIFY</ActionButton>
