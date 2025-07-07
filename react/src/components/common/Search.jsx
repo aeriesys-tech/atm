@@ -1,11 +1,13 @@
 import React from 'react'
+import { useLocation } from 'react-router-dom';
 
 function Search() {
+    const location = useLocation();
     return (
         <>
 
             <input type="text" name="search" id="search" placeholder="Search" />
-            <img className="search" src="/src/assets/icons/search1.svg" alt="search" />
+            {location.pathname === '/dashboard' && (<img className="search" src="/src/assets/icons/search1.svg" alt="search" />)}
         </>
     )
 }
