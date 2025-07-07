@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom';
 import Search from '../common/Search'
 import Breadcrum from './Breadcrum'
 import Component2 from "../../../src/assets/icons/component2.svg"
@@ -48,6 +49,7 @@ import { Link } from 'react-router-dom';
 
 function Header() {
     const [openMenu, setOpenMenu] = useState(null);
+    const location = useLocation();
 
     const handleMenuToggle = (menuId) => {
         setOpenMenu(openMenu === menuId ? null : menuId);
@@ -107,22 +109,35 @@ function Header() {
                                 <img src={logom} width="46px" height="29.86px" />
                             </a>
                         </div>
-                        <div className="search-div">
+                        {/* <div className="search-div">
                             <a href="Dashboard.html">
                                 <img src={Navlogo} alt="Logo" />
                             </a>
 
                             <Search />
+                        </div> */}
+
+                        <div className="search-div">
+                            <a href="/dashboard">
+                                <img src={Navlogo} alt="Logo" />
+                            </a>
+                            {location.pathname === '/dashboard' && (
+                                <Search />)}
                         </div>
+
                     </div>
                     <div className="d-flex justify-content-between align-content-center flex-wrap">
-                        <div className="bell-icon">
-                            <img src={bellIcon} />{" "}
-                            {/* Replace with your bell icon */}
-                            <span className="notification-badge">2</span>{" "}
-                            {/* Replace with the actual notification count */}
-                        </div>
-                        <img src={settings} className="settings" />
+                        {location.pathname === '/dashboard' && (
+                            <div className="bell-icon">
+                                <img src={bellIcon} />{" "}
+                                {/* Replace with your bell icon */}
+                                <span className="notification-badge">2</span>{" "}
+                                {/* Replace with the actual notification count */}
+                            </div>)}
+                        {location.pathname === '/dashboard' && (
+                            <img src={settings} className="settings" />)}
+
+
                         <li className="nav-item dropdown profile-btn">
                             <a
                                 className="nav-link d-flex gap-btwn"

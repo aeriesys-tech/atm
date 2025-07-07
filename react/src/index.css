@@ -16,8 +16,8 @@
 
 .addunit-card {
     background: #fff;
-    border-radius: 8px;
-    padding: 20px;
+    /* border-radius: 8px; */
+    /* padding: 20px; */
     width: 25%;
     max-width: 500px;
     min-width: 300px;

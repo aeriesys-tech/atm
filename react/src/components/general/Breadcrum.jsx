@@ -1,23 +1,25 @@
 import React from 'react';
 
-function Breadcrum({ parent = '', current = '' }) {
+function Breadcrumb({ title = '', items = [] }) {
     return (
-        <div className="pt-5">
-            <h5>{current}</h5>
-            <nav className="show-breadcrumb breadcrumb-nav" aria-label="breadcrumb">
-                <ol className="breadcrumb">
-                    <li className="breadcrumb-item">
-                        <a href="#" style={{ textDecoration: 'none' }}>
-                            {parent}
-                        </a>
-                    </li>
-                    <li className="breadcrumb-item active" aria-current="page">
-                        {current}
-                    </li>
-                </ol>
-            </nav>
-        </div>
+        <nav className="breadcrumb-nav show-breadcrumb" aria-label="breadcrumb">
+            <h5>{title}</h5>
+            <ol className="breadcrumb template-breadcrumb">
+                {items.map((item, index) => {
+                    const isLast = index === items.length - 1;
+
+                    return (
+                        <li
+                            key={index}
+                            className="breadcrumb-item"
+                        >
+                            <a href={item.href || '#'}>{item.label}</a>
+                        </li>
+                    );
+                })}
+            </ol>
+        </nav>
     );
 }
 
-export default Breadcrum;
+export default Breadcrumb;

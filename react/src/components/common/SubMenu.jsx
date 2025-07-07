@@ -3,7 +3,7 @@ import React from 'react'
 function SubMenu() {
     return (
         <>
-            <div className="dashboard-nav pt-3">
+            <div>
                 <div className="row card-border">
                     <div className="col-md-4 col-lg-2 col-6 p-0 card-tab">
                         <div className="menu-card card1-border border-r border-btm">

@@ -6,9 +6,9 @@ import OtpVerification from './pages/OTPverification';
 import ForgotPassword from "./pages/ForgetPassword";
 import AssetName from "./pages/AssetsGroup";
 import Dashboard from "./pages/Dashboard.jsx";
-	import Loader from "./components/general/LoaderAndSpinner/Loader.jsx";
-	import MainLayout from "../src/layout/MainLayout";
-	import Master from "./pages/configurations/Master.jsx";
+import Loader from "./components/general/LoaderAndSpinner/Loader.jsx";
+import MainLayout from "../src/layout/MainLayout";
+import Master from "./pages/configurations/Master.jsx";
 
 // function App() {
 // 	const [isLoggedIn, setIsLoggedIn] = useState(false); // Simulated login state
@@ -37,8 +37,9 @@ function App() {
 				<Route path="/" element={<Login />} />
 				<Route path="/otpverify" element={<OtpVerification />} />
 				<Route path="/forgotPassword" element={<ForgotPassword />} />
-				<Route path="/dashboard" element={<Dashboard />} />
+				<Route path="/dashboard" element={< Dashboard />} />
 				<Route path="/assets" element={<AssetName />} />
+				<Route path="/master" element={<Master />} />
 
 				{/* {publicRoutes.map((route, index) => (
 					<Route
@@ -62,11 +63,11 @@ function App() {
 				))} */}
 
 				{/* Fallback route if needed */}
-				<Route path="/" element={
+				{/* <Route path="/" element={
 					<MainLayout>
 						<Master />
 					</MainLayout>
-				} />
+				} /> */}
 			</Routes>
 		</HashRouter>
 	);

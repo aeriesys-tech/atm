@@ -2,10 +2,11 @@ import React from 'react';
 
 function Dropdown({ options = [], label = "Select Option" }) {
     return (
-        <div className="dropdown">
+
+        <div class="dropdown">
             <select
-                style={{ padding: "10px", width: "250px" }}
-                className="select-unit textarea"
+                style={{ padding: "10px" }}
+                className="btn-bg1 d-flex gap-btwn status"
             >
                 <option value="">{label}</option>
                 {options.map((option, index) => (
@@ -14,8 +15,11 @@ function Dropdown({ options = [], label = "Select Option" }) {
                     </option>
                 ))}
             </select>
+
         </div>
     );
 }
+
+
 
 export default Dropdown;

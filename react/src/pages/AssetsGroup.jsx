@@ -24,11 +24,11 @@ const AssetName = () => {
     <>
       <Header />
       <div >
-   
+
 
         <TemplateBuilderWrapper
           master={{}}
-          usedTemplateTypeIds={[]} 
+          usedTemplateTypeIds={[]}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           templateCode={templateCode}
