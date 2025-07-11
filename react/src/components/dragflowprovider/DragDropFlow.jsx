@@ -90,7 +90,9 @@ const DragDropFlow = () => {
           fitView
           proOptions={{ hideAttribution: true }}
         >
-          <Controls />
+          {/* <Controls /> */}
+          <Controls showInteractive={false} position="top-right" />
+
           <Background gap={12} color="#eee" variant={BackgroundVariant.Lines} />
         </ReactFlow>
       </div>
