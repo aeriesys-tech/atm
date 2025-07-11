@@ -1,24 +1,76 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import mainBanner from '../assets/main_banner.jpg';
 import logo from '../assets/AdityaBirlaGroupLogoVector.svg';
 import InputField from '../components/common/InputField';
 import ActionButton from '../components/common/ActionButton';
 import { useNavigate } from 'react-router';
+import Loader from '../components/general/LoaderAndSpinner/Loader'; // Make sure this path is correct
+import authWrapper from '../../services/AuthWrapper';
 
 function OtpVerification() {
 	const navigate = useNavigate();
 	const [otp, setOtp] = useState('');
 	const [error, setError] = useState('');
-	const handleSubmit = (e) => {
+	const [loading, setLoading] = useState(false);
+	const [countdown, setCountdown] = useState(60);
+
+	// ⏱️ Start 60s countdown when email is found
+	useEffect(() => {
+		const email = sessionStorage.getItem('email');
+		if (!email) {
+			alert('Email not Entered. Please login again.');
+			navigate('/');
+		} else {
+			// Start countdown
+			const interval = setInterval(() => {
+				setCountdown((prev) => {
+					if (prev === 1) {
+						clearInterval(interval);
+						return 0;
+					}
+					return prev - 1;
+				});
+			}, 1000);
+
+			return () => clearInterval(interval);
+		}
+	}, [navigate]);
+
+	const handleSubmit = async (e) => {
 		e.preventDefault();
+
+		setError('');
 		if (otp.length !== 6) {
 			setError('OTP must be 6 digits');
-		} else {
-			setError('');
-			navigate('/dashboard'); // Navigate only if OTP is valid
+			return;
+		}
+
+		const email = sessionStorage.getItem("email");
+		if (!email) {
+			alert("Email not found. Please login again.");
+			navigate('/');
+			return;
+		}
+
+		setLoading(true);
+		try {
+			const data = await authWrapper('api/v1/validate-otp', { email, otp });
+			sessionStorage.setItem("token", data.token);
+			sessionStorage.setItem("user", JSON.stringify(data.user));
+			sessionStorage.setItem("role", JSON.stringify(data.role));
+			sessionStorage.setItem("email", data.user.email);
+			navigate("/dashboard");
+		} catch (err) {
+			console.error(err);
+			setError(err.message);
+		}
+		finally {
+			setLoading(false);
 		}
 	};
 
+
+	if (loading) return <Loader />;
 
 	return (
 		<div className="container bg-white">
@@ -44,18 +96,22 @@ function OtpVerification() {
 							placeholder="Enter OTP"
 							isNumeric
 							maxLength={6}
-							error={error}
+							error={error} // ✅ pass error here
 						/>
-						<div className="mt-2 mb-2 text-center">Resend OTP in 60 seconds</div>
 
-						{/* <button type="submit" className="signin-form-button">VERIFY</button> */}
+						<div className="mt-2 mb-2 text-center">
+							{countdown > 0
+								? `Resend OTP in ${countdown} seconds`
+								: "Didn't receive OTP? Try again."}
+						</div>
+
 						<ActionButton type="submit">VERIFY</ActionButton>
 					</form>
 				</div>
 			</div>
 
 			<div className="d-flex justify-content-between align-content-center px-4 sign-footer-text">
-				<p className="w-100">Copyright all rights reserved {new Date().getFullYear()}</p>
+				<p className="w-100">Copyright © {new Date().getFullYear()}</p>
 				<div className="w-100 d-flex gap-5 justify-content-end sign-footer-text-1">
 					<p>Terms Of Use</p>
 					<p>Privacy Policy</p>

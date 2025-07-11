@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import InputField from '../components/common/InputField';
 import '../assets/css/bootstrap.min.css';
 import '../assets/css/sign.css';
@@ -8,38 +8,50 @@ import adityabirlarao from '../assets/AdityaBirlaGroupLogoVector.svg';
 import navlogo from '../assets/Navlogo.svg';
 import passicon from '../assets/icons/Component 26.svg';
 import ActionButton from '../components/common/ActionButton';
-
+import Loader from '../components/general/LoaderAndSpinner/Loader'; // ✅ make sure this exists
+import authWrapper from '../../services/AuthWrapper'
 function Login() {
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState({ email: '', password: '' });
-	console.log(formData)
+	const [errors, setErrors] = useState({});
+	const [loading, setLoading] = useState(false);
+
 	const handleChange = (e) => {
 		setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+		setErrors(prev => ({ ...prev, [e.target.name]: '' })); // clear error on input
 	};
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
+	const handleSubmit = async (e) => {
+	e.preventDefault();
+	setLoading(true);
+	setErrors({}); // reset errors
 
-		const fullEmail = `${formData.email}@adityabirla.com`;
+	const payload = {
+		email: formData.email,
+		password: formData.password,
+	};
 
-		const payload = {
-			email: fullEmail,
-			password: formData.password,
-		};
+	try {
+		const data = await authWrapper('api/v1/login', payload);
 
-		console.log('Submitting:', payload);
-
-		// ✅ Store a dummy token (replace with real one after API call)
-		sessionStorage.setItem("token", "dummy-auth-token");
-
-		// Then navigate
+		// Store email and navigate
+		sessionStorage.setItem("email", payload.email);
 		navigate('/otpverify');
-	};
 
-
+	} catch (error) {
+		if (error?.message?.errors) {
+			setErrors(error.message.errors); // server-side field validation
+		} else {
+			// alert(error.message || "Login failed");
+		}
+	} finally {
+		setLoading(false);
+	}
+};
 
 	return (
 		<div className="container">
+			{loading && <Loader />} {/* ✅ Show loader */}
 			<div className="row signIn-card">
 				<div className="col-lg-6 p-0 pt-4 col-md-12 px-4 mb-4 resp-img">
 					<img className="resp-img-img" src={bg_image} alt="bg-image" />
@@ -65,25 +77,29 @@ function Login() {
 								onChange={handleChange}
 								placeholder="Enter your email"
 								className="signin-form-input"
+								error={errors.email}
 							/>
 							<p className="email-p">@adityabirla.com</p>
+						
 						</div>
 
-
-						<InputField
-							label="Password"
-							type="password"
-							name="password"
-							value={formData.password}
-							onChange={handleChange}
-							placeholder="Enter your password"
-							suffix={<img className="password-icon" src={passicon} alt="toggle password" />}
-						/>
+						<div style={{ marginBottom: 16 }}>
+							<InputField
+								label="Password"
+								type="password"
+								name="password"
+								value={formData.password}
+								onChange={handleChange}
+								placeholder="Enter your password"
+								suffix={<img className="password-icon" src={passicon} alt="toggle password" />}
+								 error={errors.password}
+							/>
+						</div>
 
 						<p className="signin-form-fp-text">
 							<Link to="/forgotPassword">Forgot Password?</Link>
 						</p>
-						{/* <button type="submit" className="signin-form-button">SIGN IN</button> */}
+
 						<ActionButton type="submit">SIGN IN</ActionButton>
 					</form>
 				</div>
