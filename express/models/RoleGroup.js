@@ -6,14 +6,16 @@ const roleGroupSchema = new Schema({
         type: String,
         required: [true, 'Role group code is required'],
         unique: true,
-        trim: true
+        trim: true,
+        index: true
     },
     role_group_name: {
         type: String,
         required: [true, 'Role group name is required'],
         trim: true,
         maxlength: 30,
-        unique: true
+        unique: true,
+        index: true
     },
     deleted_at: {
         type: Date,
@@ -28,6 +30,17 @@ const roleGroupSchema = new Schema({
     versionKey: false,
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
+
+// Partial indexes to support Cosmos DB sorting & soft delete
+roleGroupSchema.index(
+    { role_group_name: 1 },
+    { unique: true, partialFilterExpression: { deleted_at: null } }
+);
+
+roleGroupSchema.index(
+    { role_group_code: 1 },
+    { unique: true, partialFilterExpression: { deleted_at: null } }
+);
 
 // Explicitly specify collection name
 module.exports = mongoose.model('RoleGroup', roleGroupSchema, 'rolegroups');

@@ -71,7 +71,7 @@ const seedUser = async () => {
             {
                 name: "Bharatesh",
                 username: "bharatesh",
-                email: "richa@aeriesys.com",
+                email: "bharatesh@aeriesys.com",
                 password: hashedPassword,
                 mobile_no: "9535342875",
                 role_id: role._id,
