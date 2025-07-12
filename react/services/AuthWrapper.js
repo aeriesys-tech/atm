@@ -12,19 +12,23 @@ const authWrapper = async (endpoint, data, rawResponse = false) => {
 			{ headers }
 		);
 
-		return rawResponse ? response : response.data;
-	} catch (error) {
-		// 👇 Extract proper error message from backend response
-		const responseData = error?.response?.data;
-		let message = 'Something went wrong';
-
-		if (responseData?.errors?.otp) {
-			message = responseData.errors.otp;
-		} else if (responseData?.message) {
-			message = responseData.message;
+		if (rawResponse) {
+			return response;
 		}
 
-		throw new Error(message); // 👈 Clean error thrown back to OTP page
+		return response.data;
+	} catch (error) {
+		console.error('Axios error:', error.response?.data || error);
+
+		const errorData = error.response?.data;
+
+		// 🟡 Attach `errors` and `message` clearly
+		const finalError = new Error(errorData?.message || 'Something went wrong');
+		if (errorData?.errors) {
+			finalError.errors = errorData.errors;
+		}
+
+		throw finalError;
 	}
 };
 

@@ -49,10 +49,14 @@ import { Link } from 'react-router-dom';
 
 function Header() {
     const [openMenu, setOpenMenu] = useState(null);
+    const [openSubMenu, setOpenSubMenu] = useState(null);
     const location = useLocation();
-
+    useEffect(() => {
+        setOpenMenu(null);
+        setOpenSubMenu(null);
+    }, [location]);
     const handleMenuToggle = (menuId) => {
-        setOpenMenu(openMenu === menuId ? null : menuId);
+        setOpenSubMenu(openSubMenu === menuId ? null : menuId);
     };
 
     useEffect(() => {
@@ -89,8 +93,6 @@ function Header() {
             window.removeEventListener("scroll", handleScroll);
         };
     }, []);
-
-
 
     return (
         <>
@@ -240,7 +242,7 @@ function Header() {
                                     {openMenu === "main" && (
                                         <ul className="dropdown-menu show">
                                             {/* Lineage Parameters */}
-                                            <li className="menu-item">
+                                            <li className="menu-item position-relative">
                                                 <button
                                                     className="dropdown-item d-flex justify-content-between align-items-center"
                                                     onClick={() => handleMenuToggle("lineage")}
@@ -249,10 +251,10 @@ function Header() {
                                                         <img src={adjust1} alt="Lineage" />
                                                         <p className="m-0">Lineage Parameters</p>
                                                     </div>
-
                                                     <img className="icon" src={ArrowLineRight} alt="Arrow" />
                                                 </button>
-                                                {openMenu === "lineage" && (
+
+                                                {openSubMenu === "lineage" && (
                                                     <ul className="submenu">
                                                         <li><a href="newconfigureunit.html">Units</a></li>
                                                         <li><a href="secotrs.html">Sector</a></li>
@@ -265,6 +267,7 @@ function Header() {
                                                 )}
                                             </li>
 
+
                                             {/* Repeat similarly for other menus */}
                                             <li className="menu-item">
                                                 <button
@@ -273,18 +276,18 @@ function Header() {
                                                 >
                                                     <div className="d-flex gap-3 align-items-center">
                                                         <img src={tag} alt="Attribute" />
-                                                        <p className="m-0">Attribute Parameters</p>
+                                                        <p className="m-0">Users Settings</p>
                                                     </div>
                                                     <img className="icon" src={ArrowLineRight} alt="Arrow" />
                                                 </button>
-                                                {openMenu === "attribute" && (
+                                                {openSubMenu === "attribute" && (
                                                     <ul className="submenu">
-                                                        <li><a href="equipment-groups.html">Equipment Group</a></li>
+                                                        {/* <li><a href="equipment-groups.html">Equipment Group</a></li>
                                                         <li><a href="equipment-types.html">Equipment Type</a></li>
                                                         <li><a href="#">Equipment Subtype</a></li>
-                                                        <li><a href="#">Components</a></li>
-                                                        <li><a href="#">Drive Type</a></li>
-                                                        <li><a href="#">OEM List</a></li>
+                                                        <li><a href="#">Components</a></li> */}
+                                                        <li><img src={adjust1} alt="Lineage" /><Link to="/assets">Assets</Link></li>
+                                                        <li><img src={tag} alt="Lineage" /><Link to="/role">Role</Link></li>
                                                     </ul>
                                                 )}
                                             </li>

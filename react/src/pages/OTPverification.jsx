@@ -6,13 +6,14 @@ import ActionButton from '../components/common/ActionButton';
 import { useNavigate } from 'react-router';
 import Loader from '../components/general/LoaderAndSpinner/Loader'; // Make sure this path is correct
 import authWrapper from '../../services/AuthWrapper';
-
+// import useDispatch from 'react-redux'
 function OtpVerification() {
 	const navigate = useNavigate();
 	const [otp, setOtp] = useState('');
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [countdown, setCountdown] = useState(60);
+	// const dispatch = useDispatch();
 
 	// ⏱️ Start 60s countdown when email is found
 	useEffect(() => {
@@ -62,7 +63,11 @@ function OtpVerification() {
 			navigate("/dashboard");
 		} catch (err) {
 			console.error(err);
-			setError(err.message);
+			if (err?.errors?.otp) {
+				setError(err.errors.otp); 
+			} else {
+				setError(err.message); 
+			}
 		}
 		finally {
 			setLoading(false);

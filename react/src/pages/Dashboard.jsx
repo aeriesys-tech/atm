@@ -23,22 +23,14 @@ const Dashboard = () => {
         { label: "STATUS" },
         { label: "ACTION" },
     ]);
-    const [rowData] = useState([
-        " Priority",
-        "  Sector",
-        "  PRI",
-        " Plant 1",
-        " PRI",
-        " Plant 2",
-        " PRI",
-        " PRI",
-        " PRI",
-    ]);
+  const [rowData] = useState([
+  ["1", "Priority", "PRI", "Plant 1", "Type A", "Group 1", "Var A", "Active"],
+  ["2", "Sector", "SEC", "Plant 2", "Type B", "Group 2", "Var B", "Inactive"],
+]);
 
 
     return (
         <>
-            <Header />
             <div className="tb-responsive templatebuilder-body">
                 <div className="tb-container pt-3">
 
@@ -66,7 +58,6 @@ const Dashboard = () => {
                     <Table headers={tableHeaders} rows={rowData} />
                 </div>
             </div >
-            <Footer />
         </>
     );
 };

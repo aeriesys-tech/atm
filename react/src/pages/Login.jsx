@@ -15,39 +15,40 @@ function Login() {
 	const [formData, setFormData] = useState({ email: '', password: '' });
 	const [errors, setErrors] = useState({});
 	const [loading, setLoading] = useState(false);
-
+	const [showPassword, setShowPassword] = useState(false);
 	const handleChange = (e) => {
 		setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 		setErrors(prev => ({ ...prev, [e.target.name]: '' })); // clear error on input
 	};
 
 	const handleSubmit = async (e) => {
-	e.preventDefault();
-	setLoading(true);
-	setErrors({}); // reset errors
+		e.preventDefault();
+		setLoading(true);
+		setErrors({}); // reset errors
 
-	const payload = {
-		email: formData.email,
-		password: formData.password,
-	};
+		const payload = {
+			email: formData.email,
+			password: formData.password,
+		};
 
-	try {
-		const data = await authWrapper('api/v1/login', payload);
+		try {
+			const data = await authWrapper('api/v1/login', payload);
 
-		// Store email and navigate
-		sessionStorage.setItem("email", payload.email);
-		navigate('/otpverify');
+			// Store email and navigate
+			sessionStorage.setItem("email", payload.email);
+			navigate('/otpverify');
 
-	} catch (error) {
-		if (error?.message?.errors) {
-			setErrors(error.message.errors); // server-side field validation
-		} else {
-			// alert(error.message || "Login failed");
+		} catch (error) {
+			if (error?.errors) {
+				setErrors(error.errors); // ✅ Correct way now
+			} else {
+				alert(error.message || "Login failed");
+			}
 		}
-	} finally {
-		setLoading(false);
-	}
-};
+		finally {
+			setLoading(false);
+		}
+	};
 
 	return (
 		<div className="container">
@@ -80,19 +81,27 @@ function Login() {
 								error={errors.email}
 							/>
 							<p className="email-p">@adityabirla.com</p>
-						
+
 						</div>
 
-						<div style={{ marginBottom: 16 }}>
+						<div style={{ marginBottom: 16, position: 'relative' }}>
 							<InputField
 								label="Password"
-								type="password"
+								type={showPassword ? "text" : "password"}
 								name="password"
 								value={formData.password}
 								onChange={handleChange}
 								placeholder="Enter your password"
-								suffix={<img className="password-icon" src={passicon} alt="toggle password" />}
-								 error={errors.password}
+								suffix={
+									<img
+										className="password-icon"
+										src={passicon}
+										alt="toggle password"
+										style={{ cursor: 'pointer' }}
+										onClick={() => setShowPassword(prev => !prev)}
+									/>
+								}
+								error={errors.password}
 							/>
 						</div>
 

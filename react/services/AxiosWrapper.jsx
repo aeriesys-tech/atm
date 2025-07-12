@@ -45,7 +45,7 @@ const axiosWrapper = async (endpoint, options = {}, navigate, rawResponse = fals
 		}
 
 		const errorMessage = error.response?.data || 'Something went wrong';
-		console.error('Axios error:', errorMessage);
+		// console.error('Axios error:', errorMessage);
 		error.message = errorMessage;
 		throw error;
 	}

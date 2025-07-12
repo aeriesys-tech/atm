@@ -10,8 +10,9 @@ const MainLayout = ({ children }) => {
 			</div>
 			<div className="container" style={{ height: "auto", backgroundColor: "#F9F9F9" }}>
 				{children}
-				<Footer />
 			</div>
+				<Footer />
+
 		</>
 
 	);

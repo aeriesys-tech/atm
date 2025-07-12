@@ -39,7 +39,7 @@ function InputField({
         placeholder={placeholder}
         className={`signin-form-input ${error ? 'is-invalid' : ''} ${className}`}
         maxLength={maxLength}
-        required={isRequired}
+        // required={isRequired}
       />
       {suffix && <div className="suffix-icon">{suffix}</div>}
       {error && <div className="invalid-feedback d-block">{error}</div>}

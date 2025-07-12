@@ -22,7 +22,6 @@ const AssetName = () => {
 
   return (
     <>
-      <Header />
       <div >
 
 
@@ -47,7 +46,6 @@ const AssetName = () => {
           setEdgeLabelModal={setEdgeLabelModal}
         />
       </div>
-      <Footer />
     </>
   );
 };

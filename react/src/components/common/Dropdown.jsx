@@ -1,12 +1,14 @@
 import React from 'react';
 
-function Dropdown({ options = [], label = "Select Option" }) {
+function Dropdown({ options = [], label = "Select Option", name, value, onChange, error }) {
     return (
-
-        <div class="dropdown">
+        <div>
             <select
+                name={name}
+                value={value}
+                onChange={onChange}
+                className="form-select"
                 style={{ padding: "10px" }}
-                className="btn-bg1 d-flex gap-btwn status"
             >
                 <option value="">{label}</option>
                 {options.map((option, index) => (
@@ -15,11 +17,9 @@ function Dropdown({ options = [], label = "Select Option" }) {
                     </option>
                 ))}
             </select>
-
+            {error && <small className="text-danger">{error}</small>}
         </div>
     );
 }
-
-
 
 export default Dropdown;

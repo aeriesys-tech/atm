@@ -1,52 +1,103 @@
-import React, { useState, useRef } from "react";
-import Header from "../../components/general/Header";
-import Footer from "../../components/general/Footer";
-
+import React, { useState } from "react";
 import Breadcrumb from "../../components/general/Breadcrum";
-import SubMenu from "../../components/common/SubMenu";
-import Button from "../../components/common/Button";
-import Dropdown from "../../components/common/Dropdown";
 import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
+import Modal from "../../components/common/Modal";
 
 const Master = () => {
     const breadcrumbItems = [
         { label: 'Configure', href: '#' },
         { label: 'Masters', href: '#' }
     ];
+
     const [tableHeaders] = useState([
         { label: "# ID", sortable: true },
         { label: "CODE", sortable: true },
         { label: "EQUIPMENT NAME", sortable: true },
-        { label: "SECTOR", sortable: true },
-        { label: "TYPE", sortable: true },
-        { label: "GROUP" },
         { label: "VARIABLES" },
         { label: "STATUS" },
         { label: "ACTION" },
     ]);
+
     const [rowData] = useState([
-        " Priority",
-        "  Sector",
-        "  PRI",
-        " Plant 1",
-        " PRI",
-        " Plant 2",
-        " PRI",
-        " PRI",
-        " PRI",
+        ["1", "Priority", "PRI", "Active", "Edit"],
+        ["2", "Sector", "SEC", "Inactive", "Edit"],
     ]);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [formValues, setFormValues] = useState({});
+    const [formErrors, setFormErrors] = useState({});
+
+    // ✅ Define the fields specific to Master page
+    const fields = [
+        {
+            label: "Master Name",
+            name: "masterName",
+            type: "text",
+            placeholder: "Enter master name",
+            required: true,
+        },
+        {
+            label: "Code",
+            name: "code",
+            type: "text",
+            placeholder: "Enter code",
+            required: true,
+        }
+    ];
+
+    // ✅ Handle input field changes
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormValues(prev => ({ ...prev, [name]: value }));
+        setFormErrors(prev => ({ ...prev, [name]: "" }));
+    };
+
+    // ✅ Submit handler for modal form
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        const errors = {};
+        fields.forEach(field => {
+            if (field.required && !formValues[field.name]) {
+                errors[field.name] = `${field.label} is required`;
+            }
+        });
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+
+        console.log("Submitted:", formValues); // Replace with actual API call
+        setIsModalOpen(false);
+        setFormValues({});
+    };
+
     return (
         <>
-            <Header />
             <div className="tb-responsive templatebuilder-body">
-                <div className="tb-container pt-3">
+                <div className="pt-3">
                     <Breadcrumb title="Masters" items={breadcrumbItems} />
-                    <Navbar />
+
+                    <Navbar modalTitle="Add Master" modalFields={fields} onAddClick={() => setIsModalOpen(true)} />
+
                     <Table headers={tableHeaders} rows={rowData} />
                 </div>
-            </div >
-            <Footer />
+            </div>
+
+            {/* ✅ Modal with reusable fields and handlers */}
+            {isModalOpen && (
+                <Modal
+                    title="Add Master"
+                    fields={fields}
+                    values={formValues}
+                    errors={formErrors}
+                    onChange={handleInputChange}
+                    onSubmit={handleSubmit}
+                    onClose={() => setIsModalOpen(false)}
+                />
+            )}
         </>
     );
 };

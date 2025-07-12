@@ -1,9 +1,11 @@
 import React from 'react';
 import Button from '../common/Button';
 import InputField from '../common/InputField';
+import Dropdown from '../common/Dropdown';
 
 function Modal({
     onClose,
+    onSubmit,
     fields = [],
     labels = [],
     onChange,
@@ -15,7 +17,7 @@ function Modal({
         <div className="modal-overlay" onClick={onClose}>
             <div
                 className="addunit-card"
-                style={{ width: "25%", transition: "width 0.3s" }}
+                style={{ width: "50%", transition: "width 0.3s" }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="addunit-header">
@@ -39,24 +41,37 @@ function Modal({
                         ))}
                     </div>
                 )}
+
                 {fields.length > 0 && (
-                    <form>
+                    <form onSubmit={onSubmit}>
                         <div className="addunit-form">
                             {fields.map((field, index) => (
-                                <InputField
-                                    key={index}
-                                    label={field.label}
-                                    type={field.type}
-                                    name={field.name}
-                                    id={field.name}
-                                    placeholder={field.placeholder}
-                                    value={values[field.name] || ''}
-                                    onChange={onChange}
-                                    isRequired={field.required}
-                                    isNumeric={field.isNumeric}
-                                    maxLength={field.maxLength}
-                                    error={errors[field.name]}
-                                />
+                                <div key={index} className="mb-3">
+                                    {field.type === "dropdown" ? (
+                                        <Dropdown
+                                            label={field.label}
+                                            options={field.options || []}
+                                            value={values[field.name] || ''}
+                                            name={field.name}
+                                            onChange={onChange}
+                                            error={errors[field.name]}
+                                        />
+                                    ) : (
+                                        <InputField
+                                            label={field.label}
+                                            type={field.type}
+                                            name={field.name}
+                                            id={field.name}
+                                            placeholder={field.placeholder}
+                                            value={values[field.name] || ''}
+                                            onChange={onChange}
+                                            isRequired={field.required}
+                                            isNumeric={field.isNumeric}
+                                            maxLength={field.maxLength}
+                                            error={errors[field.name]}
+                                        />
+                                    )}
+                                </div>
                             ))}
                         </div>
 
@@ -67,7 +82,7 @@ function Modal({
                                 onClick={onClose}
                             />
                             <Button
-                                name="UPDATE"
+                                name="ADD"
                                 type="submit"
                                 className="update-btn"
                             />
