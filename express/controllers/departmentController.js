@@ -2,12 +2,23 @@ const Department = require('../models/department');
 const { logApiResponse } = require('../utils/responseService');
 
 const paginatedDepartments = async (req, res) => {
-    const { page = 1, limit = 10, sortBy = 'createdAt', order = 'desc', search = '', status } = req.query;
+    const {
+        page = 1,
+        limit = 10,
+        sortBy = 'department_code',
+        order = 'asc',
+        search = '',
+        status
+    } = req.query;
 
-    // Building the sort object dynamically based on the query parameters
-    const sort = { [sortBy]: order === 'desc' ? -1 : 1 };
+    const allowedSortFields = ['_id', 'department_name', 'department_code', 'created_at'];
+    const cleanSortBy = String(sortBy).trim();
+    const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
 
-    // Implementing search functionality
+    const sort = {
+        [safeSortBy]: order === 'desc' ? -1 : 1
+    };
+
     const searchQuery = {
         $and: [
             search ? {
@@ -16,7 +27,7 @@ const paginatedDepartments = async (req, res) => {
                     { department_code: new RegExp(search, 'i') }
                 ]
             } : {},
-            status ? { status: status === 'active' } : {}
+            status !== undefined ? { status: status === 'active' } : {}
         ]
     };
 
@@ -24,21 +35,35 @@ const paginatedDepartments = async (req, res) => {
         const departments = await Department.find(searchQuery)
             .sort(sort)
             .skip((page - 1) * limit)
-            .limit(limit);
+            .limit(Number(limit));
+
         const count = await Department.countDocuments(searchQuery);
 
-        res.json({
+        await logApiResponse(req, "Paginated departments retrieved successfully", 200, {
             totalPages: Math.ceil(count / limit),
             currentPage: Number(page),
             departments,
-            totalItems: count,
+            totalItems: count
+        });
+
+        res.status(200).json({
+            totalPages: Math.ceil(count / limit),
+            currentPage: Number(page),
+            departments,
+            totalItems: count
         });
     } catch (error) {
         console.error("Error retrieving paginated departments:", error);
-        await logApiResponse(req, "Error retrieving paginated departments", 500, { error: error.message });
-        res.status(500).json({ message: "Error retrieving paginated departments", error: error.message });
+        await logApiResponse(req, "Failed to retrieve paginated departments", 500, { error: error.message });
+
+        res.status(500).json({
+            message: "Failed to retrieve paginated departments",
+            error: error.message
+        });
     }
 };
+
+
 
 const createDepartment = async (req, res) => {
     const { department_code, department_name } = req.body;
@@ -115,43 +140,64 @@ const createDepartment = async (req, res) => {
 };
 
 const updateDepartment = async (req, res) => {
-    const { id } = req.params; // Department ID from the URL parameter
-    const { department_code, department_name, status, deleted_at } = req.body;
+    const { id, department_code, department_name } = req.body;
+
+    let validationErrors = {};
+
+    // Validate department_code
+    if (!department_code || department_code.trim() === '') {
+        validationErrors.department_code = "Department code is required";
+    }
+
+    // Validate department_name
+    if (!department_name || department_name.trim() === '') {
+        validationErrors.department_name = "Department name is required";
+    }
+
+    // If there are validation errors, return them
+    if (Object.keys(validationErrors).length > 0) {
+        await logApiResponse(req, "Validation Error", 400, validationErrors);
+        return res.status(400).json({
+            message: "Validation Error",
+            errors: validationErrors
+        });
+    }
 
     try {
-        // Check if a department with the same code already exists and isn't the same as the one being updated
+        // Check if department code is already taken by another department
         if (department_code) {
-            const existingDepartment = await Department.findOne({ department_code, _id: { $ne: id } });
-            if (existingDepartment) {
-                await logApiResponse(req, "Duplicate Key Error", 409, {
-                    errors: {
-                        department_code: "Another department with this code already exists"
-                    }
-                });
-                return res.status(409).json({
-                    message: "Duplicate Key Error",
-                    errors: {
-                        department_code: "Another department with this code already exists"
-                    }
-                });
+            const existingCode = await Department.findOne({ department_code, _id: { $ne: id } });
+            if (existingCode) {
+                validationErrors.department_code = "Department with this code already exists";
             }
         }
 
-        // Find the department by ID and update it
+        // Check if department name is already taken by another department
+        if (department_name) {
+            const existingName = await Department.findOne({ department_name, _id: { $ne: id } });
+            if (existingName) {
+                validationErrors.department_name = "Department with this name already exists";
+            }
+        }
+
+        // If there are duplicate errors
+        if (Object.keys(validationErrors).length > 0) {
+            await logApiResponse(req, "Duplicate Key Error", 409, validationErrors);
+            return res.status(409).json({
+                message: "Duplicate Key Error",
+                errors: validationErrors
+            });
+        }
+
+        // Find and update the department
         const updatedDepartment = await Department.findByIdAndUpdate(id, {
             department_code,
             department_name,
-            status,
-            deleted_at,
             updated_at: Date.now()
-        }, { new: true, runValidators: true }); // This option returns the updated document and runs validators
+        }, { new: true, runValidators: true });
 
         if (!updatedDepartment) {
-            await logApiResponse(req, "Validation Error", 404, {
-                errors: {
-                    id: "Department not found"
-                }
-            });
+            await logApiResponse(req, "Validation Error", 404, { id: "Department not found" });
             return res.status(404).json({
                 message: "Validation Error",
                 errors: {
@@ -160,50 +206,60 @@ const updateDepartment = async (req, res) => {
             });
         }
 
-        // Send a successful response back with updated department data
+        // Log success and respond
         await logApiResponse(req, "Department updated successfully", 200, updatedDepartment);
-        res.status(200).json({
+        return res.status(200).json({
             message: "Department updated successfully",
             data: updatedDepartment
         });
+
     } catch (error) {
         console.error("Failed to update department:", error);
 
         let errors = {};
 
+        // Handle schema validation errors
         if (error.name === 'ValidationError') {
             Object.keys(error.errors).forEach(key => {
                 errors[key] = error.errors[key].message;
             });
+
             await logApiResponse(req, "Validation Error", 400, errors);
             return res.status(400).json({
                 message: "Validation Error",
                 errors
             });
-        } else if (error.code === 11000) {
+        }
+
+        // Handle duplicate key errors
+        if (error.code === 11000) {
             if (error.keyPattern && error.keyPattern.department_code) {
-                errors.department_code = "Another department with this code already exists";
+                errors.department_code = "Department with this code already exists";
             }
+            if (error.keyPattern && error.keyPattern.department_name) {
+                errors.department_name = "Department with this name already exists";
+            }
+
             await logApiResponse(req, "Duplicate Key Error", 409, errors);
             return res.status(409).json({
                 message: "Duplicate Key Error",
                 errors
             });
-        } else {
-            await logApiResponse(req, "Internal Server Error", 500, {
-                errors: {
-                    message: "An unexpected error occurred"
-                }
-            });
-            return res.status(500).json({
-                message: "Internal Server Error",
-                errors: {
-                    message: "An unexpected error occurred"
-                }
-            });
         }
+
+        // Fallback for unknown errors
+        await logApiResponse(req, "Internal Server Error", 500, {
+            message: "An unexpected error occurred"
+        });
+        return res.status(500).json({
+            message: "Internal Server Error",
+            errors: {
+                message: "An unexpected error occurred"
+            }
+        });
     }
 };
+
 
 const getDepartments = async (req, res) => {
     try {
@@ -265,8 +321,7 @@ const getDepartment = async (req, res) => {
 
 const deleteDepartment = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { ids } = req.body;
+        const { id, ids } = req.body;
 
         // Function to toggle soft delete for a single department
         const toggleSoftDelete = async (departmentId) => {

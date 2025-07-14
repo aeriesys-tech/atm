@@ -5,7 +5,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 // const { checkPermission } = require("../middlewares/permissionsMiddleware");
 const { upload } = require('../middlewares/multerMiddleware');
 
-router.post('/addUser', authMiddleware, upload.single('avatar'), userController.createUser);
+router.post('/createUser', authMiddleware, upload.single('avatar'), userController.createUser);
 router.post('/updateUser', authMiddleware, upload.single('avatar'), userController.updateUser);
 router.post('/getUsers', authMiddleware, userController.getAllUsers);
 router.post('/getUser', authMiddleware, userController.getUserById);

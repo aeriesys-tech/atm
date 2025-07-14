@@ -52,8 +52,7 @@ const userSchema = new Schema({
 		required: [true, 'Department ID is required']
 	},
 	avatar: {
-		type: String,
-		required: false
+		type: String
 	},
 	jwt_token: {
 		type: String
@@ -71,24 +70,33 @@ const userSchema = new Schema({
 		required: true,
 		default: true
 	},
-	created_at: {
-		type: Date,
-		default: Date.now
-	},
-	updated_at: {
-		type: Date,
-		default: Date.now
-	},
 	deleted_at: {
 		type: Date,
 		default: null
 	}
 }, {
-	versionKey: false
+	versionKey: false,
+	timestamps: {
+		createdAt: 'created_at',
+		updatedAt: 'updated_at'
+	}
 });
 
+// Partial indexes to support Cosmos DB + soft delete
+userSchema.index(
+	{ email: 1 },
+	{ unique: true, partialFilterExpression: { deleted_at: null } }
+);
+
+userSchema.index(
+	{ mobile_no: 1 },
+	{ unique: true, partialFilterExpression: { deleted_at: null } }
+);
+
+// Hash password method
 userSchema.methods.hashPassword = async function (password) {
 	return await bcrypt.hash(password, 10);
 };
 
-module.exports = mongoose.model('User', userSchema);
+// Explicitly specify collection name
+module.exports = mongoose.model('User', userSchema, 'users');

@@ -10,7 +10,7 @@ const createRoleGroup = (req, res, next) => {
 
 const updateRoleGroup = (req, res, next) => {
     return Validate([
-        body("role_group_id", "Role group field is required").isString().escape().trim().exists().notEmpty(),
+        body("id", "Role group id is required").isString().escape().trim().exists().notEmpty(),
         body("role_group_code", "Role group code field is required").isString().escape().trim().exists().notEmpty(),
         body("role_group_name", "Role group name field is required").isString().escape().trim().exists().notEmpty(),
     ])(req, res, next);

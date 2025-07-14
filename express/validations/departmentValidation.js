@@ -10,7 +10,7 @@ const createDepartment = (req, res, next) => {
 
 const updateDepartment = (req, res, next) => {
     return Validate([
-        body("department_id", "department id field is required").isString().escape().trim().exists().notEmpty(),
+        body("id", "department id field is required").isString().escape().trim().exists().notEmpty(),
         body("department_code", "department code field is required").isString().escape().trim().exists().notEmpty(),
         body("department_name", "department name field is required").isString().escape().trim().exists().notEmpty(),
     ])(req, res, next);

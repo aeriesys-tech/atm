@@ -6,11 +6,14 @@ const authRoute = require('./authRoute');
 const userRoute = require('./userRoute');
 const roleRoute = require('./roleRoute');
 const roleGroupRoute = require('./roleGroupRoute');
+const departmentRoute = require("./departmentRoute");
+const parameterTypeRoute = require("./parameterTypeRoute");
 
-// ✅ Use router, NOT app
-router.use('/', authRoute);   // /api/v1/auth/*
-router.use('/users', userRoute);  // /api/v1/users/*
-router.use('/roles', roleRoute);  // /api/v1/users/*
-router.use('/role-groups', roleGroupRoute);  // /api/v1/users/*
+router.use('/', authRoute);
+router.use('/users', userRoute);
+router.use('/roles', roleRoute);
+router.use('/role-groups', roleGroupRoute);
+router.use('/departments', departmentRoute);
+router.use('/parameter-types', parameterTypeRoute);
 
 module.exports = router;

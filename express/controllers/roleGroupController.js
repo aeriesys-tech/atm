@@ -147,9 +147,8 @@ const createRoleGroup = async (req, res) => {
     }
 };
 
-const updateRoleGroup = async (req, res) => {
-    const { id } = req.params; // Using simple 'id' from the route parameter
-    const { role_group_code, role_group_name, status, deleted_at } = req.body;
+const updateRoleGroup = async (req, res) => {// Using simple 'id' from the route parameter
+    const { id, role_group_code, role_group_name, status, deleted_at } = req.body;
 
     try {
         const updatedRoleGroup = await RoleGroup.findByIdAndUpdate(id, {
@@ -282,11 +281,9 @@ const getRoleGroup = async (req, res) => {
     }
 };
 
-
-
 const deleteRoleGroup = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.body;
         const { ids } = req.body;
 
         // Function to toggle soft delete for a single role group

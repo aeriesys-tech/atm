@@ -1,10 +1,63 @@
 const Role = require('../models/Role');
+const RoleGroup = require('../models/RoleGroup');
 const mongoose = require('mongoose');
 const { logApiResponse } = require('../utils/responseService');
 
+// const paginatedRoles = async (req, res) => {
+//     const { page = 1, limit = 10, sortBy = 'role_code', order = 'desc', search = '', status } = req.query;
+//     const sort = { [sortBy]: order === 'desc' ? -1 : 1 };
+//     const searchQuery = {
+//         $and: [
+//             search ? {
+//                 $or: [
+//                     { role_name: new RegExp(search, 'i') },
+//                     { role_code: new RegExp(search, 'i') }
+//                 ]
+//             } : {},
+//             status ? { status: status === 'active' } : {}
+//         ]
+//     };
+
+//     try {
+//         const roles = await Role.find(searchQuery)
+//             .sort(sort)
+//             .skip((page - 1) * limit)
+//             .limit(Number(limit));
+//         const count = await Role.countDocuments(searchQuery);
+//         await logApiResponse(req, 'Roles retrieved successfully', 200, { roles, totalPages: Math.ceil(count / limit), currentPage: Number(page), totalItems: count });
+
+//         res.status(200).json({
+//             totalPages: Math.ceil(count / limit),
+//             currentPage: Number(page),
+//             roles,
+//             totalItems: count,
+//         });
+//     } catch (error) {
+//         console.error("Error retrieving paginated roles:", error);
+//         await logApiResponse(req, 'Error retrieving paginated roles', 500, { error: error.message });
+
+//         res.status(500).json({ message: "Error retrieving paginated roles", error: error.message });
+//     }
+// };
+
 const paginatedRoles = async (req, res) => {
-    const { page = 1, limit = 10, sortBy = 'role_code', order = 'desc', search = '', status } = req.query;
-    const sort = { [sortBy]: order === 'desc' ? -1 : 1 };
+    const {
+        page = 1,
+        limit = 10,
+        sortBy = 'role_code',
+        order = 'asc',
+        search = '',
+        status
+    } = req.query;
+
+    const allowedSortFields = ['_id', 'role_code', 'role_name', 'created_at'];
+    const cleanSortBy = String(sortBy).trim();
+    const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
+
+    const sort = {
+        [safeSortBy]: order === 'desc' ? -1 : 1
+    };
+
     const searchQuery = {
         $and: [
             search ? {
@@ -13,7 +66,7 @@ const paginatedRoles = async (req, res) => {
                     { role_code: new RegExp(search, 'i') }
                 ]
             } : {},
-            status ? { status: status === 'active' } : {}
+            status !== undefined ? { status: status === 'active' } : {}
         ]
     };
 
@@ -22,22 +75,33 @@ const paginatedRoles = async (req, res) => {
             .sort(sort)
             .skip((page - 1) * limit)
             .limit(Number(limit));
+
         const count = await Role.countDocuments(searchQuery);
-        await logApiResponse(req, 'Roles retrieved successfully', 200, { roles, totalPages: Math.ceil(count / limit), currentPage: Number(page), totalItems: count });
+
+        await logApiResponse(req, "Paginated roles retrieved successfully", 200, {
+            totalPages: Math.ceil(count / limit),
+            currentPage: Number(page),
+            roles,
+            totalItems: count
+        });
 
         res.status(200).json({
             totalPages: Math.ceil(count / limit),
             currentPage: Number(page),
             roles,
-            totalItems: count,
+            totalItems: count
         });
     } catch (error) {
         console.error("Error retrieving paginated roles:", error);
-        await logApiResponse(req, 'Error retrieving paginated roles', 500, { error: error.message });
+        await logApiResponse(req, "Failed to retrieve paginated roles", 500, { error: error.message });
 
-        res.status(500).json({ message: "Error retrieving paginated roles", error: error.message });
+        res.status(500).json({
+            message: "Failed to retrieve paginated roles",
+            error: error.message
+        });
     }
 };
+
 
 const createRole = async (req, res) => {
     const { role_group_id, role_code, role_name } = req.body;
@@ -137,8 +201,8 @@ const createRole = async (req, res) => {
 };
 
 const updateRole = async (req, res) => {
-    const { id } = req.params;
-    const { role_group_id, role_code, role_name, status, deleted_at } = req.body;
+
+    const { id, role_group_id, role_code, role_name, status, deleted_at } = req.body;
 
     let validationErrors = {};
     if (role_group_id === "") {
@@ -337,8 +401,7 @@ const getRole = async (req, res) => {
 
 const deleteRole = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { ids } = req.body;
+        const { id, ids } = req.body;
 
         // Function to toggle soft delete for a single role
         const toggleSoftDelete = async (roleId) => {

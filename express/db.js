@@ -6,6 +6,7 @@ const User = require('./models/user');
 const RoleGroup = require('./models/RoleGroup');
 const Role = require("./models/Role");
 const Department = require("./models/department");
+const ParameterType = require("./models/parameterType");
 
 mongoose.connect(process.env.MONGODB_URI, {
 }).then(() => {
@@ -100,6 +101,48 @@ const seedUser = async () => {
             },
             { new: true, upsert: true }
         );
+
+        const linageParameter = await ParameterType.create({
+            parameter_type_code: "LP_001",
+            parameter_type_name: "Lineage Parameter",
+            order: 1,
+            icon: 'adjust(1)1'
+        });
+
+        const equipmentParameter = await ParameterType.create({
+            parameter_type_code: "EP_002",
+            parameter_type_name: "Equipment Parameter",
+            order: 2,
+            icon: 'tag(2)1'
+        });
+
+        const variableParameter = await ParameterType.create({
+            parameter_type_code: "VP_003",
+            parameter_type_name: "Variable Parameter",
+            order: 3,
+            icon: 'flag1'
+        });
+
+        const modelParameter = await ParameterType.create({
+            parameter_type_code: "MP_004",
+            parameter_type_name: "Model Parameter",
+            order: 4,
+            icon: '3d1'
+        });
+
+        const dataSourceParameter = await ParameterType.create({
+            parameter_type_code: "DS_005",
+            parameter_type_name: "Data Source Parameter",
+            order: 5,
+            icon: 'big-data1'
+        });
+
+        const generalParameter = await ParameterType.create({
+            parameter_type_code: "GP_006",
+            parameter_type_name: "General Parameter",
+            order: 6,
+            icon: 'verified1'
+        });
 
 
         console.log(" Seed data inserted or updated successfully.");

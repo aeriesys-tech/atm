@@ -128,8 +128,7 @@ const createUser = async (req, res) => {
 	}
 };
 const updateUser = async (req, res) => {
-	const { id } = req.params; // User ID from the URL parameter
-	const { name, username, email, mobile_no, role_id, department_id } = req.body;
+	const { id, name, username, email, mobile_no, role_id, department_id } = req.body;
 	const avatarUrl = req.file ? req.file.location : null;
 
 	let validationErrors = {};
@@ -272,7 +271,7 @@ const getAllUsers = async (req, res) => {
 };
 
 const getUserById = async (req, res) => {
-	const { id } = req.params; // Get the user ID from the URL parameter
+	const { id } = req.body; // Get the user ID from the URL parameter
 
 	try {
 		// Fetch the user by ID from the database excluding the password field
@@ -316,8 +315,7 @@ const getUserById = async (req, res) => {
 
 const toggleSoftDeleteUser = async (req, res) => {
 	try {
-		const { id } = req.params;
-		const { ids } = req.body;
+		const { id, ids } = req.body;
 
 		// Function to toggle soft delete for a single user
 		const toggleSoftDelete = async (userId) => {
@@ -385,46 +383,75 @@ const toggleSoftDeleteUser = async (req, res) => {
 
 
 const getPaginatedUsers = async (req, res) => {
-	const { page = 1, limit = 10, sortBy = 'createdAt', order = 'desc', search = '', status } = req.query;
+	const {
+		page = 1,
+		limit = 10,
+		sortBy = 'name',
+		order = 'desc',
+		search = '',
+		status
+	} = req.query;
 
-	// Building the sort object dynamically based on the query parameters
-	const sort = { [sortBy]: order === 'desc' ? -1 : 1 };
+	const allowedSortFields = ['_id', 'name', 'email', 'mobile_no', 'created_at'];
+	const cleanSortBy = String(sortBy).trim();
+	const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
 
-	// Implementing search functionality
-	let searchQuery = {
-		$and: [
-			search ? {
-				$or: [
-					{ name: new RegExp(search, 'i') },
-					{ email: new RegExp(search, 'i') }
-				].concat(!isNaN(search) ? [{ mobile_no: search }] : [])
-			} : {},
-			status ? { status: status === 'active' } : {}
-		]
+	const sort = {
+		[safeSortBy]: order === 'desc' ? -1 : 1
 	};
+
+	const searchConditions = [];
+
+	if (search) {
+		const orConditions = [
+			{ name: new RegExp(search, 'i') },
+			{ email: new RegExp(search, 'i') }
+		];
+
+		if (!isNaN(search)) {
+			orConditions.push({ mobile_no: search });
+		}
+
+		searchConditions.push({ $or: orConditions });
+	}
+
+	if (status !== undefined) {
+		searchConditions.push({ status: status === 'active' });
+	}
+
+	const searchQuery = searchConditions.length > 0 ? { $and: searchConditions } : {};
 
 	try {
 		const users = await User.find(searchQuery)
 			.sort(sort)
 			.skip((page - 1) * limit)
-			.limit(limit)
-			.select('-password -jwt_token'); // Exclude password from the results
+			.limit(Number(limit))
+			.select('-password -jwt_token'); // Exclude sensitive fields
+
 		const count = await User.countDocuments(searchQuery);
 
-		await logApiResponse(req, 'Users retrieved successfully', 200, { users, totalPages: Math.ceil(count / limit), currentPage: Number(page), totalItems: count });
-
-		res.json({
+		await logApiResponse(req, "Paginated users retrieved successfully", 200, {
 			totalPages: Math.ceil(count / limit),
 			currentPage: Number(page),
 			users,
-			totalItems: count,
+			totalItems: count
+		});
+
+		res.status(200).json({
+			totalPages: Math.ceil(count / limit),
+			currentPage: Number(page),
+			users,
+			totalItems: count
 		});
 	} catch (error) {
 		console.error("Error retrieving paginated users:", error);
 
-		await logApiResponse(req, 'Error retrieving paginated users', 500, { error: error.message });
+		await logApiResponse(req, "Failed to retrieve paginated users", 500, { error: error.message });
 
-		res.status(500).json({ message: "Error retrieving paginated users", error: error.message });
+		res.status(500).json({
+			message: "Failed to retrieve paginated users",
+			error: error.message
+		});
 	}
 };
 

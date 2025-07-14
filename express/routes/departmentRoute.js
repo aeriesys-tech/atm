@@ -8,8 +8,8 @@ const { createDepartment, updateDepartment, getDepartment, paginatedDepartments,
 // POST route to create a new role group
 // router.post('/role-groups/upload', excelMiddleware.single('file'), roleGroupController.bulkCreateRoleGroups);
 router.post('/createDepartment', authMiddleware, createDepartment, departmentController.createDepartment);
-router.post('/updateDepartment', authMiddleware, updateDepartment, updateRoleGroup, departmentController.updateDepartment);
-router.post('/getDepartments', authMiddleware, getDepartment, departmentController.getDepartments);
+router.post('/updateDepartment', authMiddleware, updateDepartment, departmentController.updateDepartment);
+router.post('/getDepartments', authMiddleware, departmentController.getDepartments);
 router.post('/paginateDepartments', authMiddleware, departmentController.paginatedDepartments);
 router.post('/getDepartment', authMiddleware, getDepartment, departmentController.getDepartment);
 router.post('/deleteDepartment', authMiddleware, deleteDepartment, departmentController.deleteDepartment);

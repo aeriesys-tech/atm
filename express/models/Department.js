@@ -5,39 +5,42 @@ const departmentSchema = new Schema({
     department_code: {
         type: String,
         required: [true, 'Department code is required'],
-        index: true,
-        unique: true
+        unique: true,
+        trim: true,
+        index: true
     },
     department_name: {
         type: String,
         required: [true, 'Department name is required'],
-        index: true,
-        unique: true,
+        trim: true,
         maxlength: [30, 'Department name must be at most 30 characters long'],
+        unique: true,
+        index: true
     },
     deleted_at: {
         type: Date,
-        index: true,
         default: null
     },
     status: {
         type: Boolean,
         required: true,
-        index: true,
         default: true
-    },
-    created_at: {
-        type: Date,
-        index: true,
-        default: Date.now
-    },
-    updated_at: {
-        type: Date,
-        index: true,
-        default: Date.now
     }
 }, {
-    versionKey: false
+    versionKey: false,
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-module.exports = mongoose.model('Department', departmentSchema);
+// Partial indexes to support Cosmos DB sorting & soft delete
+departmentSchema.index(
+    { department_name: 1 },
+    { unique: true, partialFilterExpression: { deleted_at: null } }
+);
+
+departmentSchema.index(
+    { department_code: 1 },
+    { unique: true, partialFilterExpression: { deleted_at: null } }
+);
+
+// Explicitly specify collection name
+module.exports = mongoose.model('Department', departmentSchema, 'departments');
