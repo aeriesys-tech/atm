@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom';
 import Search from '../common/Search'
 import Breadcrum from './Breadcrum'
@@ -51,6 +51,7 @@ function Header() {
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubMenu, setOpenSubMenu] = useState(null);
     const location = useLocation();
+    const dropdownRef = useRef(null);
     useEffect(() => {
         setOpenMenu(null);
         setOpenSubMenu(null);
@@ -58,6 +59,22 @@ function Header() {
     const handleMenuToggle = (menuId) => {
         setOpenSubMenu(openSubMenu === menuId ? null : menuId);
     };
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target)
+            ) {
+                setOpenMenu(null);
+                setOpenSubMenu(null);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const handleSidebarToggle = () => {
@@ -98,7 +115,7 @@ function Header() {
         <>
 
             <div className="nav-container">
-                <div className="d-flex justify-content-between align-content-center flex-wrap navbar-1">
+                <div className="d-flex justify-content-between align-content-center flex-wrap navbar-1" ref={dropdownRef}>
                     <div className="pl-60 d-flex">
                         <img
                             src={Component2}
@@ -287,7 +304,11 @@ function Header() {
                                                         <li><a href="#">Equipment Subtype</a></li>
                                                         <li><a href="#">Components</a></li> */}
                                                         <li><img src={adjust1} alt="Lineage" /><Link to="/assets">Assets</Link></li>
-                                                        <li><img src={tag} alt="Lineage" /><Link to="/role">Role</Link></li>
+                                                        <li><img src={tag} alt="Lineage" /><Link to="/roleGroup">Role Group</Link></li>
+                                                        <li><img src={tag} alt="Lineage" /><Link to="/roles">Role</Link></li>
+                                                        <li><img src={tag} alt="Lineage" /><Link to="/departments">Department</Link></li>
+                                                        <li><img src={adjust1} alt="Lineage" /><Link to="/users">Users</Link></li>
+
                                                     </ul>
                                                 )}
                                             </li>
@@ -324,125 +345,98 @@ function Header() {
                                     )}
                                 </li>
 
-                                <li className="nav-item dropdown">
+                                <li className="nav-item dropdown position-relative">
                                     <a
-                                        className="nav-link"
-                                        href="#"
-                                        id="navbarDropdown"
-                                        role="button"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
+                                        type="button"
+                                        className="nav-link d-flex align-items-center gap-2"
+                                        onClick={() => setOpenMenu(openMenu === "templates" ? null : "templates")}
                                     >
-                                        <img src={fi_1828824} />
+                                        <img src={fi_1828824} alt="Templates" />
                                         <span>TEMPLATES</span>
-                                        <img src={ArrowDown} />
+                                        <img src={ArrowDown} alt="Dropdown" />
                                     </a>
-                                    <ul
-                                        className="dropdown-menu menu-list"
-                                        aria-labelledby="navbarDropdown"
-                                    >
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="lineage-templates.html"
-                                            >
-                                                <img src={IconSet} />
-                                                <p className="m-0">Lineage Templates</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={bag1} />
-                                                <p className="m-0">Asset Templates</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={layout1} />
-                                                <p className="m-0">Variable Templates</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={box1} />
-                                                <p className="m-0">Modal Templates</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={workschedule1} />
-                                                <p className="m-0">Use Case Templates</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={graph1} />
-                                                <p className="m-0">Analytics Templates</p>
-                                            </a>
-                                        </li>
-                                    </ul>
+
+                                    {openMenu === "templates" && (
+                                        <ul className="dropdown-menu show">
+                                            <li className="menu-item">
+                                                <button
+                                                    className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
+                                                    onClick={() => window.location.href = 'lineage-templates.html'}
+                                                >
+                                                    <img src={IconSet} alt="Lineage Templates" />
+                                                    <p className="m-0">Lineage Templates</p>
+                                                </button>
+                                            </li>
+                                            <li className="menu-item">
+                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
+                                                    <img src={bag1} alt="Asset Templates" />
+                                                    <p className="m-0">Asset Templates</p>
+                                                </button>
+                                            </li>
+                                            <li className="menu-item">
+                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
+                                                    <img src={layout1} alt="Variable Templates" />
+                                                    <p className="m-0">Variable Templates</p>
+                                                </button>
+                                            </li>
+                                            <li className="menu-item">
+                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
+                                                    <img src={box1} alt="Modal Templates" />
+                                                    <p className="m-0">Modal Templates</p>
+                                                </button>
+                                            </li>
+                                            <li className="menu-item">
+                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
+                                                    <img src={workschedule1} alt="Use Case Templates" />
+                                                    <p className="m-0">Use Case Templates</p>
+                                                </button>
+                                            </li>
+                                            <li className="menu-item">
+                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
+                                                    <img src={graph1} alt="Analytics Templates" />
+                                                    <p className="m-0">Analytics Templates</p>
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    )}
                                 </li>
 
-                                <li className="nav-item dropdown">
+
+                                <li className="nav-item dropdown position-relative">
                                     <a
-                                        className="nav-link"
-                                        href="#"
-                                        id="navbarDropdown"
-                                        role="button"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
+                                        type="button"
+                                        className="nav-link d-flex align-items-center gap-2"
+                                        onClick={() => setOpenMenu(openMenu === "assets" ? null : "assets")}
                                     >
-                                        <img src={fi_3388671} />
+                                        <img src={fi_3388671} alt="Assets" />
                                         <span>ASSETS</span>
-                                        <img src={ArrowDown} />
+                                        <img src={ArrowDown} alt="Dropdown" />
                                     </a>
-                                    <ul
-                                        className="dropdown-menu menu-list"
-                                        aria-labelledby="navbarDropdown"
-                                    >
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="assetclass.html"
-                                            >
-                                                <img src={agenda1} />
-                                                <p className="m-0">Asset Class</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="assetgroup.html"
-                                            >
-                                                <img src={package1} />
-                                                <p className="m-0">Asset Modal</p>
-                                            </a>
-                                        </li>
-                                    </ul>
+
+                                    {openMenu === "assets" && (
+                                        <ul className="dropdown-menu show">
+                                            <li className="menu-item">
+                                                <button
+                                                    className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
+                                                    onClick={() => window.location.href = 'assetclass.html'}
+                                                >
+                                                    <img src={agenda1} alt="Asset Class" />
+                                                    <p className="m-0">Asset Class</p>
+                                                </button>
+                                            </li>
+                                            <li className="menu-item">
+                                                <button
+                                                    className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
+                                                    onClick={() => window.location.href = 'assetgroup.html'}
+                                                >
+                                                    <img src={package1} alt="Asset Modal" />
+                                                    <p className="m-0">Asset Modal</p>
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    )}
                                 </li>
+
 
                                 <li className="nav-item dropdown">
                                     <a

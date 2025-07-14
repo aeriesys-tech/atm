@@ -75,3 +75,31 @@ th .fa-angle-down.icon-down {
     padding: 16px ;
     margin-bottom: opx !important;
 }
+.nav-item.dropdown .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background-color: white;
+  z-index: 999;
+  padding: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+  display: none;
+}
+
+.nav-item.dropdown .dropdown-menu.show {
+  display: block;
+}
+.nav-item.dropdown {
+  position: relative;
+}
+
+.dropdown-menu.show {
+  display: block;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 999;
+}

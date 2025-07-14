@@ -2,131 +2,274 @@ import React, { useState, useEffect } from "react";
 import Breadcrumb from "../../components/general/Breadcrum";
 import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
+import Modal from "../../components/common/Modal";
 import axiosWrapper from "../../../services/AxiosWrapper";
 
 const Role = () => {
     const [roles, setRoles] = useState([]);
+    const [roleGroups, setRoleGroups] = useState([]);
+
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [pageSize, setPageSize] = useState(5);
-    const [sortBy, setSortBy] = useState("role_group_code");
+    const [sortBy, setSortBy] = useState("role_code");
     const [order, setOrder] = useState("asc");
-     const [loading, setLoading] = useState(false);
+    const [totalItems, setTotalItems] = useState(0);
+
+    const [loading, setLoading] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editFormData, setEditFormData] = useState({});
+    const [editErrors, setEditErrors] = useState({});
+
     const breadcrumbItems = [
-        { label: 'Configure', href: '#' },
-        { label: 'User Settings', href: '#' },
-        { label: 'Roles', href: '#' }
+        { label: "Configure", href: "#" },
+        { label: "User Settings", href: "#" },
+        { label: "Roles", href: "#" },
     ];
+
     const headers = [
         { label: "# ID", key: "index", sortable: true },
-        { label: "Role Group Code", key: "role_group_code", sortable: true },
-        { label: "Role Group Name", key: "role_group_name", sortable: true },
+        { label: "Role Group", key: "role_group_name", sortable: false },
+        { label: "Role Code", key: "role_code", sortable: true },
+        { label: "Role Name", key: "role_name", sortable: true },
         { label: "Status", key: "status", sortable: false },
         { label: "Action", key: "action", sortable: false },
     ];
 
-
-
     const fetchRoles = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order) => {
         try {
             setLoading(true);
+
             const response = await axiosWrapper(
-                `api/v1/role-groups/paginateRoleGroups?page=${page}&limit=${limit}&sortBy=${sort}&order=${sortOrder}`,
+                `api/v1/roles/paginateRoles?page=${page}&limit=${limit}&sortBy=${sort}&order=${sortOrder}`,
                 { method: 'POST' }
             );
 
-            const mappedRows = response.roleGroups.map((role, index) => [
-                index + 1,
-                role.role_group_code,
-                role.role_group_name,
-                role.status ? 'Active' : 'Inactive',
-            ]);
+            const mappedRows = response.roles.map((role, index) => {
+                const matchedGroup = roleGroups.find(group => group._id === role.role_group_id);
+                return {
+                    _id: role._id,
+                    index: index + 1 + (page - 1) * pageSize,
+                    role_group_name: matchedGroup ? matchedGroup.role_group_name : "N/A",
+                    role_code: role.role_code,
+                    role_name: role.role_name,
+                    status: role.status,
+                };
+            });
 
             setRoles(mappedRows);
             setCurrentPage(response.currentPage);
             setTotalPages(response.totalPages);
+            setTotalItems(response.totalItems);
         } catch (error) {
             console.error("Failed to fetch roles:", error.message || error);
-        }
-        finally{
+        } finally {
             setLoading(false);
         }
     };
+
+    const fetchRoleGroups = async () => {
+        try {
+            const response = await axiosWrapper("api/v1/role-groups/getRoleGroups", {
+                method: "POST",
+            });
+            setRoleGroups(response.roleGroups);
+        } catch (error) {
+            console.error("Failed to fetch role groups:", error.message || error);
+        }
+    };
+
     useEffect(() => {
-        fetchRoles(currentPage, pageSize, sortBy, order);
-    }, [currentPage, pageSize, sortBy, order]);
+        fetchRoleGroups();
+    }, []);
+
+    useEffect(() => {
+        if (roleGroups.length > 0) {
+            fetchRoles(currentPage, pageSize, sortBy, order);
+        }
+    }, [roleGroups, currentPage, pageSize, sortBy, order]);
+
     const roleFields = [
-        { label: "Role Code", name: "roleCode", type: "text", placeholder: "Enter role code", required: true },
-        { label: "Role Name", name: "roleName", type: "text", placeholder: "Enter role name" },
+        {
+            label: "Role Code",
+            name: "role_code",
+            type: "text",
+            placeholder: "Enter role code",
+            required: true,
+        },
+        {
+            label: "Role Name",
+            name: "role_name",
+            type: "text",
+            placeholder: "Enter role name",
+            required: true,
+        },
+        {
+            label: "Select Role Group",
+            name: "role_group_id",
+            type: "dropdown",
+            required: true,
+            options: roleGroups.map(group => ({
+                label: group.role_group_name,
+                value: group._id,
+            })),
+        },
     ];
 
-   const handleRoleSubmit = async (formData, setErrors, onSuccess) => {
-    try {
-        setLoading(true);
-        const payload = {
-            role_group_code: formData.roleCode,
-            role_group_name: formData.roleName
-        };
+    const handleRoleSubmit = async (formData, setErrors, onSuccess) => {
+        try {
+            setLoading(true);
+            const payload = {
+                role_group_id: formData.role_group_id,
+                role_code: formData.role_code,
+                role_name: formData.role_name,
+            };
 
-        const res = await axiosWrapper('api/v1/role-groups/createRoleGroup', {
-            method: 'POST',
-            data: payload
-        });
-
-        console.log("Created:", res.data);
-        onSuccess(); // Close modal
-        fetchRoles(); // Refresh the table
-
-    } catch (err) {
-        console.error("Error creating role:", err.message);
-
-        const apiErrors = err?.response?.data?.errors;
-        if (apiErrors) {
-            setErrors({
-                roleCode: apiErrors.role_group_code,
-                roleName: apiErrors.role_group_name
+            await axiosWrapper("api/v1/roles/createRole", {
+                method: "POST",
+                data: payload,
             });
-        } else {
-            setErrors({ roleName: "An unexpected error occurred." });
+
+            onSuccess();
+            fetchRoles();
+        } catch (err) {
+            const apiErrors = err?.response?.data?.errors;
+            if (apiErrors) {
+                setErrors({
+                    role_group_id: apiErrors.role_group_id,
+                    role_code: apiErrors.role_code,
+                    role_name: apiErrors.role_name,
+                });
+            } else {
+                setErrors({ role_name: "Unexpected error occurred" });
+            }
+        } finally {
+            setLoading(false);
         }
-    } finally{
-        setLoading(false);
-    }
-};
+    };
+
+    const handleEditClick = (row) => {
+        setEditFormData({
+            id: row._id,
+            role_group_id: roleGroups.find(g => g.role_group_name === row.role_group_name)?._id,
+            role_code: row.role_code,
+            role_name: row.role_name,
+            status: row.status,
+        });
+        setEditModalOpen(true);
+    };
+
+    const handleUpdateSubmit = async (formData, setErrors, onSuccess) => {
+        try {
+            setLoading(true);
+
+            const payload = {
+                id: formData.id, // 👈 pass ID in body instead of params
+                role_group_id: formData.role_group_id,
+                role_code: formData.role_code,
+                role_name: formData.role_name,
+                status: formData.status ?? true,
+            };
+
+            await axiosWrapper("api/v1/roles/updateRole", {
+                method: "POST",
+                data: payload
+            });
+
+            onSuccess(); // Close modal
+            fetchRoles(); // Refresh roles
+            setEditModalOpen(false);
+        } catch (err) {
+            const apiErrors = err?.response?.data?.errors;
+            if (apiErrors) {
+                setErrors({
+                    role_group_id: apiErrors.role_group_id,
+                    role_code: apiErrors.role_code,
+                    role_name: apiErrors.role_name,
+                });
+            } else {
+                setErrors({ role_name: "Unexpected error occurred" });
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    const handleToggleStatus = async (row) => {
+        try {
+            setLoading(true);
+
+            await axiosWrapper("api/v1/roles/deleteRole", {
+                method: "POST",
+                data: { id: row._id }, 
+            });
+
+            fetchRoles(); 
+        } catch (err) {
+            console.error("Failed to toggle role status:", err.message || err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const handleSortChange = (key, newOrder) => {
         setSortBy(key);
         setOrder(newOrder);
-        setCurrentPage(1); // reset to first page on sort
+        setCurrentPage(1);
     };
-// if (loading) return <Loader />;
-    return (
-        <>
-            <div className="tb-responsive templatebuilder-body">
-                <div className="pt-3">
-                    <Breadcrumb title="Roles" items={breadcrumbItems} />
-                    <Navbar modalTitle="Add Role" modalFields={roleFields} onSubmit={handleRoleSubmit} />
-                    <Table
-                        headers={headers}
-                        rows={roles}
-                        sortBy={sortBy}
-                        order={order}
-                        onSortChange={handleSortChange}
-                        paginationProps={{
-                            currentPage,
-                            totalPages,
-                            pageSize,
-                            onPageChange: setCurrentPage,
-                            onPageSizeChange: (size) => {
-                                setPageSize(size);
-                                setCurrentPage(1);
-                            }
-                        }}
-                    />
 
-                </div>
+    return (
+        <div className="tb-responsive templatebuilder-body">
+            <div className="pt-3">
+                <Breadcrumb title="Roles" items={breadcrumbItems} />
+                <Navbar
+                    modalTitle="Add Role"
+                    modalFields={roleFields}
+                    onSubmit={handleRoleSubmit}
+                />
+                <Table
+                    headers={headers}
+                    rows={roles}
+                    sortBy={sortBy}
+                    order={order}
+                    onSortChange={handleSortChange}
+                    onEdit={handleEditClick}
+                    onToggleStatus={handleToggleStatus}
+                    paginationProps={{
+                        currentPage,
+                        totalPages,
+                        pageSize,
+                        totalItems,
+                        onPageChange: setCurrentPage,
+                        onPageSizeChange: (size) => {
+                            setPageSize(size);
+                            setCurrentPage(1);
+                        },
+                    }}
+                />
+                {editModalOpen && (
+                    <Modal
+                        title="Edit Role"
+                        fields={roleFields}
+                        values={editFormData}
+                        errors={editErrors}
+                        onChange={(e) => {
+                            const { name, value } = e.target;
+                            setEditFormData((prev) => ({ ...prev, [name]: value }));
+                        }}
+                        onSubmit={() =>
+                            handleUpdateSubmit(editFormData, setEditErrors, () => {
+                                setEditModalOpen(false);
+                            })
+                        }
+                        onClose={() => setEditModalOpen(false)}
+                        submitButtonLabel="UPDATE"
+                    />
+                )}
             </div>
-        </>
+        </div>
     );
 };
 

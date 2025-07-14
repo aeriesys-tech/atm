@@ -2,12 +2,12 @@ import React from 'react';
 
 function Dropdown({ options = [], label = "Select Option", name, value, onChange, error }) {
     return (
-        <div>
+        <div >
             <select
                 name={name}
                 value={value}
                 onChange={onChange}
-                className="form-select"
+                className="form-select btn-bg1 d-flex gap-btwn status"
                 style={{ padding: "10px" }}
             >
                 <option value="">{label}</option>

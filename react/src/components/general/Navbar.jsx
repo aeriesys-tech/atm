@@ -58,9 +58,17 @@ function Navbar({ modalTitle = "Add Master", modalFields = [], onSubmit }) {
                     onChange={handleInputChange}
                     values={formValues}
                     errors={formErrors}
+                    setErrors={setFormErrors}
+                    onSuccess={() => {
+                        setShowModal(false);
+                        setFormValues({});
+                        setFormErrors({});
+                    }}
                     onClose={() => setShowModal(false)}
-                    onSubmit={handleSubmit}
+                    onSubmit={onSubmit}
+                    submitButtonLabel="ADD"
                 />
+
             )}
         </>
     );

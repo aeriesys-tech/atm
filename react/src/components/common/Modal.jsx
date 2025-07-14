@@ -7,20 +7,49 @@ function Modal({
     onClose,
     onSubmit,
     fields = [],
-    labels = [],
     onChange,
     values = {},
     errors = {},
-    title
+    title,
+    submitButtonLabel = "SUBMIT",
+    setErrors = () => { },
+    onSuccess = () => { }
 }) {
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit(values, setErrors, onSuccess);
+    };
+
+
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div
-                className="addunit-card"
-                style={{ width: "50%", transition: "width 0.3s" }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="addunit-header">
+       <div className="modal-overlay" onClick={onClose}
+     style={{
+       position: "fixed",
+       top: 0,
+       left: 0,
+       right: 0,
+       bottom: 0,
+       backgroundColor: "rgba(0,0,0,0.5)",
+       zIndex: 9999,
+       overflowY: "auto",
+       paddingTop: "60px",
+     }}
+>
+                <div
+                    className="addunit-card"
+                    style={{
+                        width: "60%",
+                        marginTop: "100px", 
+                        maxHeight: "calc(100vh - 120px)", // 👈 leave space for top & bottom
+                        background: "#fff",
+                        borderRadius: "8px",
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden"
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                <div className="addunit-header d-flex justify-content-between align-items-center">
                     <h4>{title}</h4>
                     <a onClick={onClose} style={{ cursor: "pointer" }}>
                         <img
@@ -32,63 +61,51 @@ function Modal({
                     </a>
                 </div>
 
-                {labels.length > 0 && (
+                <form onSubmit={handleSubmit}>
                     <div className="addunit-form">
-                        {labels.map((label, index) => (
+                        {fields.map((field, index) => (
                             <div key={index} className="mb-3">
-                                <label className="form-label"><b>{label.label}</b>: {label.name}</label>
+                                {field.type === "dropdown" ? (
+                                    <Dropdown
+                                        label={field.label}
+                                        options={field.options || []}
+                                        value={values[field.name] || ''}
+                                        name={field.name}
+                                        onChange={onChange}
+                                        error={errors[field.name]}
+                                    />
+                                ) : (
+                                    <InputField
+                                        label={field.label}
+                                        type={field.type}
+                                        name={field.name}
+                                        id={field.name}
+                                        placeholder={field.placeholder}
+                                        value={values[field.name] || ''}
+                                        onChange={onChange}
+                                        isRequired={field.required}
+                                        isNumeric={field.isNumeric}
+                                        maxLength={field.maxLength}
+                                        error={errors[field.name]}
+                                    />
+                                )}
                             </div>
                         ))}
                     </div>
-                )}
 
-                {fields.length > 0 && (
-                    <form onSubmit={onSubmit}>
-                        <div className="addunit-form">
-                            {fields.map((field, index) => (
-                                <div key={index} className="mb-3">
-                                    {field.type === "dropdown" ? (
-                                        <Dropdown
-                                            label={field.label}
-                                            options={field.options || []}
-                                            value={values[field.name] || ''}
-                                            name={field.name}
-                                            onChange={onChange}
-                                            error={errors[field.name]}
-                                        />
-                                    ) : (
-                                        <InputField
-                                            label={field.label}
-                                            type={field.type}
-                                            name={field.name}
-                                            id={field.name}
-                                            placeholder={field.placeholder}
-                                            value={values[field.name] || ''}
-                                            onChange={onChange}
-                                            isRequired={field.required}
-                                            isNumeric={field.isNumeric}
-                                            maxLength={field.maxLength}
-                                            error={errors[field.name]}
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="addunit-card-footer d-flex gap-2">
-                            <Button
-                                name="DISCARD"
-                                className="discard-btn"
-                                onClick={onClose}
-                            />
-                            <Button
-                                name="ADD"
-                                type="submit"
-                                className="update-btn"
-                            />
-                        </div>
-                    </form>
-                )}
+                    <div className="addunit-card-footer d-flex gap-2">
+                        <Button
+                            name="DISCARD"
+                            className="discard-btn"
+                            onClick={onClose}
+                        />
+                        <Button
+                            name={submitButtonLabel}
+                            type="submit"
+                            className="update-btn"
+                        />
+                    </div>
+                </form>
             </div>
         </div>
     );
