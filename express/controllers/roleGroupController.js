@@ -347,6 +347,28 @@ const deleteRoleGroup = async (req, res) => {
     }
 };
 
+const destroyRoleGroup = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        if (!id) {
+            return logApiResponse(req, 'Role Group ID is required', 400, false, null, res);
+        }
+
+        const role_group = await RoleGroup.findOne({ _id: id }).lean({ virtuals: false });
+
+        if (!role_group) {
+            return logApiResponse(req, 'Role group not found', 404, false, null, res);
+        }
+
+        await RoleGroup.deleteOne({ _id: id });
+        await logApiResponse(req, 'Role Group is permanently deleted', 200, true, null, res);
+        res.status(200).json({ message: 'role group permanently deleted' });
+    } catch (error) {
+        return logApiResponse(req, error.message || 'Internal Server Error', 500, false, null, res);
+    }
+};
+
 
 
 module.exports = {
@@ -355,6 +377,7 @@ module.exports = {
     updateRoleGroup,
     getRoleGroups,
     getRoleGroup,
-    deleteRoleGroup
+    deleteRoleGroup,
+    destroyRoleGroup
 
 }

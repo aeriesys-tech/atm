@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const TemplateMaster = require('../models/templateMaster');
-const Master = require('../models/masterModel');
+const Master = require('../models/master');
 const ParameterType = require('../models/parameterType');
 const TemplateType = require('../models/templateType');
 const MasterField = require('../models/masterField');
 const SchemaDefinitionModel = require('../models/SchemaDefinition')
-const ExcelJS = require('exceljs');
+// const ExcelJS = require('exceljs');
 
 const getDynamicModel = require('../utils/getDynamicModel');
 const { typeMapping } = require('../utils/typeMapping');
@@ -643,14 +643,23 @@ const toggleSoftDeleteMaster = async (req, res) => {
 };
 
 const getPaginatedMasters = async (req, res) => {
-    const { page = 1, limit = 10, sortBy = 'createdAt', order = 'asc', search = '', status } = req.query;
+    const {
+        page = 1,
+        limit = 10,
+        sortBy = 'master_name',
+        order = 'asc',
+        search = '',
+        status
+    } = req.query;
 
-    // Building the sort object dynamically based on the query parameters
+    const allowedSortFields = ['_id', 'master_name', 'slug', 'display_name_singular', 'model_name', 'created_at'];
+    const cleanSortBy = String(sortBy).trim();
+    const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
+
     const sort = {
-        [sortBy]: order === 'desc' ? -1 : 1
+        [safeSortBy]: order === 'desc' ? -1 : 1
     };
 
-    // Implementing search functionality
     const searchQuery = {
         $and: [
             search ? {
@@ -661,37 +670,37 @@ const getPaginatedMasters = async (req, res) => {
                     { model_name: new RegExp(search, 'i') }
                 ]
             } : {},
-            status ? { status: status === 'active' } : {}
+            status !== undefined ? { status: status === 'active' } : {}
         ]
     };
 
     try {
-        // Finding masters and populating masterFields
         const masters = await Master.find(searchQuery)
-            .populate('masterFields')  // Populating masterFields relationship
+            .populate('masterFields')
             .sort(sort)
             .skip((page - 1) * limit)
-            .limit(limit);
+            .limit(Number(limit));
 
         const count = await Master.countDocuments(searchQuery);
 
-        // Constructing the paginated response
         const response = {
             totalPages: Math.ceil(count / limit),
             currentPage: Number(page),
-            masters: masters.map(master => ({
-                ...master.toJSON(),
-                masterFields: master.masterFields
-            })),
+            masters,
             totalItems: count
         };
 
         await logApiResponse(req, 'Paginated masters retrieved successfully', 200, response);
+
         res.status(200).json(response);
     } catch (error) {
-        console.error('Error fetching paginated masters:', error);
-        await logApiResponse(req, 'Failed to fetch paginated masters', 500, { error: error.toString() });
-        res.status(500).json({ message: "Failed to fetch paginated masters.", error: error.toString() });
+        console.error('Error retrieving paginated masters:', error);
+        await logApiResponse(req, 'Failed to retrieve paginated masters', 500, { error: error.message });
+
+        res.status(500).json({
+            message: 'Failed to retrieve paginated masters',
+            error: error.message
+        });
     }
 };
 

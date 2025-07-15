@@ -31,6 +31,12 @@ const deleteRoleGroup = (req, res, next) => {
     ])(req, res, next);
 };
 
+const destroyRoleGroup = (req, res, next) => {
+    return Validate([
+        param("id").optional().isMongoId().withMessage("Invalid role ID format")
+    ])(req, res, next);
+};
+
 const paginatedRoleGroups = (req, res, next) => {
     return Validate([
         query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
@@ -47,5 +53,6 @@ module.exports = {
     updateRoleGroup,
     getRoleGroup,
     deleteRoleGroup,
-    paginatedRoleGroups
+    paginatedRoleGroups,
+    destroyRoleGroup
 };

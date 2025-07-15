@@ -455,6 +455,28 @@ const getPaginatedUsers = async (req, res) => {
 	}
 };
 
+const destroyUser = async (req, res) => {
+	try {
+		const { id } = req.body;
+
+		if (!id) {
+			return logApiResponse(req, 'User ID is required', 400, false, null, res);
+		}
+
+		const user = await User.findOne({ _id: id }).lean({ virtuals: false });
+
+		if (!user) {
+			return logApiResponse(req, 'User not found', 404, false, null, res);
+		}
+
+		await User.deleteOne({ _id: id });
+		await logApiResponse(req, 'User is permanently deleted', 200, true, null, res);
+		res.status(200).json({ message: 'user permanently deleted' });
+	} catch (error) {
+		return logApiResponse(req, error.message || 'Internal Server Error', 500, false, null, res);
+	}
+};
+
 
 module.exports = {
 	createUser,
@@ -462,5 +484,6 @@ module.exports = {
 	getAllUsers,
 	getUserById,
 	toggleSoftDeleteUser,
-	getPaginatedUsers
+	getPaginatedUsers,
+	destroyUser
 }

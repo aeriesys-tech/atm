@@ -12,45 +12,41 @@ const masterSchema = new Schema({
         type: String,
         required: [true, 'Master name is required'],
         index: true,
-        unique: true
+        trim: true
     },
     slug: {
         type: String,
-        // required: true,
         index: true,
-        default: null
+        default: null,
+        trim: true
     },
     display_name_singular: {
         type: String,
-        index: true,
         required: [true, 'Display name is required'],
+        index: true,
+        trim: true
     },
     display_name_plural: {
         type: String,
-        index: true,
         required: [true, 'Display name is required'],
+        index: true,
+        trim: true
     },
     order: {
         type: Number,
         index: true,
-        required: false
+        default: 0
     },
     icon: {
         type: String,
-        default: null
+        default: null,
+        trim: true
     },
     model_name: {
         type: String,
-        index: true,
         required: [true, 'Table name is required'],
-    },
-    created_at: {
-        type: Date,
-        default: Date.now
-    },
-    updated_at: {
-        type: Date,
-        default: Date.now
+        index: true,
+        trim: true
     },
     deleted_at: {
         type: Date,
@@ -58,19 +54,29 @@ const masterSchema = new Schema({
     },
     status: {
         type: Boolean,
-        default: true
+        default: true,
+        required: true
     }
 }, {
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
     versionKey: false
 });
-
 masterSchema.virtual('masterFields', {
     ref: 'MasterField',
     localField: '_id',
     foreignField: 'master_id'
 });
+masterSchema.index(
+    { master_name: 1 },
+    { unique: true, partialFilterExpression: { deleted_at: null } }
+);
 
+masterSchema.index(
+    { model_name: 1 },
+    { unique: true, partialFilterExpression: { deleted_at: null } }
+);
 masterSchema.plugin(mongoosePaginate);
-module.exports = mongoose.model('Master', masterSchema);
+
+module.exports = mongoose.model('Master', masterSchema, 'masters');

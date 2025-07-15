@@ -35,7 +35,14 @@ const updateUserValidation = (req, res, next) => {
 	])(req, res, next);
 };
 
+const destroyUser = (req, res, next) => {
+	return Validate([
+		param("id").optional().isMongoId().withMessage("Invalid department ID format"),
+	])(req, res, next);
+};
+
 module.exports = {
 	createUserValidation,
-	updateUserValidation
+	updateUserValidation,
+	destroyUser
 };

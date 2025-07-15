@@ -13,5 +13,6 @@ router.post('/getRoleGroups', authMiddleware, roleGroupController.getRoleGroups)
 router.post('/paginateRoleGroups', authMiddleware, roleGroupController.getPaginatedRoleGroups);
 router.post('/getRoleGroup', authMiddleware, getRoleGroup, roleGroupController.getRoleGroup);
 router.post('/deleteRoleGroup', authMiddleware, deleteRoleGroup, roleGroupController.deleteRoleGroup);
+router.post('/destroyRoleGroup', authMiddleware, deleteRoleGroup, roleGroupController.destroyRoleGroup);
 
 module.exports = router;

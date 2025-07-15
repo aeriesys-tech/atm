@@ -31,6 +31,13 @@ const deleteDepartment = (req, res, next) => {
     ])(req, res, next);
 };
 
+const destroyDepartment = (req, res, next) => {
+    return Validate([
+        param("id").optional().isMongoId().withMessage("Invalid department ID format"),
+    ])(req, res, next);
+};
+
+
 const paginatedDepartments = (req, res, next) => {
     return Validate([
         query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
@@ -47,5 +54,6 @@ module.exports = {
     updateDepartment,
     getDepartment,
     deleteDepartment,
-    paginatedDepartments
+    paginatedDepartments,
+    destroyDepartment
 };

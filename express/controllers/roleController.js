@@ -476,6 +476,29 @@ const deleteRole = async (req, res) => {
     }
 };
 
+const destroyRole = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        if (!id) {
+            return logApiResponse(req, 'Role ID is required', 400, false, null, res);
+        }
+
+        const role = await Role.findOne({ _id: id }).lean({ virtuals: false });
+
+        if (!role) {
+            return logApiResponse(req, 'Role not found', 404, false, null, res);
+        }
+
+        await Role.deleteOne({ _id: id });
+        await logApiResponse(req, 'Role permanently deleted', 200, true, null, res);
+        res.status(200).json({ message: 'role permanently deleted' });
+    } catch (error) {
+        return logApiResponse(req, error.message || 'Internal Server Error', 500, false, null, res);
+    }
+};
+
+
 
 module.exports = {
     paginatedRoles,
@@ -483,5 +506,6 @@ module.exports = {
     updateRole,
     getRoles,
     getRole,
-    deleteRole
+    deleteRole,
+    destroyRole
 }

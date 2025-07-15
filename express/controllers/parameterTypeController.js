@@ -1,5 +1,5 @@
 const ParameterType = require('../models/parameterType');
-const Master = require('../models/masterModel');
+const Master = require('../models/master');
 const { logApiResponse } = require('../utils/responseService');
 
 // Create a new ParameterType

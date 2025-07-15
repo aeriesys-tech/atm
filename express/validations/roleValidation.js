@@ -32,6 +32,13 @@ const deleteRole = (req, res, next) => {
     ])(req, res, next);
 };
 
+const destroyRole = (req, res, next) => {
+    return Validate([
+        param("id").optional().isMongoId().withMessage("Invalid role ID format"),
+    ])(req, res, next);
+};
+
+
 const paginatedRoles = (req, res, next) => {
     return Validate([
         query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
@@ -48,5 +55,6 @@ module.exports = {
     updateRole,
     getRole,
     deleteRole,
-    paginatedRoles
+    paginatedRoles,
+    destroyRole
 };
