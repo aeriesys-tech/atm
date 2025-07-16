@@ -5,20 +5,27 @@ import Search from '../common/Search';
 import Dropdown from '../common/Dropdown';
 import Modal from '../common/Modal'
 
-function Navbar() {
+function Navbar({ modalTitle = "Add Master", modalFields = [], onSubmit }) {
     const [showModal, setShowModal] = useState(false);
     const [formValues, setFormValues] = useState({});
-    // const [formErrors, setFormErrors] = useState({});
+    const [formErrors, setFormErrors] = useState({});
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormValues(prev => ({ ...prev, [name]: value }));
     };
 
-    const fields = [
-        { label: "Master Name", name: "masterName", type: "text", placeholder: "Enter master name", required: true },
-        { label: "Code", name: "code", type: "text", placeholder: "Enter code" }
-    ];
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        if (onSubmit) {
+            onSubmit(formValues, setFormErrors, () => {
+                setShowModal(false); // close modal on success
+                setFormValues({});
+                setFormErrors({});
+            });
+        }
+    };
 
     return (
         <>
@@ -40,19 +47,29 @@ function Navbar() {
                         onChange={(e) => console.log("Selected:", e.target.value)}
                     />
 
-                    <Button name="Add Master" onClick={() => setShowModal(true)} />
+                    <Button name={modalTitle} onClick={() => setShowModal(true)} />
                 </div>
             </div>
 
             {showModal && (
                 <Modal
-                    title="Add Master"
-                    fields={fields}
+                    title={modalTitle}
+                    fields={modalFields}
                     onChange={handleInputChange}
                     values={formValues}
+                    setValues={setFormValues} 
                     errors={formErrors}
+                    setErrors={setFormErrors}
+                    onSuccess={() => {
+                        setShowModal(false);
+                        setFormValues({});
+                        setFormErrors({});
+                    }}
                     onClose={() => setShowModal(false)}
+                    onSubmit={onSubmit}
+                    submitButtonLabel="ADD"
                 />
+
             )}
         </>
     );

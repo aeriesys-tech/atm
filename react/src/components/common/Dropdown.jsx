@@ -1,25 +1,30 @@
 import React from 'react';
 
-function Dropdown({ options = [], label = "Select Option" }) {
+function Dropdown({ options = [], label = "Select Option", name, value, onChange, error }) {
     return (
-
-        <div class="dropdown">
+        <div>
+            {name && (
+                <label htmlFor={name} className="signin-form-label">
+                    {label}
+                </label>
+            )}
             <select
-                style={{ padding: "10px" }}
-                className="btn-bg1 d-flex gap-btwn status"
+                name={name}
+                value={value}
+                onChange={onChange}
+               className={`form-select btn-bg1 d-flex gap-btwn status ${error ? "is-invalid" : ""}`}
+
             >
-                <option value="">{label}</option>
+                <option value="">Select {label}</option>
                 {options.map((option, index) => (
                     <option key={index} value={option.value || option}>
                         {option.label || option}
                     </option>
                 ))}
             </select>
-
+            {error && <small className="text-danger">{error}</small>}
         </div>
     );
 }
-
-
 
 export default Dropdown;
