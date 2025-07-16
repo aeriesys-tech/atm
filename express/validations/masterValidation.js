@@ -38,7 +38,9 @@ const createMasterValidation = (req, res, next) => {
 
 const updateMasterValidation = (req, res, next) => {
     return Validate([
-        param('masterId', 'Invalid master ID').custom(value => mongoose.Types.ObjectId.isValid(value)),
+        // body('id', 'Invalid master ID').custom(value => mongoose.Types.ObjectId.isValid(value)),
+        body('id', 'Master ID must be valid')
+            .optional().custom(value => mongoose.Types.ObjectId.isValid(value)),
         body('masterData.master_name', 'Master name is required')
             .optional().trim().escape().notEmpty(),
         body('masterData.parameter_type_id', 'Parameter type ID must be valid')

@@ -24,7 +24,7 @@ const createMaster = async (req, res) => {
             validationErrors.master.master_name = "Master name is required";
         }
         if (!masterData.parameter_type_id || !mongoose.Types.ObjectId.isValid(masterData.parameter_type_id)) {
-            validationErrors.master.parameter_type_id = "Parameter type ID is required and must be valid";
+            validationErrors.master.parameter_type_id = "Parameter type is required and must be valid";
         }
         if (!masterData.display_name_singular) {
             validationErrors.master.display_name_singular = "Display name is required";
@@ -212,8 +212,6 @@ async function updateDynamicSchema(collectionName, masterFieldData) {
             unique: isDefaultTrue, // Use isDefaultTrue here
             index: true
         };
-
-        console.log(">>>>>>>>>>>>>>>>>>>>", acc); // Log the accumulator (acc) to see the schema definition being built
         return acc;
     }, {
         // Define the default fields with appropriate settings
@@ -247,12 +245,11 @@ async function updateDynamicSchema(collectionName, masterFieldData) {
 
 
 const updateMaster = async (req, res) => {
-    const { masterId } = req.params;
+    const { id } = req.body;
     const { masterData, masterFieldData } = req.body;
 
     let validationErrors = { master: {}, masterFields: [] };
 
-    // Validate masterData fields
     if (!masterData.master_name) {
         validationErrors.master.master_name = "Master name is required";
     }
@@ -260,7 +257,7 @@ const updateMaster = async (req, res) => {
         validationErrors.master.model_name = "Model name is required";
     }
     if (!masterData.parameter_type_id || !mongoose.Types.ObjectId.isValid(masterData.parameter_type_id)) {
-        validationErrors.master.parameter_type_id = "Parameter type ID is required and must be valid";
+        validationErrors.master.parameter_type_id = "Parameter type is required and must be valid";
     }
     if (!masterData.display_name_singular) {
         validationErrors.master.display_name_singular = "Display name (singular) is required";
@@ -269,7 +266,6 @@ const updateMaster = async (req, res) => {
         validationErrors.master.display_name_plural = "Display name (plural) is required";
     }
 
-    // Validate masterFieldData
     if (!Array.isArray(masterFieldData) || masterFieldData.length === 0) {
         validationErrors.masterFields.push({ message: "Master field data is required" });
     } else {
@@ -308,9 +304,9 @@ const updateMaster = async (req, res) => {
     }
 
     try {
-        let master = await Master.findById(masterId);
+        let master = await Master.findById(id);
         if (!master) {
-            const notFoundError = { masterId: "Master with provided ID does not exist" };
+            const notFoundError = { id: "Master with provided ID does not exist" };
             await logApiResponse(req, "Master not found", 404, notFoundError);
             return res.status(404).json({
                 message: "Master not found",
@@ -320,7 +316,7 @@ const updateMaster = async (req, res) => {
 
         const existingMaster = await Master.findOne({
             master_name: masterData.master_name,
-            _id: { $ne: masterId }
+            _id: { $ne: id }
         });
         if (existingMaster) {
             const duplicateError = { master: { master_name: "A master with this name already exists" } };
@@ -334,8 +330,8 @@ const updateMaster = async (req, res) => {
         Object.assign(master, masterData);
         await master.save();
 
-        await MasterField.deleteMany({ master_id: masterId });
-        const newMasterFields = masterFieldData.map(field => ({ ...field, master_id: masterId }));
+        await MasterField.deleteMany({ master_id: id });
+        const newMasterFields = masterFieldData.map(field => ({ ...field, master_id: id }));
         await MasterField.insertMany(newMasterFields);
 
         await updateDynamicSchema(master.model_name, masterFieldData);
@@ -364,30 +360,27 @@ const updateMaster = async (req, res) => {
 };
 
 const insertDynamicData = async (req, res) => {
-    const { masterId } = req.params;
-    const inputData = req.body; // Incoming data to insert
-
-    // Validate masterId
-    if (!mongoose.Types.ObjectId.isValid(masterId)) {
+    const { id } = req.body;
+    const inputData = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
             message: "Invalid Master ID",
-            errors: { masterId: "Master ID must be valid" },
+            errors: { id: "Master ID must be valid" },
         });
     }
 
     try {
-        // Fetch the masterfields configuration for the given masterId
-        const masterFields = await MasterField.find({ master_id: masterId, default: true });
+        const masterFields = await MasterField.find({ master_id: id, default: true });
 
         if (!masterFields || masterFields.length === 0) {
             return res.status(404).json({
                 message: "No masterfields found with default: true",
-                errors: { masterId: "Invalid or missing master configuration" },
+                errors: { id: "Invalid or missing master configuration" },
             });
         }
 
         // Get the collection name from the master model
-        const master = await Master.findById(masterId);
+        const master = await Master.findById(id);
         if (!master) {
             return res.status(404).json({
                 message: "Master configuration not found",
@@ -401,7 +394,7 @@ const insertDynamicData = async (req, res) => {
         if (!DynamicModel) {
             return res.status(500).json({
                 message: "Dynamic model could not be created",
-                errors: { masterId: "Model generation failed" },
+                errors: { id: "Model generation failed" },
             });
         }
 
@@ -584,8 +577,7 @@ const updateDynamicData = async (req, res) => {
 
 const toggleSoftDeleteMaster = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { ids } = req.body;
+        const { id, ids } = req.body;
 
         // Function to toggle soft delete for a single master
         const toggleSoftDelete = async (masterId) => {
@@ -642,7 +634,7 @@ const toggleSoftDeleteMaster = async (req, res) => {
     }
 };
 
-const getPaginatedMasters = async (req, res) => {
+const paginatedMasters = async (req, res) => {
     const {
         page = 1,
         limit = 10,
@@ -765,7 +757,7 @@ const getCollectionData = async (req, res) => {
 };
 
 
-const getAllMasters = async (req, res) => {
+const getMasters = async (req, res) => {
     try {
         const masters = await Master.find({ status: true }).populate('masterFields');
 
@@ -973,33 +965,25 @@ const getPaginatedDynamicData = async (req, res) => {
 const downloadExcel = async (req, res) => {
     try {
         const { masterId } = req.params;
-
-        // Check if the master exists
         const masterExists = await Master.findById(masterId);
         if (!masterExists) {
             await logApiResponse(req, 'Master not found', 404, {});
             return res.status(404).json({ message: 'Master not found' });
         }
-
-        // Get all fields related to the master
         const masterFields = await MasterField.find({ master_id: masterId });
         if (masterFields.length === 0) {
             await logApiResponse(req, 'No fields found for this master', 404, {});
             return res.status(404).json({ message: 'No fields found for this master' });
         }
-
-        // Create a new Excel workbook and add a worksheet
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Master Fields');
 
-        // Define the columns in the worksheet
         worksheet.columns = masterFields.map(field => ({
             header: field.field_name,
             key: field.field_name,
             width: 20
         }));
 
-        // Set auto filter on all columns
         worksheet.autoFilter = {
             from: 'A1',
             to: `${String.fromCharCode(64 + masterFields.length)}1`
@@ -1026,7 +1010,6 @@ const downloadExcel = async (req, res) => {
     }
 }
 
-// Function to retrieve the model name using the document ID of SchemaDefinitions
 async function getModelNameFromSchemaDefinitionId(schemaDefinitionId) {
     try {
         const schemaDefinition = await SchemaDefinitions.findById(schemaDefinitionId);
@@ -1251,10 +1234,10 @@ module.exports = {
     updateMaster,
     insertDynamicData,
     updateDynamicData,
-    getPaginatedMasters,
+    paginatedMasters,
     getAllSchemaDefinitions,
     getCollectionData,
-    getAllMasters,
+    getMasters,
     toggleSoftDeleteMaster,
     toggleSoftDeleteDynamicData,
     getPaginatedDynamicData,
