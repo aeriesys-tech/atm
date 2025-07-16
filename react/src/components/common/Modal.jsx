@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Button from '../common/Button';
 import InputField from '../common/InputField';
 import Dropdown from '../common/Dropdown';
@@ -9,46 +9,52 @@ function Modal({
     fields = [],
     onChange,
     values = {},
+    setValues = () => {},
     errors = {},
+    setErrors = () => {},
     title,
     submitButtonLabel = "SUBMIT",
-    setErrors = () => { },
-    onSuccess = () => { }
+    onSuccess = () => {}
 }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(values, setErrors, onSuccess);
     };
 
+    // ✅ Clear values & errors when modal mounts
+    useEffect(() => {
+        setValues({});
+        setErrors({});
+    }, []);
 
     return (
-       <div className="modal-overlay" onClick={onClose}
-     style={{
-       position: "fixed",
-       top: 0,
-       left: 0,
-       right: 0,
-       bottom: 0,
-       backgroundColor: "rgba(0,0,0,0.5)",
-       zIndex: 9999,
-       overflowY: "auto",
-       paddingTop: "60px",
-     }}
->
-                <div
-                    className="addunit-card"
-                    style={{
-                        width: "60%",
-                        marginTop: "100px", 
-                        maxHeight: "calc(100vh - 120px)", // 👈 leave space for top & bottom
-                        background: "#fff",
-                        borderRadius: "8px",
-                        display: "flex",
-                        flexDirection: "column",
-                        overflow: "hidden"
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
+        <div className="modal-overlay" onClick={onClose}
+            style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                zIndex: 9999,
+                overflowY: "auto",
+                paddingTop: "60px",
+            }}
+        >
+            <div
+                className="addunit-card"
+                style={{
+                    width: "60%",
+                    marginTop: "100px",
+                    maxHeight: "calc(100vh - 120px)",
+                    background: "#fff",
+                    borderRadius: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden"
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="addunit-header d-flex justify-content-between align-items-center">
                     <h4>{title}</h4>
                     <a onClick={onClose} style={{ cursor: "pointer" }}>
@@ -112,3 +118,4 @@ function Modal({
 }
 
 export default Modal;
+

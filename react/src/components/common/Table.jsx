@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import Pagination from '../general/Pagination';
 import Modal from './Modal';
-
-function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, onSortChange, onEdit,onToggleStatus }) {
+import editicon from '../../../src/assets/icons/edit.svg'
+import deleteicon from '../../../src/assets/icons/trash.svg'
+function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, onSortChange, onEdit, onToggleStatus, onDelete }) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState('');
@@ -76,8 +77,13 @@ function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, o
                         </span>
                       ) : header.key === "action" ? (
                         <span className="d-flex gap-2 justify-content-center">
-                          <a href="#" onClick={(e) => { e.preventDefault(); onEdit(row); }}><img src="../../../src/assets/icons/edit.svg" alt="Edit" /></a>
-                          <a href="#"><img src="../../../src/assets/icons/trash.svg" alt="Delete" /></a>
+                          <a  onClick={(e) => { e.preventDefault(); onEdit(row); }}><img src={editicon} alt="Edit" /></a>
+                          <a
+                            onClick={(e) => {
+                              e.preventDefault();
+                              onDelete(row);
+                            }}
+                          ><img src={deleteicon} alt="Delete" /></a>
                         </span>
                       ) : (
                         row[header.key]

@@ -52,6 +52,7 @@ function Header() {
     const [openSubMenu, setOpenSubMenu] = useState(null);
     const location = useLocation();
     const dropdownRef = useRef(null);
+    const assetsRef = useRef();
     useEffect(() => {
         setOpenMenu(null);
         setOpenSubMenu(null);
@@ -59,22 +60,20 @@ function Header() {
     const handleMenuToggle = (menuId) => {
         setOpenSubMenu(openSubMenu === menuId ? null : menuId);
     };
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target)
-            ) {
-                setOpenMenu(null);
-                setOpenSubMenu(null);
-            }
-        };
+  useEffect(() => {
+  const handleClickOutside = (e) => {
+    const isDropdownClick = e.target.closest('.nav-item.dropdown');
+    if (!isDropdownClick) {
+      setOpenMenu(null);
+      setOpenSubMenu(null);
+    }
+  };
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
     useEffect(() => {
         const handleSidebarToggle = () => {
@@ -115,7 +114,7 @@ function Header() {
         <>
 
             <div className="nav-container">
-                <div className="d-flex justify-content-between align-content-center flex-wrap navbar-1" ref={dropdownRef}>
+                <div className="d-flex justify-content-between align-content-center flex-wrap navbar-1" >
                     <div className="pl-60 d-flex">
                         <img
                             src={Component2}
@@ -241,10 +240,9 @@ function Header() {
                                     </ul>
                                 </li>
 
-                                <li className="nav-item dropdown">
+                                <li className="nav-item dropdown" ref={dropdownRef}>
                                     <a
                                         className="nav-link"
-                                        href="#"
                                         id="navbarDropdown"
                                         role="button"
                                         data-bs-toggle="dropdown"
@@ -303,7 +301,6 @@ function Header() {
                                                         <li><a href="equipment-types.html">Equipment Type</a></li>
                                                         <li><a href="#">Equipment Subtype</a></li>
                                                         <li><a href="#">Components</a></li> */}
-                                                        <li><img src={adjust1} alt="Lineage" /><Link to="/assets">Assets</Link></li>
                                                         <li><img src={tag} alt="Lineage" /><Link to="/roleGroup">Role Group</Link></li>
                                                         <li><img src={tag} alt="Lineage" /><Link to="/roles">Role</Link></li>
                                                         <li><img src={tag} alt="Lineage" /><Link to="/departments">Department</Link></li>
@@ -402,7 +399,7 @@ function Header() {
                                 </li>
 
 
-                                <li className="nav-item dropdown position-relative">
+                                <li className="nav-item dropdown" ref={assetsRef}>
                                     <a
                                         type="button"
                                         className="nav-link d-flex align-items-center gap-2"
@@ -415,10 +412,23 @@ function Header() {
 
                                     {openMenu === "assets" && (
                                         <ul className="dropdown-menu show">
+                                            {/* ✅ Use Link here */}
+                                            <li className="menu-item">
+                                                <Link
+                                                    to="/assets"
+                                                    className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
+                                                    style={{ textDecoration: "none", color: "inherit" }}
+                                                >
+                                                    <img src={package1} alt="Asset" />
+                                                    <p className="m-0">Asset</p>
+                                                </Link>
+                                            </li>
+
+                                            {/* Rest unchanged buttons */}
                                             <li className="menu-item">
                                                 <button
                                                     className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
-                                                    onClick={() => window.location.href = 'assetclass.html'}
+                                                    onClick={() => (window.location.href = "assetclass.html")}
                                                 >
                                                     <img src={agenda1} alt="Asset Class" />
                                                     <p className="m-0">Asset Class</p>
@@ -427,7 +437,7 @@ function Header() {
                                             <li className="menu-item">
                                                 <button
                                                     className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
-                                                    onClick={() => window.location.href = 'assetgroup.html'}
+                                                    onClick={() => (window.location.href = "assetgroup.html")}
                                                 >
                                                     <img src={package1} alt="Asset Modal" />
                                                     <p className="m-0">Asset Modal</p>
@@ -435,13 +445,13 @@ function Header() {
                                             </li>
                                         </ul>
                                     )}
+
                                 </li>
 
 
                                 <li className="nav-item dropdown">
                                     <a
                                         className="nav-link"
-                                        href="#"
                                         id="navbarDropdown"
                                         role="button"
                                         data-bs-toggle="dropdown"
@@ -471,7 +481,6 @@ function Header() {
                                 <li className="nav-item dropdown">
                                     <a
                                         className="nav-link"
-                                        href="#"
                                         id="navbarDropdown"
                                         role="button"
                                         data-bs-toggle="dropdown"
@@ -501,7 +510,6 @@ function Header() {
                                 <li className="nav-item dropdown">
                                     <a
                                         className="nav-link"
-                                        href="#"
                                         id="navbarDropdown"
                                         role="button"
                                         data-bs-toggle="dropdown"

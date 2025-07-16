@@ -2,15 +2,20 @@ import React from 'react';
 
 function Dropdown({ options = [], label = "Select Option", name, value, onChange, error }) {
     return (
-        <div >
+        <div>
+            {name && (
+                <label htmlFor={name} className="signin-form-label">
+                    {label}
+                </label>
+            )}
             <select
                 name={name}
                 value={value}
                 onChange={onChange}
-                className="form-select btn-bg1 d-flex gap-btwn status"
-                style={{ padding: "10px" }}
+               className={`form-select btn-bg1 d-flex gap-btwn status ${error ? "is-invalid" : ""}`}
+
             >
-                <option value="">{label}</option>
+                <option value="">Select {label}</option>
                 {options.map((option, index) => (
                     <option key={index} value={option.value || option}>
                         {option.label || option}

@@ -14,7 +14,8 @@ function InputField({
   isRequired = false,
   isNumeric = false,
   maxLength,
-  error = ''
+  error = '',
+  ...rest
 }) {
   // Restrict numeric-only input
   const handleInputChange = (e) => {
@@ -24,7 +25,12 @@ function InputField({
     }
     onChange(e);
   };
-
+  const handleWheel = (e) => {
+    // Prevent scroll-based value change for number inputs
+    if (type === 'number' || isNumeric) {
+      e.target.blur();
+    }
+  };
   return (
     <div className="d-flex flex-column" style={{ marginBottom: 16, position: 'relative', ...containerStyle }}>
       <label htmlFor={id || name} className="signin-form-label">
@@ -36,9 +42,11 @@ function InputField({
         name={name}
         value={value}
         onChange={handleInputChange}
-        placeholder={placeholder}
+        placeholder={placeholder || `Enter ${label}`}
         className={`signin-form-input ${error ? 'is-invalid' : ''} ${className}`}
         maxLength={maxLength}
+          onWheel={handleWheel} // ✅ disables scroll changes
+        {...rest}
         // required={isRequired}
       />
       {suffix && <div className="suffix-icon">{suffix}</div>}

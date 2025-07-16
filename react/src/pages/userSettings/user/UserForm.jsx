@@ -135,7 +135,7 @@ const UserForm = ({ mode }) => {
 
     return (
         <div className="">
-            <div className="pt-5 pb-4">
+            <div className="pt-4 pb-1">
                 <h5>{isEditMode ? "Edit User" : "Add User"}</h5>
                 <nav className="breadcrumb show-breadcrumb" aria-label="breadcrumb">
                     <ol className="breadcrumb">
@@ -147,139 +147,145 @@ const UserForm = ({ mode }) => {
                     </ol>
                 </nav>
             </div>
+            {/* <!-- <h5 class="mb-4">Add Equipments</h5> --> */}
 
-            <form onSubmit={handleSubmit} encType="multipart/form-data">
-                <div className="row">
-                    <div className="col-md-6">
-                        <InputField
-                            label="Name"
-                            name="name"
-                            value={form.name}
-                            onChange={handleChange}
-                            placeholder="Enter name"
-                            isRequired={true}
-                            error={errors.name}
-                        />
-                    </div>
+            <div>
+                <div class="addEuipment-header mb-5">
+                    <h4>{isEditMode ? "Update User" : "Add User"}</h4>
+                </div>
 
-                    <div className="col-md-6">
-                        <InputField
-                            label="Username"
-                            name="username"
-                            value={form.username}
-                            onChange={handleChange}
-                            placeholder="Enter username"
-                            isRequired={true}
-                            error={errors.username}
-                        />
-                    </div>
-
-                    <div className="col-md-6">
-                        <InputField
-                            label="Email"
-                            type="email"
-                            name="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            placeholder="Enter email"
-                            isRequired={true}
-                            error={errors.email}
-                        />
-                    </div>
-
-                    <div className="col-md-6">
-                        <InputField
-                            label="Mobile No"
-                            name="mobile_no"
-                            value={form.mobile_no}
-                            onChange={handleChange}
-                            placeholder="Enter mobile number"
-                            isRequired={true}
-                            isNumeric={true}
-                            maxLength={10}
-                            error={errors.mobile_no}
-                        />
-                    </div>
-
-                    {!isEditMode && (
+                <form onSubmit={handleSubmit} encType="multipart/form-data">
+                    <div className="row m-2">
                         <div className="col-md-6">
-                            <div style={{ marginBottom: 16, position: 'relative' }}>
-                                <InputField
-                                    label="Password"
-                                    type={showPassword ? "text" : "password"}
-                                    name="password"
-                                    value={form.password}
-                                    onChange={handleChange}
-                                    placeholder="Enter password"
-                                    error={errors.password}
-                                    suffix={
-                                        <img
-                                            className="password-icon"
-                                            src={passicon}
-                                            alt="toggle password"
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={() => setShowPassword((prev) => !prev)}
-                                        />
-                                    }
-                                />
-                            </div>
+                            <InputField
+                                label="Name"
+                                name="name"
+                                value={form.name}
+                                onChange={handleChange}
+                                placeholder="Enter name"
+                                isRequired={true}
+                                error={errors.name}
+                            />
                         </div>
-                    )}
+
+                        <div className="col-md-6">
+                            <InputField
+                                label="Username"
+                                name="username"
+                                value={form.username}
+                                onChange={handleChange}
+                                placeholder="Enter username"
+                                isRequired={true}
+                                error={errors.username}
+                            />
+                        </div>
+
+                        <div className="col-md-6">
+                            <InputField
+                                label="Email"
+                                type="email"
+                                name="email"
+                                value={form.email}
+                                onChange={handleChange}
+                                placeholder="Enter email"
+                                isRequired={true}
+                                error={errors.email}
+                            />
+                        </div>
+
+                        <div className="col-md-6">
+                            <InputField
+                                label="Mobile No"
+                                name="mobile_no"
+                                value={form.mobile_no}
+                                onChange={handleChange}
+                                placeholder="Enter mobile number"
+                                isRequired={true}
+                                isNumeric={true}
+                                maxLength={10}
+                                error={errors.mobile_no}
+                            />
+                        </div>
+
+                        {!isEditMode && (
+                            <div className="col-md-6">
+                                <div style={{ marginBottom: 16, position: 'relative' }}>
+                                    <InputField
+                                        label="Password"
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        placeholder="Enter password"
+                                        error={errors.password}
+                                        suffix={
+                                            <img
+                                                className="password-icon"
+                                                src={passicon}
+                                                alt="toggle password"
+                                                style={{ cursor: 'pointer' }}
+                                                onClick={() => setShowPassword((prev) => !prev)}
+                                            />
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        )}
 
 
-                    <div className="col-md-6">
-                        <label className="signin-form-label">Role<span style={{ color: 'red' }}> *</span></label>
-                        <Dropdown
-                            name="role_id"
-                            value={form.role_id}
-                            onChange={handleChange}
-                            label="Select Role"
-                            options={roles.map(role => ({
-                                label: role.role_name,   // 🟢 using role_name from your response
-                                value: role._id
-                            }))}
-                            error={errors.role_id}
-                        />
+                        <div className="col-md-6">
+                            <label className="signin-form-label">Role<span style={{ color: 'red' }}> *</span></label>
+                            <Dropdown
+                                name="role_id"
+                                value={form.role_id}
+                                onChange={handleChange}
+                                label="Select Role"
+                                options={roles.map(role => ({
+                                    label: role.role_name,   // 🟢 using role_name from your response
+                                    value: role._id
+                                }))}
+                                error={errors.role_id}
+                            />
+                        </div>
+
+                        <div className="col-md-6">
+                            <label className="signin-form-label">Department<span style={{ color: 'red' }}> *</span></label>
+                            <Dropdown
+                                name="department_id"
+                                value={form.department_id}
+                                onChange={handleChange}
+                                label="Select Department"
+                                options={departments.map(dept => ({ label: dept.department_name, value: dept._id }))}
+                                error={errors.department_id}
+                            />
+                        </div>
+
+                        <div className={`col-md-6 ${isEditMode ? 'mt-3' : ''}`}>
+                            <InputField
+                                label="Avatar"
+                                type="file"
+                                name="avatar"
+                                onChange={handleChange}
+                                className="form-control"
+                            />
+                        </div>
+
                     </div>
 
-                    <div className="col-md-6">
-                        <label className="signin-form-label">Department<span style={{ color: 'red' }}> *</span></label>
-                        <Dropdown
-                            name="department_id"
-                            value={form.department_id}
-                            onChange={handleChange}
-                            label="Select Department"
-                            options={departments.map(dept => ({ label: dept.department_name, value: dept._id }))}
-                            error={errors.department_id}
-                        />
+                    <div className="mt-4 ms-4 d-flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => navigate("/users")}
+                            className="btn btn-secondary"
+                        >
+                            Discard
+                        </button>
+                        <button type="submit" className="btn btn-primary">
+                            {isEditMode ? "Update" : "Create"}
+                        </button>
                     </div>
-
-                    <div className={`col-md-6 ${isEditMode ? 'mt-3' : ''}`}>
-                        <InputField
-                            label="Avatar"
-                            type="file"
-                            name="avatar"
-                            onChange={handleChange}
-                            className="form-control"
-                        />
-                    </div>
-
-                </div>
-
-                <div className="mt-4 d-flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/users")}
-                        className="btn btn-secondary"
-                    >
-                        Discard
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                        {isEditMode ? "Update" : "Create"}
-                    </button>
-                </div>
-            </form>
-
+                </form>
+            </div>
         </div>
     );
 };

@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
 import Modal from "../../components/common/Modal";
 import axiosWrapper from "../../../services/AxiosWrapper";
+import Loader from "../../components/general/LoaderAndSpinner/Loader";
 
 const Role = () => {
     const [roles, setRoles] = useState([]);
@@ -105,7 +106,7 @@ const Role = () => {
             required: true,
         },
         {
-            label: "Select Role Group",
+            label: "Role Group",
             name: "role_group_id",
             type: "dropdown",
             required: true,
@@ -202,17 +203,38 @@ const Role = () => {
 
             await axiosWrapper("api/v1/roles/deleteRole", {
                 method: "POST",
-                data: { id: row._id }, 
+                data: { id: row._id },
             });
 
-            fetchRoles(); 
+            fetchRoles();
         } catch (err) {
             console.error("Failed to toggle role status:", err.message || err);
         } finally {
             setLoading(false);
         }
     };
+    const handleDeleteRole = async (row) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this role permanently?");
+        if (!confirmDelete) return;
 
+        try {
+            setLoading(true);
+            const response = await axiosWrapper("api/v1/roles/destroyRole", {
+                method: "POST",
+                data: { id: row._id },
+            });
+
+            if (response?.message) {
+                alert(response.message);
+            }
+            fetchRoles();
+        } catch (error) {
+            console.error("Failed to delete role permanently:", error.message || error);
+            alert("Error deleting role");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSortChange = (key, newOrder) => {
         setSortBy(key);
@@ -221,8 +243,13 @@ const Role = () => {
     };
 
     return (
-        <div className="tb-responsive templatebuilder-body">
-            <div className="pt-3">
+        <div className="tb-responsive templatebuilder-body position-relative">
+            {loading && (
+        <div className="loader-overlay d-flex justify-content-center align-items-center">
+          <Loader />
+        </div>
+      )}
+            <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 <Breadcrumb title="Roles" items={breadcrumbItems} />
                 <Navbar
                     modalTitle="Add Role"
@@ -237,6 +264,7 @@ const Role = () => {
                     onSortChange={handleSortChange}
                     onEdit={handleEditClick}
                     onToggleStatus={handleToggleStatus}
+                    onDelete={handleDeleteRole}
                     paginationProps={{
                         currentPage,
                         totalPages,
@@ -255,6 +283,7 @@ const Role = () => {
                         fields={roleFields}
                         values={editFormData}
                         errors={editErrors}
+                        loading={loading}
                         onChange={(e) => {
                             const { name, value } = e.target;
                             setEditFormData((prev) => ({ ...prev, [name]: value }));

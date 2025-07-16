@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
 import axiosWrapper from "../../../services/AxiosWrapper";
 import Modal from "../../components/common/Modal";
+import Loader from "../../components/general/LoaderAndSpinner/Loader";
 
 const Department = () => {
     const [departments, setDepartments] = useState([]);
@@ -154,6 +155,30 @@ const Department = () => {
             setLoading(false);
         }
     };
+const handleDeleteDepartment = async (row) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this department permanently?");
+    if (!confirmDelete) return;
+
+    try {
+        setLoading(true);
+
+        const response = await axiosWrapper("api/v1/departments/destroyDepartment ", {
+            method: "POST",
+            data: { id: row._id },
+        });
+
+        if (response?.message) {
+            alert(response.message); // Shows: "rdepartment permanently deleted"
+        }
+
+        fetchDepartments(); // Refresh the table
+    } catch (error) {
+        console.error("Failed to delete department permanently:", error.message || error);
+        alert("Error deleting department");
+    } finally {
+        setLoading(false);
+    }
+};
 
     const handleSortChange = (key, newOrder) => {
         setSortBy(key);
@@ -162,8 +187,13 @@ const Department = () => {
     };
 
     return (
-        <div className="tb-responsive templatebuilder-body">
-            <div className="pt-3">
+       <div className="tb-responsive templatebuilder-body position-relative">
+                {loading && (
+                    <div className="loader-overlay d-flex justify-content-center align-items-center">
+                        <Loader />
+                    </div>
+                )}
+            <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 <Breadcrumb title="Departments" items={breadcrumbItems} />
                 <Navbar
                     modalTitle="Add Department"
@@ -176,6 +206,7 @@ const Department = () => {
                     sortBy={sortBy}
                     order={order}
                     onSortChange={handleSortChange}
+                    onDelete={handleDeleteDepartment}
                     paginationProps={{
                         currentPage,
                         totalPages,

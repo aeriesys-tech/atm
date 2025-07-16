@@ -1,54 +1,56 @@
+/* Navbar Style */
 .menu-item {
-    position: relative;
+  position: relative;
 }
 
 .submenu {
-    position: absolute;
-    top: 0;
-    left: 100%;
-    min-width: 200px;
-    background-color: white;
-    z-index: 999;
-    padding: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
-    display: block;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 200px;
+  background-color: white;
+  z-index: 999;
+  padding: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+  display: block;
 }
 
 .submenu li {
-    padding: 5px 20px;
+  padding: 5px 20px;
 }
 
 .submenu li a {
-    text-decoration: none;
-    color: #333;
+  text-decoration: none;
+  color: #333;
 }
 
 .submenu li a:hover {
-    background-color: #f0f0f0;
+  background-color: #f0f0f0;
 }
 
 .tb-responsive {
-    margin: 0 auto;
-    /* width: 1440px; */
-    height: auto !important;
-    position: relative;
-    overflow-x: scroll;
-    overflow-y: hidden;
-    scrollbar-width: none;
+  margin: 0 auto;
+  /* width: 1440px; */
+  height: auto !important;
+  position: relative;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scrollbar-width: none;
 }
 
 .tb-container {
-    height: auto !important;
-    max-width: 1440px;
-    padding: 0px 40px;
-    margin: 0 auto;
-    position: relative;
-    background: var(--bgColor);
-    overflow-x: scroll;
-    scrollbar-width: none;
+  height: auto !important;
+  max-width: 1440px;
+  padding: 0px 40px;
+  margin: 0 auto;
+  position: relative;
+  background: var(--bgColor);
+  overflow-x: scroll;
+  scrollbar-width: none;
 }
+
 .custom-dropdown button {
   width: 100px;
 }
@@ -56,6 +58,7 @@
 .dropdown-list li:hover {
   background-color: #f0f0f0;
 }
+
 th .fa-angle-up,
 th .fa-angle-down {
   margin-left: 4px;
@@ -66,15 +69,18 @@ th .fa-angle-up.icon-up,
 th .fa-angle-down.icon-down {
   color: #ccc;
 }
+
+/* Navbar Style */
 .addunit-form input {
-    width: inherit;
-    height: 60px;
-    border: 1px solid #E6E6E7;
-    border-radius: 11px;
-    outline: none;
-    padding: 16px ;
-    margin-bottom: opx !important;
+  width: 100%;
+  height: 50px !important;
+  border: 1px solid #E6E6E7;
+  border-radius: 11px;
+  outline: none;
+  padding: 16px;
+  margin-bottom: 0px !important;
 }
+
 .nav-item.dropdown .dropdown-menu {
   position: absolute;
   top: 100%;
@@ -92,6 +98,7 @@ th .fa-angle-down.icon-down {
 .nav-item.dropdown .dropdown-menu.show {
   display: block;
 }
+
 .nav-item.dropdown {
   position: relative;
 }
@@ -102,4 +109,96 @@ th .fa-angle-down.icon-down {
   top: 100%;
   left: 0;
   z-index: 999;
+}
+
+/* Master Modal Style */
+.modal-overlay {
+  padding-left: 100px;
+}
+
+.addunit-card1 {
+  width: 60%;
+  max-width: 600px;
+  background: #fff;
+  border-radius: 8px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE 10+ */
+}
+
+.addunit-card1::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari */
+}
+
+.master-field-box {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 18px !important;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.master-field-box .btn-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* Input field margin & structure */
+.signin-form-input {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+
+/* Label spacing */
+.signin-form-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 14px !important;
+  color: #333;
+}
+
+/* Add Field Button */
+.add-field-btn {
+  padding: 10px 22px;
+    border-radius: 12px;
+    border: 1px solid var(--primaryRed);
+    background-color: var(--white);
+    color: var(--primaryRed);
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 18px;
+    letter-spacing: 0.02px;
+    margin-right: 15px;
+}
+.add-field-btn:hover {
+  background-color: var(--primaryRed);
+  color: var(--white);
+  cursor: pointer;
+}
+
+/* dropdown style */
+.btn-bg1 {
+  border-radius: 11px !important;
+  height: 48px !important;
+}
+/* loader */
+.loader-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 9999; /* Make sure it's above the table */
 }

@@ -95,8 +95,8 @@ function Pagination({
 <div className="tfoot align-content-center">
   <div className="pagination-resuls align-content-center text-secondary">
     <h2 className="m-0" style={{ fontSize: "14px", fontWeight: "500" }}>
-      Showing {Math.min((currentPage - 1) * pageSize + 1, totalItems)}–
-      {Math.min(currentPage * pageSize, totalItems)} of {totalItems} items
+      Showing {Math.min((currentPage - 1) * pageSize + 1, totalItems)} – 
+      {Math.min(currentPage * pageSize, totalItems)} of {totalItems} Total items
     </h2>
   </div>
 </div>

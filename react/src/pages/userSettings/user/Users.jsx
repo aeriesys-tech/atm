@@ -7,6 +7,7 @@ import search2 from "../../../assets/icons/search2.svg";
 import Button from "../../../components/common/Button";
 import Search from "../../../components/common/Search";
 import Dropdown from "../../../components/common/Dropdown";
+import Loader from "../../../components/general/LoaderAndSpinner/Loader";
 
 const User = () => {
   const navigate = useNavigate();
@@ -82,6 +83,30 @@ const User = () => {
       setLoading(false);
     }
   };
+const handlePermanentDeleteUser = async (row) => {
+  const confirmDelete = window.confirm("Are you sure you want to permanently delete this user?");
+  if (!confirmDelete) return;
+
+  try {
+    setLoading(true);
+
+    const response = await axiosWrapper("api/v1/users/destroyUser", {
+      method: "POST",
+      data: { id: row._id },
+    });
+
+    if (response?.message) {
+      alert(response.message); // shows: "user permanently deleted"
+    }
+
+    fetchUsers(); // refresh the user list
+  } catch (error) {
+    console.error("Permanent delete failed:", error.message || error);
+    alert("Error deleting user");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSortChange = (key, newOrder) => {
     setSortBy(key);
@@ -90,8 +115,13 @@ const User = () => {
   };
 
   return (
-    <div className="tb-responsive templatebuilder-body">
-      <div className="pt-3">
+    <div className="tb-responsive templatebuilder-body position-relative">
+                {loading && (
+                    <div className="loader-overlay d-flex justify-content-center align-items-center">
+                        <Loader />
+                    </div>
+                )}
+      <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
         <Breadcrumb title="Users" items={breadcrumbItems} />
 
         {/* 👇 Replaced Navbar with UI + navigation logic */}
@@ -128,6 +158,7 @@ const User = () => {
           }
 
           onToggleStatus={handleSoftDelete}
+          onDelete={handlePermanentDeleteUser}
           paginationProps={{
             currentPage,
             totalPages,

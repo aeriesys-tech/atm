@@ -4,6 +4,7 @@ import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
 import axiosWrapper from "../../../services/AxiosWrapper";
 import Modal from "../../components/common/Modal";
+import Loader from "../../components/general/LoaderAndSpinner/Loader";
 
 const RoleGroup = () => {
     const [roles, setRoles] = useState([]);
@@ -16,8 +17,8 @@ const RoleGroup = () => {
 
     const [loading, setLoading] = useState(false);
     const [addModalOpen, setAddModalOpen] = useState(false);
-const [addFormData, setAddFormData] = useState({});
-const [addErrors, setAddErrors] = useState({});
+    const [addFormData, setAddFormData] = useState({});
+    const [addErrors, setAddErrors] = useState({});
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editFormData, setEditFormData] = useState({});
     const [editErrors, setEditErrors] = useState({});
@@ -41,6 +42,7 @@ const [addErrors, setAddErrors] = useState({});
             roleName: rowData.role_group_name,
             status: rowData.status,
         });
+        setEditErrors({});
         setEditModalOpen(true);
     };
 
@@ -77,8 +79,8 @@ const [addErrors, setAddErrors] = useState({});
         fetchRoles(currentPage, pageSize, sortBy, order);
     }, [currentPage, pageSize, sortBy, order]);
     const roleFields = [
-        { label: "Role Code", name: "roleCode", type: "text", placeholder: "Enter role code", required: true },
-        { label: "Role Name", name: "roleName", type: "text", placeholder: "Enter role name" },
+        { label: "Role Group Code", name: "roleCode", type: "text", placeholder: "Enter role code", required: true },
+        { label: "Role Group Name", name: "roleName", type: "text", placeholder: "Enter role name" },
     ];
 
     const handleRoleSubmit = async (formData, setErrors, onSuccess) => {
@@ -147,22 +149,46 @@ const [addErrors, setAddErrors] = useState({});
         }
     };
 
-const handleToggleStatus = async (row) => {
-  try {
-    setLoading(true);
+    const handleToggleStatus = async (row) => {
+        try {
+            setLoading(true);
 
-    await axiosWrapper('api/v1/role-groups/deleteRoleGroup', {
-      method: 'POST',
-      data: { id: row._id }, 
-    });
+            await axiosWrapper('api/v1/role-groups/deleteRoleGroup', {
+                method: 'POST',
+                data: { id: row._id },
+            });
 
-    fetchRoles(); 
-  } catch (err) {
-    console.error("Failed to toggle role status:", err.message || err);
-  } finally {
-    setLoading(false);
-  }
-};
+            fetchRoles();
+        } catch (err) {
+            console.error("Failed to toggle role status:", err.message || err);
+        } finally {
+            setLoading(false);
+        }
+    };
+    const handleDeleteRoleGroup = async (row) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this role group permanently?");
+        if (!confirmDelete) return;
+
+        try {
+            setLoading(true);
+
+            const response = await axiosWrapper("api/v1/role-groups/destroyRoleGroup", {
+                method: "POST",
+                data: { id: row._id },
+            });
+
+            if (response?.message) {
+                alert(response.message);
+            }
+            fetchRoles();
+        } catch (error) {
+            console.error("Failed to delete role group permanently:", error.message || error);
+            alert("Error deleting role group");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSortChange = (key, newOrder) => {
         setSortBy(key);
         setOrder(newOrder);
@@ -171,8 +197,13 @@ const handleToggleStatus = async (row) => {
     // if (loading) return <Loader />;
     return (
         <>
-            <div className="tb-responsive templatebuilder-body">
-                <div className="pt-3">
+            <div className="tb-responsive templatebuilder-body position-relative">
+                {loading && (
+                    <div className="loader-overlay d-flex justify-content-center align-items-center">
+                        <Loader />
+                    </div>
+                )}
+                <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                     <Breadcrumb title="Role Group" items={breadcrumbItems} />
                     <Navbar modalTitle="Add Role Group" modalFields={roleFields} onSubmit={handleRoleSubmit} />
                     <Table
@@ -183,6 +214,7 @@ const handleToggleStatus = async (row) => {
                         onSortChange={handleSortChange}
                         onEdit={handleEditClick}
                         onToggleStatus={handleToggleStatus}
+                        onDelete={handleDeleteRoleGroup}
                         paginationProps={{
                             currentPage,
                             totalPages,
@@ -211,7 +243,7 @@ const handleToggleStatus = async (row) => {
                                 })
                             }
                             onClose={() => setEditModalOpen(false)}
-                             submitButtonLabel="UPDATE"
+                            submitButtonLabel="UPDATE"
                         />
                     )}
 
