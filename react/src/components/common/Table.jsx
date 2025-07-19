@@ -77,7 +77,24 @@ function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, o
                         </span>
                       ) : header.key === "action" ? (
                         <span className="d-flex gap-2 justify-content-center">
-                          <a  onClick={(e) => { e.preventDefault(); onEdit(row); }}><img src={editicon} alt="Edit" /></a>
+                           {row.status ? (
+    <a
+      onClick={(e) => {
+        e.preventDefault();
+        onEdit(row);
+      }}
+      title="Edit"
+    >
+      <img src={editicon} alt="Edit" style={{ cursor: "pointer" }} />
+    </a>
+  ) : (
+    <img
+      src={editicon}
+      alt="Edit Disabled"
+      style={{ opacity: 0.5, cursor: "not-allowed" }}
+      title="Inactive roles cannot be edited"
+    />
+  )}
                           <a
                             onClick={(e) => {
                               e.preventDefault();

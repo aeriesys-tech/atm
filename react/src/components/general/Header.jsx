@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Search from '../common/Search'
 import Breadcrum from './Breadcrum'
 import Component2 from "../../../src/assets/icons/component2.svg"
@@ -45,35 +45,52 @@ import hierachy1 from "../../../src/assets/icons/hierachy1.svg"
 import tag31 from "../../../src/assets/icons/tag(3)1.svg"
 import node1 from "../../../src/assets/icons/node1.svg"
 import { Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { clearAllStorage } from '../../../services/TokenService';
+import { clearUser, setUser } from '../../redux/user/UserSlice';
 
 
 function Header() {
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubMenu, setOpenSubMenu] = useState(null);
     const location = useLocation();
     const dropdownRef = useRef(null);
+    const dispatch = useDispatch();
+    const user = useSelector((state) => state.user.user);
+    const navigate = useNavigate();
     const assetsRef = useRef();
+
     useEffect(() => {
         setOpenMenu(null);
         setOpenSubMenu(null);
+        setShowProfileMenu(false);
     }, [location]);
+useEffect(() => {
+    const handleClickOutside = (e) => {
+        const clickedInside = dropdownRef.current?.contains(e.target);
+        const isLogoutButton = e.target.closest("button.dropdown-item");
+
+        if (!clickedInside && !isLogoutButton) {
+            setShowProfileMenu(false);
+        }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+
+
     const handleMenuToggle = (menuId) => {
         setOpenSubMenu(openSubMenu === menuId ? null : menuId);
     };
-  useEffect(() => {
-  const handleClickOutside = (e) => {
-    const isDropdownClick = e.target.closest('.nav-item.dropdown');
-    if (!isDropdownClick) {
-      setOpenMenu(null);
-      setOpenSubMenu(null);
-    }
-  };
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+    const handleLogout = () => {
+        dispatch(setUser({ user: null, token: null ,_persist:null}));
+        clearAllStorage(); // ✅ clears sessionStorage and localStorage
+        navigate("/");
+    };
 
     useEffect(() => {
         const handleSidebarToggle = () => {
@@ -91,9 +108,9 @@ function Header() {
                 });
             }
         };
-        // Delay to ensure DOM is loaded
+
         setTimeout(handleSidebarToggle, 0);
-        // Sticky navbar
+
         const handleScroll = () => {
             const navbar = document.getElementById("navbar");
             if (navbar) {
@@ -104,12 +121,12 @@ function Header() {
                 }
             }
         };
+
         window.addEventListener("scroll", handleScroll);
         return () => {
             window.removeEventListener("scroll", handleScroll);
         };
     }, []);
-
     return (
         <>
 
@@ -156,54 +173,45 @@ function Header() {
                             <img src={settings} className="settings" />)}
 
 
-                        <li className="nav-item dropdown profile-btn">
-                            <a
+                        <li className="nav-item dropdown profile-btn" ref={dropdownRef} style={{ position: 'relative', zIndex: 9999 }}>
+                            <div
                                 className="nav-link d-flex gap-btwn"
-                                href="#"
-                                id="navbarDropdown"
+                                onClick={() => setShowProfileMenu(!showProfileMenu)}
                                 role="button"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
                             >
-                                <img src={fi_1946429} />
-                                <span className="mble-hide">Profile Name</span>
-                                <img src={ArrowDown} />
-                            </a>
-                            <ul
-                                className="dropdown-menu menu-list profile-ul"
-                                aria-labelledby="navbarDropdown"
-                            >
-                                <li>
-                                    <a
-                                        className="dropdown-item d-flex justify-content-start gap-3
-              "
-                                        href="profileSettings.html"
-                                    >
-                                        <img src={setting} />
-                                        <p className="m-0">Profile Settings</p>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        className="dropdown-item d-flex justify-content-start gap-3
-              "
-                                        href="globalSettings.html"
-                                    >
-                                        <img src={globe} />
-                                        <p className="m-0">Global Settings</p>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        className="dropdown-item d-flex justify-content-start gap-3
-              "
-                                        href="#"
-                                    >
-                                        <img src={sett} />
-                                        <p className="m-0">Operational Settings</p>
-                                    </a>
-                                </li>
-                            </ul>
+                                <img src={fi_1946429} alt="Profile" />
+                                <span className="mble-hide">{user?.name || "Profile Name"}</span>
+                                <img src={ArrowDown} alt="Arrow" style={{ transform: showProfileMenu ? "rotate(180deg)" : "rotate(0deg)" }} />
+                            </div>
+
+                            {showProfileMenu && (
+                                <ul className="dropdown-menu menu-list profile-ul show" style={{ display: "block" }}>
+                                    <li>
+                                        <a className="dropdown-item d-flex justify-content-start gap-3" href="/profileSettings">
+                                            <img src={setting} alt="Settings" />
+                                            <p className="m-0">Profile Settings</p>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a className="dropdown-item d-flex justify-content-start gap-3" href="/globalSettings">
+                                            <img src={globe} alt="Global" />
+                                            <p className="m-0">Global Settings</p>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a className="dropdown-item d-flex justify-content-start gap-3" href="/operationalSettings">
+                                            <img src={sett} alt="Operational" />
+                                            <p className="m-0">Operational Settings</p>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <button className="dropdown-item d-flex justify-content-start gap-3" onClick={handleLogout}>
+                                            <img src={sett} alt="Logout" />
+                                            <p className="m-0">Logout</p>
+                                        </button>
+                                    </li>
+                                </ul>
+                            )}
                         </li>
                     </div>
                 </div>

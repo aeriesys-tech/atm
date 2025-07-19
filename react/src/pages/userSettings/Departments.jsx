@@ -45,7 +45,7 @@ const Department = () => {
             }
         );
 
-        const mappedRows = response.departments.map((dept, index) => ({
+        const mappedRows = response.Departments.map((dept, index) => ({
             _id: dept._id,
             index: index + 1,
             department_code: dept.department_code,
@@ -132,6 +132,7 @@ const Department = () => {
         }
     };
     const handleEditClick = (rowData) => {
+        setEditErrors({})
         setEditFormData({
             id: rowData._id,
             department_code: rowData.department_code,

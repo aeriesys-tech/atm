@@ -22,10 +22,13 @@ function Modal({
     };
 
     // ✅ Clear values & errors when modal mounts
-    useEffect(() => {
+   useEffect(() => {
+    if (!values?.id) { // only reset if adding new
         setValues({});
         setErrors({});
-    }, []);
+    }
+}, []);
+
 
     return (
         <div className="modal-overlay" onClick={onClose}
