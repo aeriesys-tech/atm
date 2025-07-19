@@ -661,9 +661,8 @@ const toggleSoftDeleteDynamicData = async (req, res) => {
     }
 };
 
-
 const getPaginatedDynamicData = async (req, res) => {
-    const { masterId } = req.params;
+    const { masterId } = req.body;
     const {
         page = 1,
         limit = 10,
@@ -671,7 +670,9 @@ const getPaginatedDynamicData = async (req, res) => {
         order = 'asc',
         search = '',
         status
-    } = req.query;
+    } = req.body;
+
+    const sortOrder = order === 'desc' ? -1 : 1;
 
     try {
         const master = await Master.findById(masterId)
@@ -692,84 +693,90 @@ const getPaginatedDynamicData = async (req, res) => {
             return res.status(404).json({ message: "Model for the specified collection not found." });
         }
 
-        // Fetch schema definition ID
-        const schemaDefinition = await SchemaDefinitionModel.findOne({ collectionName: collectionName }).lean();
+        const schemaDefinition = await SchemaDefinitionModel.findOne({ collectionName }).lean();
         const schemaDefinitionId = schemaDefinition ? schemaDefinition._id : null;
 
-        let searchConditions = [];
-        if (search && master.masterFields && master.masterFields.length > 0) {
-            searchConditions = master.masterFields.map(field => {
+        // Safe sort field validation
+        const allowedSortFields = Array.isArray(master.masterFields)
+            ? master.masterFields.map(f => f.field_name).concat(['_id'])
+            : ['_id'];
+        const cleanSortBy = String(sortBy).trim();
+        const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
+
+        // Search conditions
+        const searchConditions = [];
+        if (search && Array.isArray(master.masterFields)) {
+            for (const field of master.masterFields) {
                 if (field.field_type === 'Number') {
-                    const numberValue = parseFloat(search);
-                    return isNaN(numberValue) ? null : { [field.field_name]: numberValue };
+                    const numVal = parseFloat(search);
+                    if (!isNaN(numVal)) {
+                        searchConditions.push({ [field.field_name]: numVal });
+                    }
                 } else {
-                    return { [field.field_name]: { $regex: new RegExp(search, 'i') } };
+                    searchConditions.push({ [field.field_name]: new RegExp(search, 'i') });
                 }
-            }).filter(condition => condition != null);
-        }
-
-        let queryConditions = searchConditions.length > 0 ? { $or: searchConditions } : {};
-
-        if (status && status.trim() !== "") {
-            if (status.toLowerCase() === "active") {
-                queryConditions['status'] = true;  // Active as true
-            } else if (status.toLowerCase() === "inactive") {
-                queryConditions['status'] = false; // Inactive as false
             }
         }
 
-        const searchQuery = { $and: [queryConditions] };
-        const sortOrder = order === 'desc' ? -1 : 1;
-        const sortQuery = { [sortBy]: sortOrder };
+        const query = {
+            $and: [
+                searchConditions.length ? { $or: searchConditions } : {},
+                status !== undefined
+                    ? { status: status.toLowerCase() === 'active' }
+                    : {}
+            ]
+        };
 
-        let results = await DynamicModel.find(searchQuery)
-            .sort(sortQuery)
+        const results = await DynamicModel.find(query)
+            .sort({ [safeSortBy]: sortOrder })
             .skip((page - 1) * parseInt(limit))
             .limit(parseInt(limit));
 
-        // Order and select fields in each document based on masterFields
-        results = results.map(doc => {
-            const docObject = doc.toObject();
+        const orderedResults = results.map(doc => {
+            const docObj = doc.toObject();
             const orderedDoc = {};
 
-            // Order fields as specified in masterFields
-            master.masterFields.sort((a, b) => a.order - b.order).forEach(field => {
-                if (docObject.hasOwnProperty(field.field_name)) {
-                    orderedDoc[field.field_name] = docObject[field.field_name];
-                }
-            });
+            if (Array.isArray(master.masterFields)) {
+                master.masterFields
+                    .sort((a, b) => a.order - b.order)
+                    .forEach(field => {
+                        if (docObj.hasOwnProperty(field.field_name)) {
+                            orderedDoc[field.field_name] = docObj[field.field_name];
+                        }
+                    });
+            }
 
-            // Include any additional fields not covered in masterFields at the end
-            Object.keys(docObject).forEach(key => {
+            Object.keys(docObj).forEach(key => {
                 if (!orderedDoc.hasOwnProperty(key)) {
-                    orderedDoc[key] = docObject[key];
+                    orderedDoc[key] = docObj[key];
                 }
             });
 
             return orderedDoc;
         });
 
-        const count = await DynamicModel.countDocuments(searchQuery);
+        const totalCount = await DynamicModel.countDocuments(query);
 
         const responseData = {
             master: {
                 ...master,
-                schemaDefinitionId: schemaDefinitionId // Insert schemaDefinitionId below master._id
+                schemaDefinitionId
             },
-            totalPages: Math.ceil(count / parseInt(limit)),
+            totalPages: Math.ceil(totalCount / limit),
             currentPage: Number(page),
-            data: results,
-            totalItems: count
+            data: orderedResults,
+            totalItems: totalCount
         };
 
         await logApiResponse(req, "Paginated data retrieved successfully.", 200, responseData);
-        res.status(200).json(responseData);
+        return res.status(200).json(responseData);
     } catch (error) {
         console.error('Error fetching paginated data:', error);
-        await logApiResponse(req, "Failed to fetch paginated data.", 500, { error: error.toString() });
-        res.status(500).json({ message: "Failed to fetch paginated data.", error: error.toString() });
+        await logApiResponse(req, "Failed to fetch paginated data.", 500, { error: error.message });
+        return res.status(500).json({ message: "Failed to fetch paginated data.", error: error.message });
     }
 };
+
 
 
 const downloadExcel = async (req, res) => {

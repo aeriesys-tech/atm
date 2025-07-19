@@ -10,7 +10,7 @@ const { paginateValidation, validateId } = require('../validations/commonValidat
 // const { checkPermission, checkAnyPermission } = require("../middlewares/permissionsMiddleware");
 
 // POST route to create a new user
-// router.post('/dynamic-data/:masterId/paginate', authMiddleware, masterController.getPaginatedDynamicData);
+router.post('/dynamic-data/paginate', authMiddleware, masterController.getPaginatedDynamicData);
 
 router.post('/createMaster', authMiddleware, add_master_validation, masterController.createMaster);
 router.post('/updateMaster', authMiddleware, update_master_validation, masterController.updateMaster);

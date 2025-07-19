@@ -9,6 +9,7 @@ const roleGroupRoute = require('./roleGroupRoute');
 const departmentRoute = require("./departmentRoute");
 const parameterTypeRoute = require("./parameterTypeRoute");
 const masterRoute = require("./masterRoute");
+const notificationRoute = require('./notificationRoute')
 
 router.use('/', authRoute);
 router.use('/users', userRoute);
@@ -17,5 +18,6 @@ router.use('/role-groups', roleGroupRoute);
 router.use('/departments', departmentRoute);
 router.use('/parameter-types', parameterTypeRoute);
 router.use('/masters', masterRoute);
+router.use('/notifications', notificationRoute);
 
 module.exports = router;
