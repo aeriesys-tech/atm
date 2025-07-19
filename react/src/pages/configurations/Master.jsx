@@ -59,7 +59,7 @@ const Master = () => {
             field_type: "",
             field_name: "",
             display_name: "",
-            order: 0,
+            order: 1,
             tooltip: "",
             required: false,
             default: false,
@@ -72,7 +72,7 @@ const Master = () => {
                 field_type: "",
                 field_name: "",
                 display_name: "",
-                order: 0,
+                order: 1,
                 tooltip: "",
                 required: false,
                 default: false,
@@ -213,11 +213,11 @@ const Master = () => {
                     display_name_plural: formData.display_name_plural,
                     model_name: formData.model_name,
                     parameter_type_id: formData.parameter_type_id,
-                    order: isNaN(Number(formData.order)) ? 0 : Number(formData.order),
+                    order: isNaN(Number(formData.order)) ? 1 : Number(formData.order),
                 },
                 masterFieldData: masterFieldData.map((item) => ({
                     ...item,
-                    order: isNaN(Number(item.order)) ? 0 : Number(item.order),
+                    order: isNaN(Number(item.order)) ? 1 : Number(item.order),
                     required: Boolean(item.required),
                     default: Boolean(item.default),
                 })),
@@ -271,7 +271,7 @@ const Master = () => {
                 method: "POST",
                 data: { id: row._id },
             });
-            fetchMasters(); // refresh list
+            fetchMasters(currentPage, pageSize, sortBy, order);
         } catch (error) {
             console.error("Soft delete failed:", error.message || error);
         } finally {
@@ -324,7 +324,7 @@ const Master = () => {
                                     field_type: "",
                                     field_name: "",
                                     display_name: "",
-                                    order: 0,
+                                    order: 1,
                                     tooltip: "",
                                     required: false,
                                     default: false,
@@ -389,7 +389,7 @@ const Master = () => {
                                                 field_type: "",
                                                 field_name: "",
                                                 display_name: "",
-                                                order: 0,
+                                                order: 1,
                                                 tooltip: "",
                                                 required: false,
                                                 default: false,

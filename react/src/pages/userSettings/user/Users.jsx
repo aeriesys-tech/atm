@@ -76,7 +76,7 @@ const User = () => {
         method: "POST",
         data: { id: row._id },
       });
-      fetchUsers();
+         fetchUsers(currentPage, pageSize, sortBy, order);
     } catch (error) {
       console.error("Soft delete failed:", error.message || error);
     } finally {

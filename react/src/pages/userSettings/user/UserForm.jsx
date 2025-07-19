@@ -4,7 +4,7 @@ import axiosWrapper from "../../../../services/AxiosWrapper";
 import InputField from "../../../components/common/InputField";
 import Dropdown from "../../../components/common/Dropdown";
 import passicon from '../../../assets/icons/Component 26.svg';
-
+import backIcon from '../../../assets/icons/arrow-Vector.svg';
 const UserForm = ({ mode }) => {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -136,7 +136,15 @@ const UserForm = ({ mode }) => {
     return (
         <div className="">
             <div className="pt-4 pb-1">
-                <h5>{isEditMode ? "Edit User" : "Add User"}</h5>
+                <div className="d-flex align-items-center gap-2">   <img
+                    src={backIcon}
+                    alt="Back"
+                    style={{ width: 34, cursor: 'pointer',transform: 'rotate(180deg)', }}
+                    onClick={() => navigate('/users')}
+                    title="Go back"
+                />
+                <h5>{isEditMode ? "Edit User" : "Add User"}</h5></div>
+             
                 <nav className="breadcrumb show-breadcrumb" aria-label="breadcrumb">
                     <ol className="breadcrumb">
                         <li className="breadcrumb-item"><a href="#">Admin</a></li>
@@ -234,12 +242,12 @@ const UserForm = ({ mode }) => {
 
 
                         <div className="col-md-6">
-                            <label className="signin-form-label">Role<span style={{ color: 'red' }}> *</span></label>
+                            {/* <label className="signin-form-label">Role<span style={{ color: 'red' }}> *</span></label> */}
                             <Dropdown
                                 name="role_id"
                                 value={form.role_id}
                                 onChange={handleChange}
-                                label="Select Role"
+                                label=" Role"
                                 options={roles.map(role => ({
                                     label: role.role_name,   // 🟢 using role_name from your response
                                     value: role._id
@@ -249,12 +257,11 @@ const UserForm = ({ mode }) => {
                         </div>
 
                         <div className="col-md-6">
-                            <label className="signin-form-label">Department<span style={{ color: 'red' }}> *</span></label>
                             <Dropdown
                                 name="department_id"
                                 value={form.department_id}
                                 onChange={handleChange}
-                                label="Select Department"
+                                label="Department"
                                 options={departments.map(dept => ({ label: dept.department_name, value: dept._id }))}
                                 error={errors.department_id}
                             />

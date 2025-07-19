@@ -158,7 +158,8 @@ const RoleGroup = () => {
                 data: { id: row._id },
             });
 
-            fetchRoles();
+                    fetchRoles(currentPage, pageSize, sortBy, order);
+
         } catch (err) {
             console.error("Failed to toggle role status:", err.message || err);
         } finally {

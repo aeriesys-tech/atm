@@ -51,12 +51,14 @@ const Role = () => {
                 return {
                     _id: role._id,
                     index: index + 1 + (page - 1) * pageSize,
-                    role_group_name: matchedGroup ? matchedGroup.role_group_name : "N/A",
+                    role_group_id: role.role_group_id,
+                    role_group_name: matchedGroup?.role_group_name || "N/A", // 🟢 ADD THIS
                     role_code: role.role_code,
                     role_name: role.role_name,
                     status: role.status,
                 };
             });
+
 
             setRoles(mappedRows);
             setCurrentPage(response.currentPage);
@@ -74,7 +76,8 @@ const Role = () => {
             const response = await axiosWrapper("api/v1/role-groups/getRoleGroups", {
                 method: "POST",
             });
-            setRoleGroups(response.roleGroups);
+            setRoleGroups(response.role_groups);
+            fetchRoles(currentPage, pageSize, sortBy, order, response.roleGroups);
         } catch (error) {
             console.error("Failed to fetch role groups:", error.message || error);
         }
@@ -85,7 +88,7 @@ const Role = () => {
     }, []);
 
     useEffect(() => {
-        if (roleGroups.length > 0) {
+        if (roleGroups && roleGroups?.length) {
             fetchRoles(currentPage, pageSize, sortBy, order);
         }
     }, [roleGroups, currentPage, pageSize, sortBy, order]);
@@ -110,7 +113,7 @@ const Role = () => {
             name: "role_group_id",
             type: "dropdown",
             required: true,
-            options: roleGroups.map(group => ({
+            options: roleGroups?.map(group => ({
                 label: group.role_group_name,
                 value: group._id,
             })),
@@ -132,7 +135,8 @@ const Role = () => {
             });
 
             onSuccess();
-            fetchRoles();
+            fetchRoles(currentPage, pageSize, sortBy, order);
+
         } catch (err) {
             const apiErrors = err?.response?.data?.errors;
             if (apiErrors) {
@@ -150,9 +154,10 @@ const Role = () => {
     };
 
     const handleEditClick = (row) => {
+        setEditErrors({});
         setEditFormData({
             id: row._id,
-            role_group_id: roleGroups.find(g => g.role_group_name === row.role_group_name)?._id,
+            role_group_id: row.role_group_id,
             role_code: row.role_code,
             role_name: row.role_name,
             status: row.status,
@@ -178,7 +183,8 @@ const Role = () => {
             });
 
             onSuccess(); // Close modal
-            fetchRoles(); // Refresh roles
+                     fetchRoles(currentPage, pageSize, sortBy, order);
+
             setEditModalOpen(false);
         } catch (err) {
             const apiErrors = err?.response?.data?.errors;
@@ -205,8 +211,8 @@ const Role = () => {
                 method: "POST",
                 data: { id: row._id },
             });
+            fetchRoles(currentPage, pageSize, sortBy, order);
 
-            fetchRoles();
         } catch (err) {
             console.error("Failed to toggle role status:", err.message || err);
         } finally {
@@ -245,10 +251,10 @@ const Role = () => {
     return (
         <div className="tb-responsive templatebuilder-body position-relative">
             {loading && (
-        <div className="loader-overlay d-flex justify-content-center align-items-center">
-          <Loader />
-        </div>
-      )}
+                <div className="loader-overlay d-flex justify-content-center align-items-center">
+                    <Loader />
+                </div>
+            )}
             <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 <Breadcrumb title="Roles" items={breadcrumbItems} />
                 <Navbar
