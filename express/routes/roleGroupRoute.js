@@ -1,18 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const roleGroupController = require('../controllers/roleGroupController');
-// const excelMiddleware = require('../middlewares/excelMiddleware');
 const authMiddleware = require('../middlewares/authMiddleware');
-// const { checkPermission, checkAnyPermission } = require("../middlewares/permissionsMiddleware");
-const { createRoleGroup, updateRoleGroup, getRoleGroup, paginatedRoleGroups, deleteRoleGroup } = require('../validations/roleGroupValidation');
-// POST route to create a new role group
-// router.post('/role-groups/upload', excelMiddleware.single('file'), roleGroupController.bulkCreateRoleGroups);
-router.post('/createRoleGroup', authMiddleware, createRoleGroup, roleGroupController.createRoleGroup);
-router.post('/updateRoleGroup', authMiddleware, updateRoleGroup, roleGroupController.updateRoleGroup);
+
+const { add_role_group_validation, update_role_group_validation } = require('../validations/roleGroupValidation');
+const { paginateValidation, validateId } = require('../validations/commonValidation');
+const { Validate } = require('../middlewares/validationMiddleware');
+
+router.post('/createRoleGroup', authMiddleware, add_role_group_validation, roleGroupController.createRoleGroup);
+router.post('/updateRoleGroup', authMiddleware, update_role_group_validation, roleGroupController.updateRoleGroup);
+router.post('/paginateRoleGroups', authMiddleware, paginateValidation(['role_group_name', 'role_group_code']), roleGroupController.paginatedRoleGroups);
 router.post('/getRoleGroups', authMiddleware, roleGroupController.getRoleGroups);
-router.post('/paginateRoleGroups', authMiddleware, roleGroupController.getPaginatedRoleGroups);
-router.post('/getRoleGroup', authMiddleware, getRoleGroup, roleGroupController.getRoleGroup);
-router.post('/deleteRoleGroup', authMiddleware, deleteRoleGroup, roleGroupController.deleteRoleGroup);
-router.post('/destroyRoleGroup', authMiddleware, deleteRoleGroup, roleGroupController.destroyRoleGroup);
+router.post('/getRoleGroup', authMiddleware, Validate([validateId('id', 'Role group ID')]), roleGroupController.getRoleGroup);
+router.post('/deleteRoleGroup', authMiddleware, Validate([validateId('id', 'Role group  ID')]), roleGroupController.deleteRoleGroup);
+router.post('/destroyRoleGroup', authMiddleware, Validate([validateId('id', 'Role group ID')]), roleGroupController.destroyRoleGroup);
 
 module.exports = router;

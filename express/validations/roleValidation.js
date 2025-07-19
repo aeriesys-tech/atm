@@ -1,60 +1,23 @@
-const { body, param, query } = require('express-validator');
-const { Validate } = require('../middlewares/validationMiddleware');
+const { body } = require('express-validator')
+const { Validate } = require('../middlewares/validationMiddleware')
+const mongoose = require('mongoose');
+const { validateId, paginateValidation } = require('./commonValidation');
+const RoleGroup = require('../models/RoleGroup')
 
-const createRole = (req, res, next) => {
+
+const add_role_validation = (req, res, next) => {
     return Validate([
-        body("role_group_id", "Role group field is required").isString().escape().trim().exists().notEmpty(),
-        body("role_code", "Role code field is required").isString().escape().trim().exists().notEmpty(),
-        body("role_name", "Role name field is required").isString().escape().trim().exists().notEmpty(),
+        validateId('role_group_id', 'Role group ID', RoleGroup),
+        body('role_name').trim().notEmpty().withMessage('Role name is required').bail().isString().withMessage('Role name must be a string'),
+        body('role_code').trim().notEmpty().withMessage('Role code is required').bail().isString().withMessage('Role code must be a string')
     ])(req, res, next);
 };
-
-const updateRole = (req, res, next) => {
-    return Validate([
-        body("role_group_id", "Role group field is required").isString().escape().trim().exists().notEmpty(),
-        body("role_code", "Role code field is required").isString().escape().trim().exists().notEmpty(),
-        body("role_name", "Role name field is required").isString().escape().trim().exists().notEmpty(),
+const update_role_validation = (req, res, next) =>
+    Validate([
+        validateId('role_group_id', 'Role group ID', RoleGroup),
+        validateId('id', 'Role ID'),
+        body('role_name').trim().notEmpty().withMessage('Role name is required').isString().withMessage('Must be a string'),
+        body('role_code').trim().notEmpty().withMessage('Role code is required').isString().withMessage('Must be a string')
     ])(req, res, next);
-};
 
-const getRole = (req, res, next) => {
-    return Validate([
-        param("id", "Invalid role ID format").isMongoId(),
-    ])(req, res, next);
-};
-
-const deleteRole = (req, res, next) => {
-    return Validate([
-        param("id").optional().isMongoId().withMessage("Invalid role ID format"),
-        body("ids").optional().isArray().withMessage("IDs must be an array")
-            .custom(ids => ids.every(id => mongoose.Types.ObjectId.isValid(id)))
-            .withMessage("Every ID in the array must be a valid MongoDB ID"),
-    ])(req, res, next);
-};
-
-const destroyRole = (req, res, next) => {
-    return Validate([
-        param("id").optional().isMongoId().withMessage("Invalid role ID format"),
-    ])(req, res, next);
-};
-
-
-const paginatedRoles = (req, res, next) => {
-    return Validate([
-        query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
-        query("limit").optional().isInt({ min: 1 }).withMessage("Limit must be a positive integer"),
-        query("sortBy").optional().isIn(['role_name', 'role_code', 'created_at', 'updated_at']).withMessage("Invalid sort field"),
-        query("order").optional().isIn(['asc', 'desc']).withMessage("Order must be 'asc' or 'desc'"),
-        query("search").optional().isString().withMessage("Search must be a string"),
-        query("status").optional().isIn(['active', 'inactive']).withMessage("Status must be 'active' or 'inactive'"),
-    ])(req, res, next);
-};
-
-module.exports = {
-    createRole,
-    updateRole,
-    getRole,
-    deleteRole,
-    paginatedRoles,
-    destroyRole
-};
+module.exports = { add_role_validation, update_role_validation }

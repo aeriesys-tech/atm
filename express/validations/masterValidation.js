@@ -1,78 +1,89 @@
 const { body, param } = require('express-validator');
 const mongoose = require('mongoose');
 const { Validate } = require('../middlewares/validationMiddleware');
+const parameterType = require('../models/parameterType');
+const { validateId } = require('./commonValidation');
 
-const createMasterValidation = (req, res, next) => {
+const add_master_validation = (req, res, next) => {
     return Validate([
-        // Validate fields directly under the masterData object
-        body('masterData.master_name', 'Master name is required')
-            .trim().escape().exists().notEmpty(),
-        body('masterData.parameter_type_id', 'Parameter type ID is required and must be valid')
-            .custom(value => mongoose.Types.ObjectId.isValid(value)),
-        body('masterData.display_name_singular', 'Display name singular is required')
-            .trim().escape().exists().notEmpty(),
-        body('masterData.display_name_plural', 'Display name plural is required')
-            .trim().escape().exists().notEmpty(),
-        body('masterData.model_name', 'Model name is required')
-            .trim().escape().exists().notEmpty(),
-        body('masterData.order', 'Order is required and must be a number')
-            .isNumeric(),
+        validateId('masterData.parameter_type_id', 'Parameter Type ID', parameterType),
 
-        // Validate fields in the masterFieldData array
+        body("masterData.master_name", "Master name is required")
+            .isString().trim().escape().notEmpty(),
+
+        body("masterData.display_name_singular", "Display name singular is required")
+            .isString().trim().escape().notEmpty(),
+
+        body("masterData.display_name_plural", "Display name plural is required")
+            .isString().trim().escape().notEmpty(),
+
+        body("masterData.model_name", "Model name is required")
+            .isString().trim().escape().notEmpty(),
+
+        body("masterData.order", "Order is required and must be a number")
+            .isNumeric().withMessage("Order must be a number"),
+
         body('masterFieldData.*.field_name', 'Field name is required')
-            .trim().escape().exists().notEmpty(),
+            .isString().trim().escape().notEmpty(),
+
         body('masterFieldData.*.field_type', 'Field type is required')
-            .trim().escape().exists().notEmpty(),
+            .isString().trim().escape().notEmpty(),
+
         body('masterFieldData.*.display_name', 'Display name is required')
-            .trim().escape().exists().notEmpty(),
+            .isString().trim().escape().notEmpty(),
+
         body('masterFieldData.*.tooltip', 'Tooltip is required')
-            .trim().escape().exists().notEmpty(),
+            .isString().trim().escape().notEmpty(),
+
         body('masterFieldData.*.order', 'Order is required and must be a number')
-            .isNumeric(),
+            .isNumeric().withMessage("Order must be a number"),
+
         body('masterFieldData.*.required', 'Field required status must be a boolean')
-            .isBoolean(),
+            .isBoolean().withMessage("Required must be a boolean"),
+
         body('masterFieldData.*.default', 'Field default value must be a boolean')
-            .isBoolean().exists(),
+            .isBoolean().withMessage("Default must be a boolean"),
     ])(req, res, next);
 };
 
-const updateMasterValidation = (req, res, next) => {
+const update_master_validation = (req, res, next) => {
     return Validate([
-        // body('id', 'Invalid master ID').custom(value => mongoose.Types.ObjectId.isValid(value)),
-        body('id', 'Master ID must be valid')
-            .optional().custom(value => mongoose.Types.ObjectId.isValid(value)),
-        body('masterData.master_name', 'Master name is required')
-            .optional().trim().escape().notEmpty(),
-        body('masterData.parameter_type_id', 'Parameter type ID must be valid')
-            .optional().custom(value => mongoose.Types.ObjectId.isValid(value)),
-        body('masterData.display_name_singular', 'Display name singular is required')
-            .optional().trim().escape().notEmpty(),
-        body('masterData.display_name_plural', 'Display name plural is required')
-            .optional().trim().escape().notEmpty(),
-        body('masterData.model_name', 'Model name is required')
-            .optional().trim().escape().notEmpty(),
-        body('masterData.order', 'Order must be a number')
-            .optional().isNumeric(),
+        validateId('id', 'Master ID'),
+        validateId('masterData.parameter_type_id', 'Parameter Type ID', parameterType),
+        body("masterData.master_name", "Master name is required")
+            .isString().trim().escape().notEmpty(),
+        body("masterData.display_name_singular", "Display name singular is required")
+            .isString().trim().escape().notEmpty(),
+        body("masterData.display_name_plural", "Display name plural is required")
+            .isString().trim().escape().notEmpty(),
+        body("masterData.model_name", "Model name is required")
+            .isString().trim().escape().notEmpty(),
+        body("masterData.order", "Order is required and must be a number")
+            .isNumeric().withMessage("Order must be a number"),
+        body('masterFieldData.*.field_name', 'Field name is required')
+            .isString().trim().escape().notEmpty(),
 
-        // Validate fields in the masterFieldData array
-        body('masterFieldData.*.field_name', 'Field name is required for all fields')
-            .optional().trim().escape().notEmpty(),
-        body('masterFieldData.*.field_type', 'Field type is required for all fields')
-            .optional().trim().escape().notEmpty(),
-        body('masterFieldData.*.display_name', 'Display name is required for all fields')
-            .optional().trim().escape().notEmpty(),
+        body('masterFieldData.*.field_type', 'Field type is required')
+            .isString().trim().escape().notEmpty(),
+
+        body('masterFieldData.*.display_name', 'Display name is required')
+            .isString().trim().escape().notEmpty(),
+
         body('masterFieldData.*.tooltip', 'Tooltip is required')
-            .trim().escape().exists().notEmpty(),
-        body('masterFieldData.*.order', 'Order is required for all fields and must be a number')
-            .optional().isNumeric(),
+            .isString().trim().escape().notEmpty(),
+
+        body('masterFieldData.*.order', 'Order is required and must be a number')
+            .isNumeric().withMessage("Order must be a number"),
+
         body('masterFieldData.*.required', 'Field required status must be a boolean')
-            .optional().isBoolean(),
-        body('masterFieldData.*.default', 'Field default value is required and must be a boolean')
-            .optional().isBoolean().exists(),
+            .isBoolean().withMessage("Required must be a boolean"),
+
+        body('masterFieldData.*.default', 'Field default value must be a boolean')
+            .isBoolean().withMessage("Default must be a boolean"),
     ])(req, res, next);
 };
 
 module.exports = {
-    createMasterValidation,
-    updateMasterValidation
+    add_master_validation,
+    update_master_validation
 };

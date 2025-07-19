@@ -11,6 +11,7 @@ const getDynamicModel = require('../utils/getDynamicModel');
 const { typeMapping } = require('../utils/typeMapping');
 const SchemaDefinitions = mongoose.model('SchemaDefinition');
 const { logApiResponse } = require('../utils/responseService');
+const { createNotification } = require('../utils/notification');
 
 const createMaster = async (req, res) => {
     let savedMaster = null;
@@ -18,141 +19,68 @@ const createMaster = async (req, res) => {
         const { masterData, masterFieldData } = req.body;
         const { model_name } = masterData;
 
-        let validationErrors = { master: {}, masterFields: [] };
-
-        if (!masterData.master_name) {
-            validationErrors.master.master_name = "Master name is required";
-        }
-        if (!masterData.parameter_type_id || !mongoose.Types.ObjectId.isValid(masterData.parameter_type_id)) {
-            validationErrors.master.parameter_type_id = "Parameter type is required and must be valid";
-        }
-        if (!masterData.display_name_singular) {
-            validationErrors.master.display_name_singular = "Display name is required";
-        }
-        if (!masterData.display_name_plural) {
-            validationErrors.master.display_name_plural = "Display name is required";
-        }
-        if (!model_name) {
-            validationErrors.master.model_name = "Model name is required";
-        }
-
-        if (!Array.isArray(masterFieldData) || masterFieldData.length === 0) {
-            validationErrors.masterFields.push({ message: "Master field data is required" });
-        } else {
-            masterFieldData.forEach((field, index) => {
-                let fieldErrors = {};
-                if (!field.field_name) {
-                    fieldErrors.field_name = "Field name is required";
-                }
-                if (!field.field_type) {
-                    fieldErrors.field_type = "Field type is required";
-                }
-                if (!field.display_name) {
-                    fieldErrors.display_name = "Display name is required";
-                }
-                if (!field.order) {
-                    fieldErrors.order = "Order is required";
-                }
-                if (!field.tooltip) {
-                    fieldErrors.tooltip = "Tooltip is required";
-                }
-                if (field.required === undefined) {
-                    fieldErrors.required = "Field required status is required";
-                }
-                if (field.default === undefined) {
-                    fieldErrors.default = "Field default is required";
-                }
-                if (Object.keys(fieldErrors).length > 0) {
-                    validationErrors.masterFields.push({ field: `Field ${index + 1}`, errors: fieldErrors });
-                }
-            });
-        }
-
-        if (Object.keys(validationErrors.master).length > 0 || validationErrors.masterFields.length > 0) {
-            await logApiResponse(req, "Validation Error", 400, validationErrors);
-            return res.status(400).json({
-                message: "Validation Error",
-                errors: validationErrors
-            });
-        }
-
         const existingMaster = await Master.findOne({ master_name: masterData.master_name });
         if (existingMaster) {
-            const duplicateError = { master_name: "A master with this name already exists" };
-            await logApiResponse(req, "Duplicate Key Error", 409, { master: duplicateError });
-
-            return res.status(409).json({
-                message: "Duplicate Key Error",
-                errors: { "masterData.master_name": "A master with this name already exists" }
-            })
+            const errors = { 'masterData.master_name': "Master already exists" };
+            await logApiResponse(req, "Duplicate Master", 400, errors);
+            return res.status(400).json({ message: "Duplicate Master", errors });
         }
 
-        const master = new Master(masterData);
-        savedMaster = await master.save();
+        // Save master
+        const newMaster = new Master(masterData);
+        savedMaster = await newMaster.save();
 
+        // Save master fields
         const masterFieldEntries = masterFieldData.map(field => ({
             ...field,
             master_id: savedMaster._id
         }));
         const savedMasterFields = await MasterField.insertMany(masterFieldEntries);
 
+        // Build dynamic schema
         let schemaDefinition = {};
         masterFieldData.forEach(field => {
-            console.log(`Field Name: ${field.field_name}, Default Value: ${field.default}`); // Logs the default value of each field
-
             if (!typeMapping[field.field_type]) {
                 throw new Error(`Invalid type: ${field.field_type} for field: ${field.field_name}`);
             }
 
-            // Convert field.default to a boolean value before checking if it's true
-            const isDefaultTrue = field.default === true || field.default === 'true'; // Handles both boolean and string 'true'
+            const isDefaultTrue = field.default === true || field.default === 'true';
 
             schemaDefinition[field.field_name] = {
                 type: typeMapping[field.field_type],
                 required: field.required,
-                default: field.default || undefined,
-                unique: isDefaultTrue, // Unique is true only when default is true
+                default: typeof field.default !== 'undefined' ? field.default : undefined,
+                unique: isDefaultTrue,
                 index: true
             };
         });
 
-        schemaDefinition['status'] = {
-            type: Boolean,
-            required: true,
-            default: true
-        };
+        // Add common schema fields
+        schemaDefinition.status = { type: Boolean, required: true, default: true };
+        schemaDefinition.created_at = { type: Date, default: Date.now };
+        schemaDefinition.updated_at = { type: Date, default: Date.now };
+        schemaDefinition.deleted_at = { type: Date, default: null };
 
-        schemaDefinition['created_at'] = {
-            type: Date,
-            default: Date.now
-        };
+        // Handle OverwriteModelError
+        const dynamicSchema = new mongoose.Schema(schemaDefinition, {
+            versionKey: false,
+            strict: false,
+            collection: model_name
+        });
 
-        schemaDefinition['updated_at'] = {
-            type: Date,
-            default: Date.now
-        };
+        if (mongoose.models[model_name]) {
+            mongoose.deleteModel(model_name); // Ensure model is not already registered
+        }
 
-        schemaDefinition['deleted_at'] = {
-            type: Date,
-            default: null
-        };
-
-        console.log("================================================")
-        console.log(schemaDefinition)
-        console.log("================================================")
-        const dynamicSchema = new mongoose.Schema(schemaDefinition, { versionKey: false, strict: false, collection: model_name });
         mongoose.model(model_name, dynamicSchema);
-        console.log("===================== dynamicSchema ===========================")
-        console.log(dynamicSchema)
-        console.log("======================== dynamicSchema ========================")
-
         await SchemaDefinitionModel.findOneAndUpdate(
             { collectionName: model_name },
-            { schemaDefinition: schemaDefinition },
+            { schemaDefinition },
             { upsert: true, new: true }
         );
 
         const successMessage = "Master created successfully.";
+        await createNotification(req, 'Master', savedMaster._id, 'Master created successfully');
         await logApiResponse(req, successMessage, 201, {
             masterId: savedMaster._id,
             master: savedMaster,
@@ -165,38 +93,11 @@ const createMaster = async (req, res) => {
             master: savedMaster,
             masterFields: savedMasterFields
         });
-    } catch (error) {
-        console.error('Error during master creation:', error);
-        if (savedMaster && savedMaster._id) {
-            await Master.findByIdAndDelete(savedMaster._id);
-        }
 
-        let errors = {};
-        if (error.name === 'ValidationError') {
-            Object.keys(error.errors).forEach(key => {
-                errors[key] = error.errors[key].message;
-            });
-            await logApiResponse(req, "Validation Error", 400, { master: errors });
-            return res.status(400).json({
-                message: "Validation Error",
-                errors: { master: errors }
-            });
-        } else if (error.code === 11000) {
-            errors.master_name = "A master with this name already exists";
-            await logApiResponse(req, "Duplicate Key Error", 409, { master: errors });
-            return res.status(409).json({
-                message: "Duplicate Key Error",
-                errors: { master: errors }
-            });
-        } else {
-            await logApiResponse(req, "Internal Server Error", 500, { message: "An unexpected error occurred" });
-            return res.status(500).json({
-                message: "Internal Server Error",
-                errors: {
-                    message: "An unexpected error occurred"
-                }
-            });
-        }
+    } catch (error) {
+        console.error('Error:', error);
+        await logApiResponse(req, "Failed to create user", 500, { error: error.message });
+        res.status(500).json({ message: "Failed to create user", error: error.message });
     }
 };
 
@@ -243,66 +144,9 @@ async function updateDynamicSchema(collectionName, masterFieldData) {
     );
 }
 
-
 const updateMaster = async (req, res) => {
     const { id } = req.body;
     const { masterData, masterFieldData } = req.body;
-
-    let validationErrors = { master: {}, masterFields: [] };
-
-    if (!masterData.master_name) {
-        validationErrors.master.master_name = "Master name is required";
-    }
-    if (!masterData.model_name) {
-        validationErrors.master.model_name = "Model name is required";
-    }
-    if (!masterData.parameter_type_id || !mongoose.Types.ObjectId.isValid(masterData.parameter_type_id)) {
-        validationErrors.master.parameter_type_id = "Parameter type is required and must be valid";
-    }
-    if (!masterData.display_name_singular) {
-        validationErrors.master.display_name_singular = "Display name (singular) is required";
-    }
-    if (!masterData.display_name_plural) {
-        validationErrors.master.display_name_plural = "Display name (plural) is required";
-    }
-
-    if (!Array.isArray(masterFieldData) || masterFieldData.length === 0) {
-        validationErrors.masterFields.push({ message: "Master field data is required" });
-    } else {
-        masterFieldData.forEach((field, index) => {
-            let fieldErrors = {};
-            if (!field.field_name) {
-                fieldErrors.field_name = "Field name is required";
-            }
-            if (!field.field_type) {
-                fieldErrors.field_type = "Field type is required";
-            }
-            if (!field.display_name) {
-                fieldErrors.display_name = "Display name is required";
-            }
-            if (!field.tooltip) {
-                fieldErrors.tooltip = "Tooltip is required";
-            }
-            if (field.required === undefined) {
-                fieldErrors.required = "Field required status is required";
-            }
-            if (field.default === undefined) {
-                fieldErrors.default = "Field default is required";
-            }
-            if (Object.keys(fieldErrors).length > 0) {
-                validationErrors.masterFields.push({ field: `Field ${index + 1}`, errors: fieldErrors });
-            }
-        });
-    }
-
-    if (Object.keys(validationErrors.master).length > 0 || validationErrors.masterFields.length > 0) {
-        await logApiResponse(req, "Validation Error", 400, validationErrors);
-        return res.status(400).json({
-            message: "Validation Error",
-            errors: validationErrors
-        });
-    }
-
     try {
         let master = await Master.findById(id);
         if (!master) {
@@ -440,29 +284,10 @@ const insertDynamicData = async (req, res) => {
 };
 
 const updateDynamicData = async (req, res) => {
-    const { masterId, docId } = req.params; // Get masterId and docId from the URL
-    const inputData = req.body; // Incoming data to update
-    let validationErrors = {};
-
-    // Validate masterId and docId
-    if (!mongoose.Types.ObjectId.isValid(masterId)) {
-        validationErrors.masterId = "Master ID must be valid";
-    }
-    if (!mongoose.Types.ObjectId.isValid(docId)) {
-        validationErrors.docId = "Document ID must be valid";
-    }
-
-    // Check for validation errors
-    if (Object.keys(validationErrors).length > 0) {
-        await logApiResponse(req, "Validation Error", 400, validationErrors);
-        return res.status(400).json({
-            message: "Validation Error",
-            errors: validationErrors
-        });
-    }
+    const { masterId, docId } = req.body;
+    const inputData = req.body;
 
     try {
-        // Retrieve the master to get the collection name
         const master = await Master.findById(masterId);
         if (!master) {
             const notFoundError = { masterId: "Master not found" };
@@ -473,7 +298,7 @@ const updateDynamicData = async (req, res) => {
             });
         }
 
-        const collectionName = master.model_name; // Assuming the collection name is stored in `model_name`
+        const collectionName = master.model_name;
         const DynamicModel = await getDynamicModel(collectionName);
         if (!DynamicModel) {
             const modelError = { model: "Model could not be created or found" };
@@ -553,29 +378,13 @@ const updateDynamicData = async (req, res) => {
             data: doc
         });
     } catch (error) {
-        console.error('Error updating document:', error);
-
-        if (error.name === 'ValidationError') {
-            let errors = {};
-            Object.keys(error.errors).forEach(key => {
-                errors[key] = error.errors[key].message;
-            });
-            await logApiResponse(req, "Validation Error", 400, errors);
-            return res.status(400).json({
-                message: "Validation Error",
-                errors
-            });
-        } else {
-            await logApiResponse(req, "Error updating document", 500, { message: error.message });
-            return res.status(500).json({
-                message: "Error updating document",
-                error: error.toString()
-            });
-        }
+        console.error('Error:', error);
+        await logApiResponse(req, "Failed to create user", 500, { error: error.message });
+        res.status(500).json({ message: "Failed to create user", error: error.message });
     }
 };
 
-const toggleSoftDeleteMaster = async (req, res) => {
+const deleteMaster = async (req, res) => {
     try {
         const { id, ids } = req.body;
 
@@ -619,8 +428,9 @@ const toggleSoftDeleteMaster = async (req, res) => {
         } else if (id) {
             // Toggle soft delete for a single master
             const updatedMaster = await toggleSoftDelete(id);
-
-            await logApiResponse(req, `Master ${updatedMaster.deleted_at ? 'soft-deleted' : 'restored'} successfully`, 200, updatedMaster);
+            const message = updatedMaster.deleted_at ? 'Master soft-deleted successfully' : 'Master restored successfully'
+            await createNotification(req, 'Master', id, message);
+            await logApiResponse(req, message, 200, updatedMaster);
             res.status(200).json(updatedMaster);
         } else {
             const errorResponse = { message: 'No ID or IDs provided' };
@@ -1238,7 +1048,7 @@ module.exports = {
     getAllSchemaDefinitions,
     getCollectionData,
     getMasters,
-    toggleSoftDeleteMaster,
+    deleteMaster,
     toggleSoftDeleteDynamicData,
     getPaginatedDynamicData,
     downloadExcel,

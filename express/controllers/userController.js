@@ -3,75 +3,30 @@ const bcrypt = require('bcrypt');
 const Role = require('../models/Role');
 const Department = require('../models/department');
 const mongoose = require('mongoose');
-
+const { Op } = require("sequelize");
+const redisClient = require("../config/redisConfig");
 const { logApiResponse } = require('../utils/responseService');
+const { createNotification } = require('../utils/notification');
 
 const createUser = async (req, res) => {
-	const { name, username, email, password, mobile_no, role_id, department_id } = req.body;
-	const avatarUrl = req.file ? req.file.path : null;
-
-	let validationErrors = {};
-
-	// Validate required fields
-	if (!name) {
-		validationErrors.name = "Name is required";
-	}
-	if (!email) {
-		validationErrors.email = "Email is required";
-	}
-	if (!password) {
-		validationErrors.password = "Password is required";
-	}
-	if (!mobile_no) {
-		validationErrors.mobile_no = "Mobile number is required";
-	} else if (!/^\d{10}$/.test(mobile_no)) {
-		validationErrors.mobile_no = "Mobile number must be exactly 10 digits";
-	}
-	if (!role_id || !mongoose.Types.ObjectId.isValid(role_id)) {
-		validationErrors.role_id = "Role ID is required and must be valid";
-	}
-	if (!department_id || !mongoose.Types.ObjectId.isValid(department_id)) {
-		validationErrors.department_id = "Department ID is required and must be valid";
-	}
-
-	// If there are validation errors, return them
-	if (Object.keys(validationErrors).length > 0) {
-		await logApiResponse(req, "Validation Error", 400, validationErrors);
-		return res.status(400).json({
-			message: "Validation Error",
-			errors: validationErrors
-		});
-	}
-
 	try {
-		// Check if a user with the same email already exists
-		const existingUserByEmail = await User.findOne({ email });
-		if (existingUserByEmail) {
-			validationErrors.email = "User with this email already exists";
-		}
+		const { name, username, email, password, mobile_no, role_id, department_id } = req.body;
+		const avatarUrl = req.file ? req.file.path : null;
 
-		// Check if a user with the same mobile number already exists
-		if (mobile_no) {
-			const existingUserByMobile = await User.findOne({ mobile_no });
-			if (existingUserByMobile) {
-				validationErrors.mobile_no = "User with this mobile number already exists";
-			}
-		}
 
-		// If there are validation errors after database checks, return them
-		if (Object.keys(validationErrors).length > 0) {
-			await logApiResponse(req, "Duplicate Key Error", 409, validationErrors);
-			return res.status(409).json({
-				message: "Duplicate Key Error",
-				errors: validationErrors
-			});
-		}
+		const user = await User.findOne({
+			$or: [{ email }, { username }]
+		});
+		if (user) {
+			let errors = {};
+			if (user.username === username) errors.username = "Username already exists";
+			if (user.email === email) errors.email = "Email already exists";
 
-		// Hash the password
+			await logApiResponse(req, "Duplicate User", 400, errors);
+			return res.status(400).json({ message: "Duplicate User", errors });
+		}
 		const hashedPassword = await bcrypt.hash(password, 10);
-
-		// Create a new user document
-		const newUser = new User({
+		const newUser = await User.create({
 			name,
 			username,
 			email,
@@ -81,178 +36,55 @@ const createUser = async (req, res) => {
 			department_id,
 			avatar: avatarUrl
 		});
-
-		// Save the new user to the database
-		await newUser.save();
+		await redisClient.del('users');
+		await createNotification(req, 'User', newUser._id, 'User created successfully');
 		await logApiResponse(req, "User created successfully", 201, newUser);
-		// Send a successful response back
 		res.status(201).json({
-			message: "User created successfully",
-			data: newUser
+			message: "User created successfully", data: newUser
 		});
 	} catch (error) {
-		console.error("Failed to create user:", error);
-
-		let errors = {};
-
-		if (error.name === 'ValidationError') {
-			Object.keys(error.errors).forEach(key => {
-				errors[key] = error.errors[key].message;
-			});
-			await logApiResponse(req, "Validation Error", 400, errors);
-			res.status(400).json({
-				message: "Validation Error",
-				errors
-			});
-		} else if (error.code === 11000) {
-			if (error.keyPattern && error.keyPattern.email) {
-				errors.email = "User with this email already exists";
-			}
-			if (error.keyPattern && error.keyPattern.mobile_no) {
-				errors.mobile_no = "User with this mobile number already exists";
-			}
-			await logApiResponse(req, "Duplicate Key Error", 409, errors);
-			res.status(409).json({
-				message: "Duplicate Key Error",
-				errors
-			});
-		} else {
-			await logApiResponse(req, "Internal Server Error", 500, { message: "An unexpected error occurred" });
-			res.status(500).json({
-				message: "Internal Server Error",
-				errors: {
-					message: "An unexpected error occurred"
-				}
-			});
-		}
+		await logApiResponse(req, "Failed to create user", 500, { error: error.message });
+		res.status(500).json({ message: "Failed to create user", error: error.message });
 	}
 };
+
 const updateUser = async (req, res) => {
-	const { id, name, username, email, mobile_no, role_id, department_id } = req.body;
-	const avatarUrl = req.file ? req.file.location : null;
-
-	let validationErrors = {};
-
-	// Validate required fields
-	if (!name) {
-		validationErrors.name = "Name is required";
-	}
-	if (!email) {
-		validationErrors.email = "Email is required";
-	}
-	if (!mobile_no) {
-		validationErrors.mobile_no = "Mobile number is required";
-	} else if (!/^\d{10}$/.test(mobile_no)) {
-		validationErrors.mobile_no = "Mobile number must be exactly 10 digits";
-	}
-	if (!role_id || !mongoose.Types.ObjectId.isValid(role_id)) {
-		validationErrors.role_id = "Role ID is required and must be valid";
-	}
-	if (!department_id || !mongoose.Types.ObjectId.isValid(department_id)) {
-		validationErrors.department_id = "Department ID is required and must be valid";
-	}
-
-	// If there are validation errors, return them
-	if (Object.keys(validationErrors).length > 0) {
-		await logApiResponse(req, "Validation Error", 400, validationErrors);
-		return res.status(400).json({
-			message: "Validation Error",
-			errors: validationErrors
-		});
-	}
-
 	try {
-		// Check if a user with the same email already exists
-		const existingUserByEmail = await User.findOne({ email, _id: { $ne: id } });
-		if (existingUserByEmail) {
-			validationErrors.email = "User with this email already exists";
+		const { id, name, username, email, mobile_no, role_id, department_id } = req.body;
+		const avatarUrl = req.file ? req.file.location : null;
+
+		const existingUser = await User.findById(id);
+		if (!existingUser) {
+			return logApiResponse(req, "User not found", 404, { id: "User not found" }) &&
+				res.status(404).json({ message: "User not found", errors: { id: "User  not found" } });
 		}
 
-		// Check if a user with the same mobile number already exists
-		if (mobile_no) {
-			const existingUserByMobile = await User.findOne({ mobile_no, _id: { $ne: id } });
-			if (existingUserByMobile) {
-				validationErrors.mobile_no = "User with this mobile number already exists";
-			}
+		const [duplicateUserName, duplicateEmail] = await Promise.all([
+			User.findOne({ username, _id: { $ne: id } }),
+			User.findOne({ email, _id: { $ne: id } })
+		]);
+
+		if (duplicateUserName || duplicateEmail) {
+			const errors = {};
+			if (duplicateUserName) errors.username = "Username already exists";
+			if (duplicateEmail) errors.email = "Email already exists";
+			await createNotification(req, 'User', id, 'User updated successfully');
+			return logApiResponse(req, "Validation Error", 400, errors) &&
+				res.status(400).json({ message: "Validation Error", errors });
 		}
-
-		// If there are validation errors after database checks, return them
-		if (Object.keys(validationErrors).length > 0) {
-			await logApiResponse(req, "Duplicate Key Error", 409, validationErrors);
-			return res.status(409).json({
-				message: "Duplicate Key Error",
-				errors: validationErrors
-			});
-		}
-
-		// Find the user by ID and update the user document
-		const updatedUser = await User.findByIdAndUpdate(id, {
-			name,
-			username,
-			email,
-			mobile_no,
-			role_id,
-			department_id,
-			avatar: avatarUrl,
-			updated_at: Date.now()
-		}, { new: true, runValidators: true });
-
-		if (!updatedUser) {
-			await logApiResponse(req, "Validation Error", 404, { id: "User not found" });
-			return res.status(404).json({
-				message: "Validation Error",
-				errors: { id: "User not found" }
-			});
-		}
-
-		// Log the successful response
+		await User.findByIdAndUpdate(id, { name, username, email, mobile_no, role_id, department_id, avatar: avatarUrl, updated_at: Date.now() });
+		const updatedUser = await User.findById(id);
+		await createNotification(req, 'User', id, 'User updated successfully');
 		await logApiResponse(req, "User updated successfully", 200, updatedUser);
+		return res.status(200).json({ message: "User updated successfully", data: updatedUser });
 
-		// Send a successful response back with updated user data
-		res.status(200).json({
-			message: "User updated successfully",
-			data: updatedUser
-		});
 	} catch (error) {
-		console.error("Failed to update user:", error);
-
-		let errors = {};
-
-		if (error.name === 'ValidationError') {
-			Object.keys(error.errors).forEach(key => {
-				errors[key] = error.errors[key].message;
-			});
-			await logApiResponse(req, "Validation Error", 400, errors);
-			res.status(400).json({
-				message: "Validation Error",
-				errors
-			});
-		} else if (error.code === 11000) {
-			if (error.keyPattern && error.keyPattern.email) {
-				errors.email = "User with this email already exists";
-			}
-			if (error.keyPattern && error.keyPattern.mobile_no) {
-				errors.mobile_no = "User with this mobile number already exists";
-			}
-			await logApiResponse(req, "Duplicate Key Error", 409, errors);
-			res.status(409).json({
-				message: "Duplicate Key Error",
-				errors
-			});
-		} else {
-			await logApiResponse(req, "Internal Server Error", 500, { message: "An unexpected error occurred" });
-			res.status(500).json({
-				message: "Internal Server Error",
-				errors: {
-					message: "An unexpected error occurred"
-				}
-			});
-		}
+		await logApiResponse(req, "Failed to create role", 500, { error: error.message });
+		res.status(500).json({ message: "Failed to create role", error: error.message });
 	}
 };
 
-
-const getAllUsers = async (req, res) => {
+const getUsers = async (req, res) => {
 	try {
 		const users = await User.find({ status: true }, '-password')
 		await logApiResponse(req, "Users retrieved successfully", 200, users);
@@ -270,7 +102,7 @@ const getAllUsers = async (req, res) => {
 	}
 };
 
-const getUserById = async (req, res) => {
+const getUser = async (req, res) => {
 	const { id } = req.body; // Get the user ID from the URL parameter
 
 	try {
@@ -313,7 +145,7 @@ const getUserById = async (req, res) => {
 
 
 
-const toggleSoftDeleteUser = async (req, res) => {
+const deleteUser = async (req, res) => {
 	try {
 		const { id, ids } = req.body;
 
@@ -353,13 +185,10 @@ const toggleSoftDeleteUser = async (req, res) => {
 		} else if (id) {
 			// Toggle soft delete for a single user
 			const updatedUser = await toggleSoftDelete(id);
-
-			await logApiResponse(req, updatedUser.deleted_at ? 'User soft-deleted successfully' : 'User restored successfully', 200, updatedUser);
-
-			res.status(200).json({
-				message: updatedUser.deleted_at ? 'User soft-deleted successfully' : 'User restored successfully',
-				data: updatedUser
-			});
+			const message = updatedUser.deleted_at ? 'User soft-deleted successfully' : 'User restored successfully'
+			await createNotification(req, 'User', id, message);
+			await logApiResponse(req, message, 200, updatedUser);
+			res.status(200).json({ message, data: updatedUser });
 		} else {
 			await logApiResponse(req, 'No ID or IDs provided', 400, {});
 
@@ -382,7 +211,7 @@ const toggleSoftDeleteUser = async (req, res) => {
 };
 
 
-const getPaginatedUsers = async (req, res) => {
+const paginatedUsers = async (req, res) => {
 	const {
 		page = 1,
 		limit = 10,
@@ -470,6 +299,7 @@ const destroyUser = async (req, res) => {
 		}
 
 		await User.deleteOne({ _id: id });
+		await createNotification(req, 'User', id, 'User is permanently deleted');
 		await logApiResponse(req, 'User is permanently deleted', 200, true, null, res);
 		res.status(200).json({ message: 'user permanently deleted' });
 	} catch (error) {
@@ -481,9 +311,9 @@ const destroyUser = async (req, res) => {
 module.exports = {
 	createUser,
 	updateUser,
-	getAllUsers,
-	getUserById,
-	toggleSoftDeleteUser,
-	getPaginatedUsers,
+	getUsers,
+	getUser,
+	deleteUser,
+	paginatedUsers,
 	destroyUser
 }

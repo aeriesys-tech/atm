@@ -1,18 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const departmentController = require('../controllers/departmentController');
-// const excelMiddleware = require('../middlewares/excelMiddleware');
 const authMiddleware = require('../middlewares/authMiddleware');
-// const { checkPermission, checkAnyPermission } = require("../middlewares/permissionsMiddleware");
-const { createDepartment, updateDepartment, getDepartment, paginatedDepartments, deleteDepartment, destroyDepartment } = require('../validations/departmentValidation');
-// POST route to create a new role group
-// router.post('/role-groups/upload', excelMiddleware.single('file'), roleGroupController.bulkCreateRoleGroups);
-router.post('/createDepartment', authMiddleware, createDepartment, departmentController.createDepartment);
-router.post('/updateDepartment', authMiddleware, updateDepartment, departmentController.updateDepartment);
+
+const { add_department_validation, update_department_validation } = require('../validations/departmentValidation');
+const { paginateValidation, validateId } = require('../validations/commonValidation');
+const { Validate } = require('../middlewares/validationMiddleware');
+
+router.post('/createDepartment', authMiddleware, add_department_validation, departmentController.createDepartment);
+router.post('/updateDepartment', authMiddleware, update_department_validation, departmentController.updateDepartment);
+router.post('/paginateDepartments', authMiddleware, paginateValidation(['department_name', 'department_code']), departmentController.paginatedDepartments);
 router.post('/getDepartments', authMiddleware, departmentController.getDepartments);
-router.post('/paginateDepartments', authMiddleware, departmentController.paginatedDepartments);
-router.post('/getDepartment', authMiddleware, getDepartment, departmentController.getDepartment);
-router.post('/deleteDepartment', authMiddleware, deleteDepartment, departmentController.deleteDepartment);
-router.post('/destroyDepartment', authMiddleware, destroyDepartment, departmentController.destroyDepartment);
+router.post('/getDepartment', authMiddleware, Validate([validateId('id', 'Department ID')]), departmentController.getDepartment);
+router.post('/deleteDepartment', authMiddleware, Validate([validateId('id', 'Department  ID')]), departmentController.deleteDepartment);
+router.post('/destroyDepartment', authMiddleware, Validate([validateId('id', 'Department ID')]), departmentController.destroyDepartment);
 
 module.exports = router;

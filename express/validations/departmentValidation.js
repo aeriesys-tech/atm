@@ -1,59 +1,20 @@
-const { body, param, query } = require('express-validator');
-const { Validate } = require('../middlewares/validationMiddleware');
+const { body } = require('express-validator')
+const { Validate } = require('../middlewares/validationMiddleware')
+const mongoose = require('mongoose');
+const { validateId } = require('./commonValidation');
 
-const createDepartment = (req, res, next) => {
+
+const add_department_validation = (req, res, next) => {
     return Validate([
-        body("department_code", "department code field is required").isString().escape().trim().exists().notEmpty(),
-        body("department_name", "department name field is required").isString().escape().trim().exists().notEmpty(),
+        body('department_name').trim().notEmpty().withMessage('Department name is required').bail().isString().withMessage('Department name must be a string'),
+        body('department_code').trim().notEmpty().withMessage('Department code is required').bail().isString().withMessage('Department code must be a string')
     ])(req, res, next);
 };
-
-const updateDepartment = (req, res, next) => {
-    return Validate([
-        body("id", "department id field is required").isString().escape().trim().exists().notEmpty(),
-        body("department_code", "department code field is required").isString().escape().trim().exists().notEmpty(),
-        body("department_name", "department name field is required").isString().escape().trim().exists().notEmpty(),
+const update_department_validation = (req, res, next) =>
+    Validate([
+        validateId('id', 'Department ID'),
+        body('department_name').trim().notEmpty().withMessage('Department name is required').isString().withMessage('Department Must be a string'),
+        body('department_code').trim().notEmpty().withMessage('Department code is required').isString().withMessage('Department  Must be a string')
     ])(req, res, next);
-};
 
-const getDepartment = (req, res, next) => {
-    return Validate([
-        param("id", "Invalid department ID format").isMongoId(),
-    ])(req, res, next);
-};
-
-const deleteDepartment = (req, res, next) => {
-    return Validate([
-        param("id").optional().isMongoId().withMessage("Invalid department ID format"),
-        body("ids").optional().isArray().withMessage("IDs must be an array")
-            .custom(ids => ids.every(id => mongoose.Types.ObjectId.isValid(id)))
-            .withMessage("Every ID in the array must be a valid MongoDB ID"),
-    ])(req, res, next);
-};
-
-const destroyDepartment = (req, res, next) => {
-    return Validate([
-        param("id").optional().isMongoId().withMessage("Invalid department ID format"),
-    ])(req, res, next);
-};
-
-
-const paginatedDepartments = (req, res, next) => {
-    return Validate([
-        query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
-        query("limit").optional().isInt({ min: 1 }).withMessage("Limit must be a positive integer"),
-        query("sortBy").optional().isIn(['department_name', 'department_code', 'created_at', 'updated_at']).withMessage("Invalid sort field"),
-        query("order").optional().isIn(['asc', 'desc']).withMessage("Order must be 'asc' or 'desc'"),
-        query("search").optional().isString().withMessage("Search must be a string"),
-        query("status").optional().isIn(['active', 'inactive']).withMessage("Status must be 'active' or 'inactive'"),
-    ])(req, res, next);
-};
-
-module.exports = {
-    createDepartment,
-    updateDepartment,
-    getDepartment,
-    deleteDepartment,
-    paginatedDepartments,
-    destroyDepartment
-};
+module.exports = { add_department_validation, update_department_validation }
