@@ -4,14 +4,16 @@ const userController = require('../controllers/userController');
 const authMiddleware = require('../middlewares/authMiddleware');
 // const { checkPermission } = require("../middlewares/permissionsMiddleware");
 const { upload } = require('../middlewares/multerMiddleware');
-const { destroyUser } = require('../validations/userValidation');
+const { add_user_validation, update_user_validation } = require('../validations/userValidation');
+const { paginateValidation, validateId } = require('../validations/commonValidation');
+const { Validate } = require('../middlewares/validationMiddleware');
 
-router.post('/createUser', authMiddleware, upload.single('avatar'), userController.createUser);
-router.post('/updateUser', authMiddleware, upload.single('avatar'), userController.updateUser);
-router.post('/getUsers', authMiddleware, userController.getAllUsers);
-router.post('/getUser', authMiddleware, userController.getUserById);
-router.post('/deleteUser', authMiddleware, userController.toggleSoftDeleteUser);
-router.post('/paginateUsers', authMiddleware, userController.getPaginatedUsers);
-router.post('/destroyUser', authMiddleware, destroyUser, userController.destroyUser);
+router.post('/createUser', authMiddleware, upload.single('avatar'), add_user_validation, userController.createUser);
+router.post('/updateUser', authMiddleware, upload.single('avatar'), update_user_validation, userController.updateUser);
+router.post('/paginateUsers', authMiddleware, paginateValidation(['username', 'email', 'role_id']), userController.paginatedUsers);
+router.post('/getUsers', authMiddleware, userController.getUsers);
+router.post('/getUser', authMiddleware, Validate([validateId('id', 'User ID')]), userController.getUser);
+router.post('/deleteUser', authMiddleware, Validate([validateId('id', 'User ID')]), userController.deleteUser);
+router.post('/destroyUser', authMiddleware, Validate([validateId('id', 'Role ID')]), userController.destroyUser);
 
 module.exports = router;

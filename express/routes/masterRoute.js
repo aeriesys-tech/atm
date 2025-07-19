@@ -4,25 +4,27 @@ const masterController = require('../controllers/masterController');
 // const uploadExcelMiddleware = require('../middlewares/uploadExcelMiddleware');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { dynamicTableValidation, dynamicTableUpdateValidation } = require('../validations/dynamicTableValidation');
-const { createMasterValidation, updateMasterValidation } = require('../validations/masterValidation');
+const { add_master_validation, update_master_validation } = require('../validations/masterValidation');
+const { Validate } = require('../middlewares/validationMiddleware');
+const { paginateValidation, validateId } = require('../validations/commonValidation');
 // const { checkPermission, checkAnyPermission } = require("../middlewares/permissionsMiddleware");
 
 // POST route to create a new user
 // router.post('/dynamic-data/:masterId/paginate', authMiddleware, masterController.getPaginatedDynamicData);
 
-router.post('/createMaster', authMiddleware, createMasterValidation, masterController.createMaster);
-router.post('/updateMaster', authMiddleware, masterController.updateMaster);
+router.post('/createMaster', authMiddleware, add_master_validation, masterController.createMaster);
+router.post('/updateMaster', authMiddleware, update_master_validation, masterController.updateMaster);
 
 router.post('/masters/add', authMiddleware, dynamicTableValidation, masterController.insertDynamicData);
-// router.post('/masters/:masterId/update/:docId', authMiddleware, dynamicTableUpdateValidation, checkPermission("masters.update"), masterController.updateDynamicData);
+router.post('/masters/update', authMiddleware, dynamicTableUpdateValidation, masterController.updateDynamicData);
 // router.post('/masters/:masterId/add', masterController.insertDynamicData);
 
-router.post('/deleteMaster', authMiddleware, masterController.toggleSoftDeleteMaster);
+router.post('/deleteMaster', authMiddleware, Validate([validateId('id', 'Master ID')]), masterController.deleteMaster);
 
 // router.post('/masterfields-delete/:masterId/:docId', authMiddleware, checkPermission("masters.delete"), masterController.toggleSoftDeleteDynamicData);
 // router.post('/restore-master/:id', masterController.restoreMaster);
 
-router.post('/paginateMasters', authMiddleware, masterController.paginatedMasters);
+router.post('/paginateMasters', authMiddleware, paginateValidation(['master_name', 'display_name_singular', 'display_name_plural']), masterController.paginatedMasters);
 
 
 // router.post('/schema-definitions', authMiddleware, checkPermission("masters.view"), masterController.getAllSchemaDefinitions);

@@ -4,7 +4,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-const bodyParser = require('body-parser');
 
 const apiLogger = require('./middlewares/apiLogger');
 const initializeDynamicModels = require('./utils/initializeDynamicModels');
@@ -14,7 +13,7 @@ const app = express();
 
 // Environment variables
 const PORT = process.env.PORT || 8080;
-const URL = process.env.APP_URL || 'http://192.168.29.247';
+const URL = process.env.APP_URL || 'http://192.168.0.217';
 
 // CORS configuration 
 const corsOptions = {
@@ -25,8 +24,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware
-app.use(bodyParser.json({ limit: '500mb' }));
-app.use(bodyParser.urlencoded({ limit: '500mb', extended: true }));
+app.use(express.json({ limit: '500mb' }))
+app.use(express.urlencoded({ limit: '500mb', extended: true }))
 app.use(apiLogger);
 
 // Serve uploads directory
@@ -36,7 +35,8 @@ app.use("/uploads", express.static("uploads"));
 app.use('/api/v1', router);
 
 // Serve React frontend (if deployed together)
-app.use(express.static(path.join(__dirname, '../react/build')));
+const reactPath = path.join(__dirname, '../react/dist')
+app.use(express.static(reactPath))
 // app.get('*', (req, res) => {
 //     res.sendFile(path.join(__dirname, '../react/build', 'index.html'));
 // });

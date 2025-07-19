@@ -5,7 +5,6 @@ const roleSchema = new Schema({
     role_code: {
         type: String,
         required: [true, 'Role code is required'],
-        unique: true,
         trim: true,
         index: true,
     },
@@ -14,7 +13,6 @@ const roleSchema = new Schema({
         required: [true, 'Role name is required'],
         trim: true,
         maxlength: 50,
-        unique: true,
         index: true,
     },
     role_group_id: {
