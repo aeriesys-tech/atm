@@ -6,6 +6,7 @@ import Role from "../src/pages/userSettings/Roles";
 import Department from "../src/pages/userSettings/Departments";
 import User from "../src/pages/userSettings/user/Users";
 import UserForm from "../src/pages/userSettings/user/UserForm";
+import Notification from "../src/pages/utilities/Notification";
 
 const protectedRoutes = [
   {
@@ -22,28 +23,32 @@ const protectedRoutes = [
   },
   {
     path: "/roleGroup",
-    element: <RoleGroup/>
+    element: <RoleGroup />
   },
-    {
+  {
     path: "/roles",
-    element: <Role/>
+    element: <Role />
   },
-   {
+  {
     path: "/departments",
-    element: <Department/>
+    element: <Department />
   },
   {
     path: "/users",
-    element: <User/>
+    element: <User />
   },
-    {
-        path: "/users/add",
-        element: <UserForm mode="add" />,
-      },
-      {
-        path: "/users/edit/:id",
-        element: <UserForm mode="edit" />,
-      }
+  {
+    path: "/notifications",
+    element: <Notification />
+  },
+  {
+    path: "/users/add",
+    element: <UserForm mode="add" />,
+  },
+  {
+    path: "/users/edit/:id",
+    element: <UserForm mode="edit" />,
+  }
 ];
 
 export default protectedRoutes;

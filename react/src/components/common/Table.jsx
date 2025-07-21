@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
 import Pagination from '../general/Pagination';
 import Modal from './Modal';
-import editicon from '../../../src/assets/icons/edit.svg'
-import deleteicon from '../../../src/assets/icons/trash.svg'
-function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, onSortChange, onEdit, onToggleStatus, onDelete }) {
-
+import editicon from '../../../src/assets/icons/edit.svg';
+import deleteicon from '../../../src/assets/icons/trash.svg';
+import eyeicon from '../../../src/assets/icons/Component 26.svg'
+function Table({
+  headers = [],
+  rows = [],
+  paginationProps = {},
+  sortBy,
+  order,
+  onSortChange,
+  onEdit,
+  onToggleStatus,
+  onDelete,
+  onView
+}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState('');
 
@@ -36,15 +47,28 @@ function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, o
                         onSortChange(header.key, nextOrder);
                       }
                     }}
-                    style={{ cursor: header.sortable ? 'pointer' : 'default', whiteSpace: 'nowrap' }}
+                    style={{
+                      cursor: header.sortable ? 'pointer' : 'default',
+                      whiteSpace: 'nowrap'
+                    }}
                   >
                     <span className="d-inline-flex align-items-center gap-1">
                       {header.label}
                       {header.sortable && header.key && (
                         isSorted ? (
-                          <i className={`fas ${order === 'asc' ? 'fa-angle-up' : 'fa-angle-down'} text-dark`} />
+                          <i
+                            className={`fas ${order === 'asc' ? 'fa-angle-up' : 'fa-angle-down'} text-dark`}
+                          />
                         ) : (
-                          <span style={{ fontSize: '10px', color: '#ccc', display: 'flex', flexDirection: 'column', lineHeight: '10px' }}>
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              color: '#ccc',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              lineHeight: '10px'
+                            }}
+                          >
                             <i className="fas fa-angle-up" />
                             <i className="fas fa-angle-down" />
                           </span>
@@ -54,8 +78,6 @@ function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, o
                   </th>
                 );
               })}
-
-
             </tr>
           </thead>
           <tbody>
@@ -64,7 +86,7 @@ function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, o
                 <tr key={index}>
                   {headers.map((header, hIndex) => (
                     <td key={hIndex}>
-                      {header.key === "status" ? (
+                      {header.key === 'status' ? (
                         <span className="align-content-center" style={{ paddingTop: 6 }}>
                           <label className="switch switch1">
                             <input
@@ -75,32 +97,51 @@ function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, o
                             <span className="slider slider1 round" />
                           </label>
                         </span>
-                      ) : header.key === "action" ? (
+                      ) : header.key === 'action' ? (
                         <span className="d-flex gap-2 justify-content-center">
-                           {row.status ? (
-    <a
-      onClick={(e) => {
-        e.preventDefault();
-        onEdit(row);
-      }}
-      title="Edit"
-    >
-      <img src={editicon} alt="Edit" style={{ cursor: "pointer" }} />
-    </a>
-  ) : (
-    <img
-      src={editicon}
-      alt="Edit Disabled"
-      style={{ opacity: 0.5, cursor: "not-allowed" }}
-      title="Inactive roles cannot be edited"
-    />
-  )}
+                          {/* View Button */}
+                          <a
+                            onClick={(e) => {
+                              e.preventDefault();
+                              onView?.(row);
+                              handleViewClick(row);
+                            }}
+                            title="View"
+                          >
+                            <img src={eyeicon} alt="Edit" style={{ cursor: 'pointer', width: '28px' }} />
+
+                          </a>
+
+                          {/* Edit Button */}
+                          {row.status ? (
+                            <a
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onEdit(row);
+                              }}
+                              title="Edit"
+                            >
+                              <img src={editicon} alt="Edit" style={{ cursor: 'pointer' }} />
+                            </a>
+                          ) : (
+                            <img
+                              src={editicon}
+                              alt="Edit Disabled"
+                              style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                              title="Inactive roles cannot be edited"
+                            />
+                          )}
+
+                          {/* Delete Button */}
                           <a
                             onClick={(e) => {
                               e.preventDefault();
                               onDelete(row);
                             }}
-                          ><img src={deleteicon} alt="Delete" /></a>
+                            title="Delete"
+                          >
+                            <img src={deleteicon} alt="Delete" />
+                          </a>
                         </span>
                       ) : (
                         row[header.key]
@@ -117,24 +158,26 @@ function Table({ headers = [], rows = [], paginationProps = {}, sortBy, order, o
               </tr>
             )}
           </tbody>
-
-
         </table>
-
-        {/* ✅ Pass dynamic pagination props */}
         <Pagination {...paginationProps} totalItems={paginationProps.totalItems} />
       </div>
 
       {/* Optional View Modal */}
-      {isModalOpen && (
+      {isModalOpen && selectedRow && (
         <Modal
           onClose={handleCloseModal}
-          title="View Master"
-          labels={[]}
-          values={{ rowData: selectedRow }}
-          errors={{}}
-          onChange={() => { }}
+          title="View Notification"
+          fields={[
+            { label: 'User ID', name: 'user_id' },
+            { label: 'Module Name', name: 'module_name' },
+            { label: 'Notification', name: 'notification' },
+            { label: 'Date Time', name: 'date_time' },
+            { label: 'Timestamp', name: 'timestamp' },
+          ]}
+          values={selectedRow}
+          displayOnly={true}
         />
+
       )}
     </div>
   );

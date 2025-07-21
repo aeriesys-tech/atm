@@ -9,26 +9,32 @@ function Modal({
     fields = [],
     onChange,
     values = {},
-    setValues = () => {},
+    setValues = () => { },
     errors = {},
-    setErrors = () => {},
+    setErrors = () => { },
     title,
     submitButtonLabel = "SUBMIT",
-    onSuccess = () => {}
+    onSuccess = () => { },
+    displayOnly = false // ✅ NEW PROP
 }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(values, setErrors, onSuccess);
     };
 
-    // ✅ Clear values & errors when modal mounts
-   useEffect(() => {
-    if (!values?.id) { // only reset if adding new
-        setValues({});
-        setErrors({});
-    }
-}, []);
+    useEffect(() => {
+        if (!values?.id) {
+            setValues({});
+            setErrors({});
+        }
+    }, []);
 
+    const formatDisplayValue = (value) => {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (!isNaN(date)) return date.toLocaleString();
+        return value.toString();
+    };
 
     return (
         <div className="modal-overlay" onClick={onClose}
@@ -74,7 +80,12 @@ function Modal({
                     <div className="addunit-form">
                         {fields.map((field, index) => (
                             <div key={index} className="mb-3">
-                                {field.type === "dropdown" ? (
+                                {displayOnly ? (
+                                    <div>
+                                        <label style={{ fontWeight: 'bold' }}>{field.label}:</label>
+                                        <div>{formatDisplayValue(values[field.name])}</div>
+                                    </div>
+                                ) : field.type === "dropdown" ? (
                                     <Dropdown
                                         label={field.label}
                                         options={field.options || []}
@@ -104,15 +115,17 @@ function Modal({
 
                     <div className="addunit-card-footer d-flex gap-2">
                         <Button
-                            name="DISCARD"
+                            name={displayOnly ? "CLOSE" : "DISCARD"}
                             className="discard-btn"
                             onClick={onClose}
                         />
-                        <Button
-                            name={submitButtonLabel}
-                            type="submit"
-                            className="update-btn"
-                        />
+                        {!displayOnly && (
+                            <Button
+                                name={submitButtonLabel}
+                                type="submit"
+                                className="update-btn"
+                            />
+                        )}
                     </div>
                 </form>
             </div>
@@ -121,4 +134,3 @@ function Modal({
 }
 
 export default Modal;
-

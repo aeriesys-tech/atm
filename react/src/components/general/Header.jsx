@@ -48,46 +48,62 @@ import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
 import { clearAllStorage } from '../../../services/TokenService';
-import { clearUser, setUser } from '../../redux/user/UserSlice';
+import { clearUser, setNotificationCount, setUser } from '../../redux/user/UserSlice';
+import axiosWrapper from '../../../services/AxiosWrapper';
 
 
 function Header() {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubMenu, setOpenSubMenu] = useState(null);
+    // const [notificationCount, setNotificationCount] = useState(null);
     const location = useLocation();
     const dropdownRef = useRef(null);
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
     const navigate = useNavigate();
     const assetsRef = useRef();
-
+    const notificationCount = useSelector((state) => state.user.notificationCount);
+    console.log(notificationCount)
     useEffect(() => {
         setOpenMenu(null);
         setOpenSubMenu(null);
         setShowProfileMenu(false);
     }, [location]);
-useEffect(() => {
-    const handleClickOutside = (e) => {
-        const clickedInside = dropdownRef.current?.contains(e.target);
-        const isLogoutButton = e.target.closest("button.dropdown-item");
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            const clickedInside = dropdownRef.current?.contains(e.target);
+            const isLogoutButton = e.target.closest("button.dropdown-item");
 
-        if (!clickedInside && !isLogoutButton) {
-            setShowProfileMenu(false);
-        }
-    };
+            if (!clickedInside && !isLogoutButton) {
+                setShowProfileMenu(false);
+            }
+        };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
 
     const handleMenuToggle = (menuId) => {
         setOpenSubMenu(openSubMenu === menuId ? null : menuId);
     };
 
+    // const getNotificationCount = async () => {
+    //     try {
+    //         const response = await axiosWrapper(
+    //             `api/v1/notifications/countUnreadNotifications`,
+    //             { method: 'POST' }
+    //         );
+    //         dispatch(setNotificationCount(response.data))
+
+    //     } catch (error) {
+    //         console.error("Failed to fetch roles:", error.message || error);
+    //     }
+    // };
+
     const handleLogout = () => {
-        dispatch(setUser({ user: null, token: null ,_persist:null}));
+        dispatch(setUser({ user: null, token: null, _persist: null }));
         clearAllStorage(); // ✅ clears sessionStorage and localStorage
         navigate("/");
     };
@@ -162,13 +178,13 @@ useEffect(() => {
 
                     </div>
                     <div className="d-flex justify-content-between align-content-center flex-wrap">
-                        {location.pathname === '/dashboard' && (
-                            <div className="bell-icon">
-                                <img src={bellIcon} />{" "}
-                                {/* Replace with your bell icon */}
-                                <span className="notification-badge">2</span>{" "}
-                                {/* Replace with the actual notification count */}
-                            </div>)}
+                        <Link to="/notifications" className="bell-icon" style={{ textDecoration: 'none' }}>
+                            <img src={bellIcon} alt="Notifications" />
+                            {notificationCount > 0 && (
+                                <span className="notification-badge">{notificationCount}</span>
+                            )}
+                        </Link>
+
                         {location.pathname === '/dashboard' && (
                             <img src={settings} className="settings" />)}
 
@@ -574,54 +590,36 @@ useEffect(() => {
                                     </ul>
                                 </li>
 
-                                <li className="nav-item dropdown">
+                                <li className="nav-item dropdown" ref={dropdownRef}>
                                     <a
                                         className="nav-link"
-                                        href="#"
                                         id="navbarDropdown"
                                         role="button"
                                         data-bs-toggle="dropdown"
                                         aria-expanded="false"
+                                        onClick={() => setOpenMenu(openMenu === "utility" ? null : "utility")}
                                     >
                                         <img src={fi_503849} />
                                         <span>UTILITIES</span>
                                         <img src={ArrowDown} />
                                     </a>
-                                    <ul
-                                        className="dropdown-menu menu-list dropdown-w"
-                                        aria-labelledby="navbarDropdown"
-                                    >
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={hierachy1} />
-                                                <p className="m-0">Asset Taxonomy</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={tag31} />
-                                                <p className="m-0">Tag Structure</p>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="#"
-                                            >
-                                                <img src={node1} />
-                                                <p className="m-0">Modal Structure</p>
-                                            </a>
-                                        </li>
-                                    </ul>
+
+                                    {openMenu === "utility" && (
+                                        <ul className="dropdown-menu show">
+                                            {/* Lineage Parameters */}
+                                            <li className="btn-group dropend d-flex">
+                                                <Link
+                                                    className="dropdown-item d-flex justify-content-start gap-3"
+                                                    to="/notifications"
+                                                >
+                                                    <div className="d-flex gap-3">
+                                                        <img src={tag} alt="Masters" />
+                                                        <p className="m-0">Notifications</p>
+                                                    </div>
+                                                </Link>
+                                            </li>
+                                        </ul>
+                                    )}
                                 </li>
 
                             </ul>

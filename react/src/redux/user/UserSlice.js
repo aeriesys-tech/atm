@@ -4,6 +4,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
     token: null,
     user: null,
+    notificationCount: 0,
 };
 
 const userSlice = createSlice({
@@ -23,9 +24,13 @@ const userSlice = createSlice({
             state.token = null;
             state.user = null;
         },
+        setNotificationCount: (state, action) => {
+            console.log(state, action)
+            state.notificationCount = action.payload;
+        },
     },
 });
 
-export const { setUser, updateUser, clearUser } = userSlice.actions;
+export const { setUser, updateUser, clearUser, setNotificationCount } = userSlice.actions;
 
 export default userSlice.reducer;
