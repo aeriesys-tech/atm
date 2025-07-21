@@ -3,6 +3,7 @@ const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");
 const redisClient = require("../config/redisConfig");
 const { createNotification } = require('../utils/notification');
+const NotificationUser = require('../models/NotificationUser');
 
 const paginateNotifications = async (req, res) => {
     const {
@@ -66,25 +67,28 @@ const paginateNotifications = async (req, res) => {
 
 
 const createNotificationUser = async (req, res) => {
-    const { notification_id } = req.body;
-    const user_id = req.user?.id;
+    const { id } = req.body;
+    const user_id = req.user._id;
 
     try {
-        const newNotificationUser = new NotificationUser({
-            user_id,
-            notification_id
-        });
+        const newNotificationUser = await NotificationUser.findOneAndUpdate(
+            { user_id, notification_id: id },
+            { $setOnInsert: { user_id, notification_id: id } },
+            { new: true, upsert: true }
+        );
 
-        await newNotificationUser.save();
-
-        return responseService.success(req, res, "NotificationUser created successfully", newNotificationUser, 201);
+        await logApiResponse(req, "NotificationUser upserted successfully", 200, newNotificationUser);
+        res.status(200).json({ message: "NotificationUser upserted successfully", data: newNotificationUser });
     } catch (error) {
-        console.error("Failed to create NotificationUser:", error);
-        return responseService.error(req, res, "Internal Server Error", {
-            message: "An unexpected error occurred"
-        }, 500);
+        console.error("Failed to upsert NotificationUser:", error);
+        await logApiResponse(req, "Failed to upsert NotificationUser", 500, { error: error.message });
+        res.status(500).json({
+            message: "Failed to upsert NotificationUser",
+            error: error.message
+        });
     }
 };
+
 
 
 
@@ -106,20 +110,15 @@ const getNotification = async (req, res) => {
 
 
 const countUnreadNotifications = async (req, res) => {
-    const userId = req.user.id;
-
+    const user_id = req.user._id;
     try {
-        // Count total notifications
-        const totalNotifications = await Notification.countDocuments({ user_id: userId });
-
-        // Count notifications this user has already read
-        const readNotifications = await NotificationUser.countDocuments({ user_id: userId });
+        const totalNotifications = await Notification.countDocuments({ user_id });
+        const readNotifications = await NotificationUser.countDocuments({ user_id });
 
         const unreadCount = totalNotifications - readNotifications;
 
-        return responseService.success(req, res, "Unread notifications count fetched successfully", {
-            unread_count: unreadCount
-        });
+        await logApiResponse(req, "Notification count retrieved successfully", 200, unreadCount);
+        res.status(200).json({ message: "Notification count retrieved successfully", data: unreadCount });
 
     } catch (error) {
         console.error("Failed to count unread notifications:", error);
@@ -130,8 +129,14 @@ const countUnreadNotifications = async (req, res) => {
 };
 
 
+
+
+
+
 module.exports = {
     paginateNotifications,
-    getNotification
+    getNotification,
+    countUnreadNotifications,
+    createNotificationUser
 
 }

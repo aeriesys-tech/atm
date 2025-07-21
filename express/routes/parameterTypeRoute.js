@@ -13,4 +13,6 @@ router.post('/getParameterTypes', authMiddleware, parameterTypeController.getPar
 router.post('/getParameterType', authMiddleware, getParameterType, parameterTypeController.getParameterType);
 router.post('/deleteParameterType', authMiddleware, deleteParameterType, parameterTypeController.deleteParameterType);
 
+
+
 module.exports = router;
