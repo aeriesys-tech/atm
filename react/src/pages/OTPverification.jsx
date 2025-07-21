@@ -8,6 +8,7 @@ import Loader from '../components/general/LoaderAndSpinner/Loader'; // Make sure
 import authWrapper from '../../services/AuthWrapper';
 import { useDispatch } from 'react-redux'
 import { setUser } from '../redux/user/UserSlice';
+import axiosWrapper from '../../services/AxiosWrapper';
 function OtpVerification() {
 	const navigate = useNavigate();
 	const [otp, setOtp] = useState('');
@@ -65,6 +66,8 @@ function OtpVerification() {
 				token: data.token,
 				user: data.user,
 			}));
+			const paramTypes = await axiosWrapper("api/v1/parameter-types/getParameterTypes", { method: "POST" });
+			sessionStorage.setItem("parameterTypes", JSON.stringify(paramTypes));
 			navigate("/dashboard");
 		} catch (err) {
 			console.error(err);

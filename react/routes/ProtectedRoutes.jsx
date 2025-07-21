@@ -6,6 +6,7 @@ import Role from "../src/pages/userSettings/Roles";
 import Department from "../src/pages/userSettings/Departments";
 import User from "../src/pages/userSettings/user/Users";
 import UserForm from "../src/pages/userSettings/user/UserForm";
+import MasterDetail from "../src/pages/configurations/MasterDetails";
 
 const protectedRoutes = [
   {
@@ -19,6 +20,10 @@ const protectedRoutes = [
   {
     path: "/master",
     element: <Master />
+  },
+    {
+    path: "/masters/:masterId",
+    element: <MasterDetail />
   },
   {
     path: "/roleGroup",

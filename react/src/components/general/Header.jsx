@@ -49,6 +49,7 @@ import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
 import { clearAllStorage } from '../../../services/TokenService';
 import { clearUser, setUser } from '../../redux/user/UserSlice';
+import axiosWrapper from '../../../services/AxiosWrapper';
 
 
 function Header() {
@@ -61,25 +62,50 @@ function Header() {
     const user = useSelector((state) => state.user.user);
     const navigate = useNavigate();
     const assetsRef = useRef();
+    const [parameterTypes, setParameterTypes] = useState([]);
+    const menuWrapperRef = useRef(null);
+
+    useEffect(() => {
+        const stored = sessionStorage.getItem("parameterTypes");
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                setParameterTypes(parsed);
+            } catch (err) {
+                console.error("Invalid parameterTypes in sessionStorage", err);
+            }
+        }
+    }, []);
+
 
     useEffect(() => {
         setOpenMenu(null);
         setOpenSubMenu(null);
         setShowProfileMenu(false);
     }, [location]);
-useEffect(() => {
-    const handleClickOutside = (e) => {
-        const clickedInside = dropdownRef.current?.contains(e.target);
-        const isLogoutButton = e.target.closest("button.dropdown-item");
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            // For profile menu
+            const clickedProfile = dropdownRef.current?.contains(e.target);
+            const isLogoutButton = e.target.closest("button.dropdown-item");
 
-        if (!clickedInside && !isLogoutButton) {
-            setShowProfileMenu(false);
-        }
-    };
+            if (!clickedProfile && !isLogoutButton) {
+                setShowProfileMenu(false);
+            }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
+            // For main and sub menus
+            const clickedInsideMenu = menuWrapperRef.current?.contains(e.target);
+
+            if (!clickedInsideMenu) {
+                setOpenMenu(null);
+                setOpenSubMenu(null);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
 
 
     const handleMenuToggle = (menuId) => {
@@ -87,7 +113,7 @@ useEffect(() => {
     };
 
     const handleLogout = () => {
-        dispatch(setUser({ user: null, token: null ,_persist:null}));
+        dispatch(setUser({ user: null, token: null, _persist: null }));
         clearAllStorage(); // ✅ clears sessionStorage and localStorage
         navigate("/");
     };
@@ -248,7 +274,7 @@ useEffect(() => {
                                     </ul>
                                 </li>
 
-                                <li className="nav-item dropdown" ref={dropdownRef}>
+                                <li className="nav-item dropdown" ref={menuWrapperRef}>
                                     <a
                                         className="nav-link"
                                         id="navbarDropdown"
@@ -265,30 +291,33 @@ useEffect(() => {
                                     {openMenu === "main" && (
                                         <ul className="dropdown-menu show">
                                             {/* Lineage Parameters */}
-                                            <li className="menu-item position-relative">
-                                                <button
-                                                    className="dropdown-item d-flex justify-content-between align-items-center"
-                                                    onClick={() => handleMenuToggle("lineage")}
-                                                >
-                                                    <div className="d-flex gap-3 align-items-center">
-                                                        <img src={adjust1} alt="Lineage" />
-                                                        <p className="m-0">Lineage Parameters</p>
-                                                    </div>
-                                                    <img className="icon" src={ArrowLineRight} alt="Arrow" />
-                                                </button>
-
-                                                {openSubMenu === "lineage" && (
-                                                    <ul className="submenu">
-                                                        <li><a href="newconfigureunit.html">Units</a></li>
-                                                        <li><a href="secotrs.html">Sector</a></li>
-                                                        <li><a href="#">Cluster</a></li>
-                                                        <li><a href="#">Plant</a></li>
-                                                        <li><a href="#">Line</a></li>
-                                                        <li><a href="#">Section</a></li>
-                                                        <li><button className="li-menu-btn">Add New</button></li>
-                                                    </ul>
-                                                )}
-                                            </li>
+                                            {parameterTypes.map(pt => (
+                                                <li key={pt._id} className="position-relative">
+                                                    <button className="dropdown-item d-flex justify-content-between align-items-center" onClick={() => setOpenSubMenu(openSubMenu === pt._id ? null : pt._id)}>
+                                                        <div className="d-flex gap-3 align-items-center">            <img src={adjust1} alt="Lineage" /><p className="m-0">{pt.parameter_type_name}</p></div>
+                                                        <img className="icon" src={ArrowLineRight} style={{ transform: openSubMenu === pt._id ? 'rotate(90deg)' : 'rotate(0deg)' }} alt="Toggle Submenu" />
+                                                    </button>
+                                                    {openSubMenu === pt._id && (
+                                                        <ul className="submenu position-absolute" style={{ left: '100%', top: 0 }}>
+                                                            {pt.masterDetails?.length
+                                                                ? pt.masterDetails.map(md => (
+                                                                    <li key={md.masterId}>
+                                                                        <button className="dropdown-item gap-3" onClick={() => {
+                                                                            navigate(`/masters/${md.masterId}`);
+                                                                            setOpenMenu(null);
+                                                                            setOpenSubMenu(null);
+                                                                        }}>
+                                                                            <img className="icon" src={ArrowLineRight} alt="Toggle Submenu" />
+                                                                            {md.masterName}
+                                                                        </button>
+                                                                    </li>
+                                                                ))
+                                                                : <li><span className="dropdown-item">— No items —</span></li>
+                                                            }
+                                                        </ul>
+                                                    )}
+                                                </li>
+                                            ))}
 
 
                                             {/* Repeat similarly for other menus */}
