@@ -79,7 +79,7 @@ const Notification = () => {
                 method: "POST",
             });
             setUsers(response.users);
-            fetchNotifications(currentPage, pageSize, sortBy, order, response.users);
+            // fetchNotifications(currentPage, pageSize, sortBy, order, response.users);
         } catch (error) {
             console.error("Failed to fetch notification groups:", error.message || error);
         }
@@ -90,7 +90,7 @@ const Notification = () => {
     }, []);
 
     useEffect(() => {
-        if (users && users?.length) {
+        if (users && users.length) {
             fetchNotifications(currentPage, pageSize, sortBy, order);
         }
     }, [users, currentPage, pageSize, sortBy, order]);

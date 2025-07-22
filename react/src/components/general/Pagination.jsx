@@ -25,10 +25,34 @@ function Pagination({
   }, []);
 
   const getPageNumbers = () => {
-    const pages = [];
+   const pages = [];
+  const maxVisible = 6;
+
+  if (totalPages <= maxVisible) {
     for (let i = 1; i <= totalPages; i++) {
       pages.push(i);
     }
+  } else {
+    pages.push(1, 2);
+
+    if (currentPage > 3) {
+      pages.push('...');
+    }
+
+    const start = Math.max(3, currentPage - 1);
+    const end = Math.min(totalPages - 2, currentPage + 1);
+
+    for (let i = start; i <= end; i++) {
+      if (!pages.includes(i)) pages.push(i);
+    }
+
+    if (currentPage < totalPages - 3) {
+      pages.push('...');
+    }
+
+    if (!pages.includes(totalPages - 1)) pages.push(totalPages - 1);
+    if (!pages.includes(totalPages)) pages.push(totalPages);
+  }
     return pages;
   };
 
