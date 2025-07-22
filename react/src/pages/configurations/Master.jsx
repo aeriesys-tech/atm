@@ -200,70 +200,97 @@ const Master = () => {
         setIsModalOpen(true);
     };
 
+const handleCreateOrUpdateMaster = async (formData, setErrors, onSuccess) => {
+    try {
+        setModalLoading(true);
 
-    const handleCreateOrUpdateMaster = async (formData, setErrors, onSuccess) => {
-        try {
-            setModalLoading(true);
+        const payload = {
+            masterData: {
+                master_name: formData.master_name,
+                slug: formData.slug,
+                display_name_singular: formData.display_name_singular,
+                display_name_plural: formData.display_name_plural,
+                model_name: formData.model_name,
+                parameter_type_id: formData.parameter_type_id,
+                order: isNaN(Number(formData.order)) ? 1 : Number(formData.order),
+            },
+            masterFieldData: masterFieldData.map((item) => ({
+                ...item,
+                order: isNaN(Number(item.order)) ? 1 : Number(item.order),
+                required: Boolean(item.required),
+                default: Boolean(item.default),
+            })),
+        };
 
-            const payload = {
-                masterData: {
-                    master_name: formData.master_name,
-                    slug: formData.slug,
-                    display_name_singular: formData.display_name_singular,
-                    display_name_plural: formData.display_name_plural,
-                    model_name: formData.model_name,
-                    parameter_type_id: formData.parameter_type_id,
-                    order: isNaN(Number(formData.order)) ? 1 : Number(formData.order),
-                },
-                masterFieldData: masterFieldData.map((item) => ({
-                    ...item,
-                    order: isNaN(Number(item.order)) ? 1 : Number(item.order),
-                    required: Boolean(item.required),
-                    default: Boolean(item.default),
-                })),
-            };
+        let createdMaster = null;
 
-            if (isEditMode) {
-                payload.id = editingMasterId;
-                await axiosWrapper("api/v1/masters/updateMaster", {
-                    method: "POST",
-                    data: payload,
-                });
-            } else {
-                await axiosWrapper("api/v1/masters/createMaster", {
-                    method: "POST",
-                    data: payload,
-                });
-            }
+        if (isEditMode) {
+            payload.id = editingMasterId;
+            await axiosWrapper("api/v1/masters/updateMaster", {
+                method: "POST",
+                data: payload,
+            });
+        } else {
+            const res = await axiosWrapper("api/v1/masters/createMaster", {
+                method: "POST",
+                data: payload,
+            });
+            createdMaster = res?.master || res?.data?.master; // adjust based on API format
+        }
 
-            onSuccess();
-            await fetchMasters(currentPage, pageSize, sortBy, order, true); // refresh table
-        } catch (err) {
-            const apiErrors = err?.response?.data?.errors || {};
-            const masterErrors = {};
-            const fieldErrors = [];
-
-            for (const key in apiErrors) {
-                if (key.startsWith("masterData.")) {
-                    const field = key.split("masterData.")[1];
-                    masterErrors[field] = apiErrors[key];
-                } else if (key.startsWith("masterFieldData[")) {
-                    const match = key.match(/masterFieldData\[(\d+)\]\.(.+)/);
-                    if (match) {
-                        const index = parseInt(match[1], 10);
-                        const field = match[2];
-                        fieldErrors[index] = fieldErrors[index] || {};
-                        fieldErrors[index][field] = apiErrors[key];
+        // ✅ Update sessionStorage only on create
+        if (!isEditMode && createdMaster) {
+            const sessionData = JSON.parse(sessionStorage.getItem("parameterTypes"));
+            if (sessionData && Array.isArray(sessionData)) {
+                const updatedSessionData = sessionData.map((item) => {
+                    if (item._id === payload.masterData.parameter_type_id) {
+                        return {
+                            ...item,
+                            masterDetails: [
+                                ...(item.masterDetails || []),
+                                {
+                                    masterId: createdMaster._id,
+                                    masterName: createdMaster.master_name,
+                                    order: createdMaster.order,
+                                },
+                            ],
+                        };
                     }
+                    return item;
+                });
+                sessionStorage.setItem("parameterTypes", JSON.stringify(updatedSessionData));
+            }
+        }
+
+        onSuccess();
+        await fetchMasters();
+    } catch (err) {
+        const apiErrors = err?.response?.data?.errors || {};
+        const masterErrors = {};
+        const fieldErrors = [];
+
+        for (const key in apiErrors) {
+            if (key.startsWith("masterData.")) {
+                const field = key.split("masterData.")[1];
+                masterErrors[field] = apiErrors[key];
+            } else if (key.startsWith("masterFieldData[")) {
+                const match = key.match(/masterFieldData\[(\d+)\]\.(.+)/);
+                if (match) {
+                    const index = parseInt(match[1], 10);
+                    const field = match[2];
+                    fieldErrors[index] = fieldErrors[index] || {};
+                    fieldErrors[index][field] = apiErrors[key];
                 }
             }
-
-            setFormErrors(masterErrors);
-            setMasterFieldErrors(fieldErrors);
-        } finally {
-            setModalLoading(false);
         }
-    };
+
+        setFormErrors(masterErrors);
+        setMasterFieldErrors(fieldErrors);
+    } finally {
+        setModalLoading(false);
+    }
+};
+
     const handleSoftDelete = async (row) => {
         try {
             setLoading(true);
@@ -278,6 +305,44 @@ const Master = () => {
             setLoading(false);
         }
     };
+    const handleHardDelete = async (row) => {
+        if (!window.confirm("Are you sure you want to permanently delete this master?")) return;
+
+        try {
+            setLoading(true);
+
+            // Delete from server
+            await axiosWrapper(`api/v1/masters/destroyMaster`, {
+                method: "POST",
+                data: { id: row._id },
+            });
+
+            // Step 1: Get sessionStorage array
+            const sessionData = JSON.parse(sessionStorage.getItem("parameterTypes"));
+            if (sessionData && Array.isArray(sessionData)) {
+                const updatedData = sessionData.map((item) => {
+                    if (Array.isArray(item.masterDetails)) {
+                        return {
+                            ...item,
+                            masterDetails: item.masterDetails.filter(
+                                (detail) => detail.masterId !== row._id
+                            ),
+                        };
+                    }
+                    return item;
+                });
+
+                sessionStorage.setItem("parameterTypes", JSON.stringify(updatedData));
+            }
+
+            await fetchMasters(currentPage, pageSize, sortBy, order);
+        } catch (error) {
+            console.error("Hard delete failed:", error.message || error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
 
@@ -342,6 +407,7 @@ const Master = () => {
                     onSortChange={handleSortChange}
                     onEdit={handleEditMaster}
                     onToggleStatus={handleSoftDelete}
+                    onDelete={handleHardDelete}
                     paginationProps={{
                         currentPage,
                         totalPages,
