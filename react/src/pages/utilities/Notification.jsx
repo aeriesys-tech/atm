@@ -1,3 +1,4 @@
+// Notification.jsx
 import React, { useState, useEffect } from "react";
 import Breadcrumb from "../../components/general/Breadcrum";
 import Table from "../../components/common/Table";
@@ -5,67 +6,90 @@ import Navbar from "../../components/general/Navbar";
 import Modal from "../../components/common/Modal";
 import axiosWrapper from "../../../services/AxiosWrapper";
 import Loader from "../../components/general/LoaderAndSpinner/Loader";
-
+import search2 from "../../assets/icons/search2.svg";
 import { setNotificationCount } from "../../redux/user/UserSlice";
 import { useDispatch } from "react-redux";
+import Dropdown from "../../components/common/Dropdown";
+import Search from "../../components/common/Search";
+import Button from "../../components/common/Button";
 
 const Notification = () => {
     const [notifications, setNotifications] = useState([]);
+    const [notificationUserIds, setNotificationUserIds] = useState([]);
     const [users, setUsers] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedRow, setSelectedRow] = useState(null);
+    const [selectedRow, setSelectedRow] = useState({});
+    const [selectedUserId, setSelectedUserId] = useState("");
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [pageSize, setPageSize] = useState(5);
     const [sortBy, setSortBy] = useState("notification_code");
-    const [order, setOrder] = useState("asc");
+    const [order, setOrder] = useState("desc");
     const [totalItems, setTotalItems] = useState(0);
 
     const [loading, setLoading] = useState(false);
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [editFormData, setEditFormData] = useState({});
-    const [editErrors, setEditErrors] = useState({});
     const dispatch = useDispatch();
-    const breadcrumbItems = [
-        // { label: "Notifications", href: "#" },
-    ];
 
     const headers = [
-        { label: "# ID", key: "index", sortable: true },
-        { label: "Date Time", key: "date_time", sortable: true },
-        { label: "Notification", key: "notification", sortable: true },
-        { label: "Module Name", key: "module_name", sortable: true },
-        { label: "User", key: "user_id", sortable: true },
+        { label: "#", key: "index", sortable: true },
+        { label: "Module", key: "module_name", sortable: true },
+        { label: "Message", key: "notification", sortable: true },
+        { label: "Updated By", key: "user_id", sortable: true },
+        { label: "Updated At", key: "date_time", sortable: true },
         { label: "Action", key: "action", sortable: false },
     ];
 
-    const fetchNotifications = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order) => {
+    const fetchNotificationUsers = async () => {
+        try {
+            const response = await axiosWrapper("api/v1/notifications/getNotificationUsers", {
+                method: "POST",
+            });
+            const ids = response.notification_users.map(nu => String(nu.notification_id));
+            setNotificationUserIds(ids);
+        } catch (error) {
+            console.error("Failed to fetch notification users:", error.message || error);
+        }
+    };
+
+    const fetchNotifications = async () => {
         try {
             setLoading(true);
+            const payload = {};
+            if (selectedUserId) payload.user_id = selectedUserId;
 
             const response = await axiosWrapper(
-                `api/v1/notifications/paginateNotifications?page=${page}&limit=${limit}&sortBy=${sort}&order=${sortOrder}`,
-                { method: 'POST' }
+                `api/v1/notifications/paginateNotifications?page=${currentPage}&limit=${pageSize}&sortBy=${sortBy}&order=${order}`,
+                { method: 'POST', data: payload }
             );
 
             const mappedRows = response.notifications.map((notification, index) => {
                 const user = users.find(u => u._id === notification.user_id);
+                const date = new Date(notification.date_time);
+                const formattedDateTime = date.toLocaleString('en-US', {
+                    hour: 'numeric', minute: 'numeric', second: 'numeric',
+                    hour12: true, day: '2-digit', month: '2-digit', year: 'numeric',
+                });
+
+                const isUnread = !notificationUserIds.includes(String(notification._id));
+
                 return {
                     _id: notification._id,
-                    index: index + 1 + (page - 1) * pageSize,
-                    date_time: notification.date_time,
+                    index: index + 1 + (currentPage - 1) * pageSize,
+                    date_time: formattedDateTime,
                     module_name: notification.module_name,
-                    notification: notification.notification,
+                    notification: notification.notification || '',
                     user_id: user ? user.name : "-",
+                    isUnread,
                 };
             });
-
 
             setNotifications(mappedRows);
             setCurrentPage(response.currentPage);
             setTotalPages(response.totalPages);
             setTotalItems(response.totalItems);
+
+            console.log("DEBUG - Notifications Mapped Rows:", mappedRows);
         } catch (error) {
             console.error("Failed to fetch notifications:", error.message || error);
         } finally {
@@ -75,204 +99,56 @@ const Notification = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axiosWrapper("api/v1/users/getUsers", {
-                method: "POST",
-            });
+            const response = await axiosWrapper("api/v1/users/getUsers", { method: "POST" });
             setUsers(response.users);
-            // fetchNotifications(currentPage, pageSize, sortBy, order, response.users);
         } catch (error) {
-            console.error("Failed to fetch notification groups:", error.message || error);
+            console.error("Failed to fetch users:", error.message || error);
         }
     };
 
     useEffect(() => {
-        fetchUsers();
+        const init = async () => {
+            await fetchUsers();
+            await fetchNotificationUsers();
+        };
+        init();
     }, []);
 
     useEffect(() => {
-        if (users && users.length) {
-            fetchNotifications(currentPage, pageSize, sortBy, order);
-        }
-    }, [users, currentPage, pageSize, sortBy, order]);
-
-    const notificationFields = [
-        {
-            label: "Notification Code",
-            name: "notification_code",
-            type: "text",
-            placeholder: "Enter notification code",
-            required: true,
-        },
-        {
-            label: "Notification Name",
-            name: "notification_name",
-            type: "text",
-            placeholder: "Enter notification name",
-            required: true,
-        },
-        {
-            label: "Notification Group",
-            name: "notification_group_id",
-            type: "dropdown",
-            required: true,
-            options: users?.map(group => ({
-                label: group.notification_group_name,
-                value: group._id,
-            })),
-        },
-    ];
-
-    const handleNotificationSubmit = async (formData, setErrors, onSuccess) => {
-        try {
-            setLoading(true);
-            const payload = {
-                notification_group_id: formData.notification_group_id,
-                notification_code: formData.notification_code,
-                notification_name: formData.notification_name,
-            };
-
-            await axiosWrapper("api/v1/notifications/createNotification", {
-                method: "POST",
-                data: payload,
-            });
-
-            onSuccess();
-            fetchNotifications(currentPage, pageSize, sortBy, order);
-
-        } catch (err) {
-            const apiErrors = err?.response?.data?.errors;
-            if (apiErrors) {
-                setErrors({
-                    notification_group_id: apiErrors.notification_group_id,
-                    notification_code: apiErrors.notification_code,
-                    notification_name: apiErrors.notification_name,
-                });
-            } else {
-                setErrors({ notification_name: "Unexpected error occurred" });
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEditClick = (row) => {
-        setEditErrors({});
-        setEditFormData({
-            id: row._id,
-            notification_group_id: row.notification_group_id,
-            notification_code: row.notification_code,
-            notification_name: row.notification_name,
-            status: row.status,
-        });
-        setEditModalOpen(true);
-    };
-
-
-
-    const handleUpdateSubmit = async (formData, setErrors, onSuccess) => {
-        try {
-            setLoading(true);
-
-            const payload = {
-                id: formData.id, // 👈 pass ID in body instead of params
-                notification_group_id: formData.notification_group_id,
-                notification_code: formData.notification_code,
-                notification_name: formData.notification_name,
-                status: formData.status ?? true,
-            };
-
-            await axiosWrapper("api/v1/notifications/updateNotification", {
-                method: "POST",
-                data: payload
-            });
-
-            onSuccess(); // Close modal
-            fetchNotifications(currentPage, pageSize, sortBy, order);
-
-            setEditModalOpen(false);
-        } catch (err) {
-            const apiErrors = err?.response?.data?.errors;
-            if (apiErrors) {
-                setErrors({
-                    notification_group_id: apiErrors.notification_group_id,
-                    notification_code: apiErrors.notification_code,
-                    notification_name: apiErrors.notification_name,
-                });
-            } else {
-                setErrors({ notification_name: "Unexpected error occurred" });
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    const handleToggleStatus = async (row) => {
-        try {
-            setLoading(true);
-
-            await axiosWrapper("api/v1/notifications/deleteNotification", {
-                method: "POST",
-                data: { id: row._id },
-            });
-            fetchNotifications(currentPage, pageSize, sortBy, order);
-
-        } catch (err) {
-            console.error("Failed to toggle notification status:", err.message || err);
-        } finally {
-            setLoading(false);
-        }
-    };
-    const handleDeleteNotification = async (row) => {
-        const confirmDelete = window.confirm("Are you sure you want to delete this notification permanently?");
-        if (!confirmDelete) return;
-
-        try {
-            setLoading(true);
-            const response = await axiosWrapper("api/v1/notifications/destroyNotification", {
-                method: "POST",
-                data: { id: row._id },
-            });
-
-            if (response?.message) {
-                alert(response.message);
-            }
+        if (users.length) {
             fetchNotifications();
-        } catch (error) {
-            console.error("Failed to delete notification permanently:", error.message || error);
-            alert("Error deleting notification");
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [users, notificationUserIds, currentPage, pageSize, sortBy, order, selectedUserId]);
 
     const getNotificationCount = async () => {
         try {
-            const response = await axiosWrapper(
-                `api/v1/notifications/countUnreadNotifications`,
-                { method: 'POST' }
-            );
-            console.log(response.data)
+            const response = await axiosWrapper("api/v1/notifications/countUnreadNotifications", {
+                method: 'POST',
+            });
             dispatch(setNotificationCount(response.data));
-
         } catch (error) {
-            console.error("Failed to fetch roles:", error.message || error);
+            console.error("Failed to fetch notification count:", error.message || error);
+        }
+    };
+
+    const readAllNotifications = async () => {
+        try {
+            await axiosWrapper("api/v1/notifications/readAllNotifications", { method: 'POST' });
+            await fetchNotificationUsers();
+            getNotificationCount();
+        } catch (error) {
+            console.error("Failed to mark notifications as read:", error.message || error);
         }
     };
 
     const addNotificationUser = async (id) => {
         try {
             setLoading(true);
-
-            const response = await axiosWrapper("api/v1/notifications/createNotificationUser", {
-                method: "POST",
-                data: { id },
+            await axiosWrapper("api/v1/notifications/createNotificationUser", {
+                method: "POST", data: { id },
             });
-            if (response?.data) {
-                console.log("Notification user added:", response.data);
-            }
             getNotificationCount();
-
+            await fetchNotificationUsers();
         } catch (error) {
             console.error("Failed to add notification user:", error.message || error);
         } finally {
@@ -283,31 +159,20 @@ const Notification = () => {
     const handleViewClick = async (row) => {
         try {
             setLoading(true);
-
             const response = await axiosWrapper("api/v1/notifications/getNotification", {
-                method: "POST",
-                data: { id: row._id },
+                method: "POST", data: { id: row._id },
             });
-
             if (response?.data) {
-                console.log("Selected row:", response.data);
                 setSelectedRow(response.data);
                 setIsModalOpen(true);
             }
-
-            // Use row._id for adding notification user
             await addNotificationUser(row._id);
-
         } catch (error) {
             console.error("Failed to view notification:", error.message || error);
-            alert("Error viewing notification");
         } finally {
             setLoading(false);
         }
     };
-
-
-
 
     const handleSortChange = (key, newOrder) => {
         setSortBy(key);
@@ -323,18 +188,34 @@ const Notification = () => {
                 </div>
             )}
             <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
-                <Breadcrumb title="Notifications" items={breadcrumbItems} />
-
+                <Breadcrumb title="Notifications" items={[]} />
+                <div className="navbar-3 mt-0 d-flex justify-content-between">
+                    <div className="d-flex gap-4">
+                        <div className="search-container">
+                            <img src={search2} alt="Search" />
+                            <Search />
+                        </div>
+                    </div>
+                    <div className="d-flex gap-3">
+                        <Dropdown
+                            label="Users"
+                            options={[
+                                { label: "All Users", value: "" },
+                                ...users.map(user => ({ label: user.name, value: user._id }))
+                            ]}
+                            onChange={(e) => setSelectedUserId(e.target.value)}
+                        />
+                        <Button name="Read All" onClick={readAllNotifications} />
+                    </div>
+                </div>
                 <Table
                     headers={headers}
                     rows={notifications}
                     sortBy={sortBy}
                     order={order}
                     onSortChange={handleSortChange}
-                    onEdit={handleEditClick}
-                    onToggleStatus={handleToggleStatus}
-                    onDelete={handleDeleteNotification}
                     onView={handleViewClick}
+                    selectedRow={selectedRow}
                     paginationProps={{
                         currentPage,
                         totalPages,
@@ -347,26 +228,6 @@ const Notification = () => {
                         },
                     }}
                 />
-                {editModalOpen && (
-                    <Modal
-                        title="Edit Notification"
-                        fields={notificationFields}
-                        values={editFormData}
-                        errors={editErrors}
-                        loading={loading}
-                        onChange={(e) => {
-                            const { name, value } = e.target;
-                            setEditFormData((prev) => ({ ...prev, [name]: value }));
-                        }}
-                        onSubmit={() =>
-                            handleUpdateSubmit(editFormData, setEditErrors, () => {
-                                setEditModalOpen(false);
-                            })
-                        }
-                        onClose={() => setEditModalOpen(false)}
-                        submitButtonLabel="UPDATE"
-                    />
-                )}
             </div>
         </div>
     );

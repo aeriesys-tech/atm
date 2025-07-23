@@ -18,9 +18,13 @@ function Table({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState('');
-
+  console.log("selectedRow Table", selectedRow?.notification)
+  console.log("rowData", rows, headers)
   const handleViewClick = (rowData) => {
+
+    console.log("rowData???", rowData)
     setSelectedRow(rowData);
+
     setIsModalOpen(true);
   };
 
@@ -99,51 +103,57 @@ function Table({
                         </span>
                       ) : header.key === 'action' ? (
                         <span className="d-flex gap-2 justify-content-center">
-                          <a
-                            onClick={(e) => {
-                              e.preventDefault();
-                              onView?.(row);
-                              handleViewClick(row);
-                            }}
-                            title="View"
-                          >
-                            <img src={eyeicon} alt="Edit" style={{ cursor: 'pointer', width: '28px' }} />
-                          </a>
-                          {row.status ? (
+                          {onView ? (
                             <a
                               onClick={(e) => {
                                 e.preventDefault();
-                                onEdit(row);
+                                onView?.(row);
+                                handleViewClick(row);
                               }}
-                              title="Edit"
+                              title="View"
                             >
-                              <img src={editicon} alt="Edit" style={{ cursor: 'pointer' }} />
+                              <img src={eyeicon} alt="View" style={{ cursor: 'pointer', width: '28px' }} />
                             </a>
                           ) : (
-                            <img
-                              src={editicon}
-                              alt="Edit Disabled"
-                              style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                              title="Inactive roles cannot be edited"
-                            />
+                            <>
+                              {row.status ? (
+                                <a
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    onEdit(row);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <img src={editicon} alt="Edit" style={{ cursor: 'pointer' }} />
+                                </a>
+                              ) : (
+                                <img
+                                  src={editicon}
+                                  alt="Edit Disabled"
+                                  style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                                  title="Inactive roles cannot be edited"
+                                />
+                              )}
+                              <a
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  onDelete(row);
+                                }}
+                                title="Delete"
+                              >
+                                <img src={deleteicon} alt="Delete" />
+                              </a>
+                            </>
                           )}
-
-                          {/* Delete Button */}
-                          <a
-                            onClick={(e) => {
-                              e.preventDefault();
-                              onDelete(row);
-                            }}
-                            title="Delete"
-                          >
-                            <img src={deleteicon} alt="Delete" />
-                          </a>
                         </span>
+                      ) : header.key === 'notification' ? (
+                        row.notification?.split('\n')[0] || ''
                       ) : (
                         row[header.key]
                       )}
                     </td>
                   ))}
+
                 </tr>
               ))
             ) : (
@@ -163,19 +173,16 @@ function Table({
             fields={[
               { label: 'User ID', name: 'user_id' },
               { label: 'Module Name', name: 'module_name' },
-              { label: 'Notification', name: 'notification' },
+              { label: 'Message', name: 'notification' },
               { label: 'Date Time', name: 'date_time' },
               // { label: 'Timestamp', name: 'timestamp' },
             ]}
             values={selectedRow}
             displayOnly={true}
           />
-
         )}
       </div>
-
       {/* Optional View Modal */}
-
     </div>
   );
 }
