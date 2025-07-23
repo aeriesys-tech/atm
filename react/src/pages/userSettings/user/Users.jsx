@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosWrapper from "../../../../services/AxiosWrapper";
 import Table from "../../../components/common/Table";
@@ -13,13 +13,15 @@ const User = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [sortBy, setSortBy] = useState("name");
   const [order, setOrder] = useState("asc");
-
+  const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const debounceTimeoutRef = useRef(null);
   const breadcrumbItems = [
     { label: 'Configure', href: '#' },
     { label: 'User Settings', href: '#' },
@@ -39,19 +41,33 @@ const User = () => {
     page = 1,
     limit = pageSize,
     sortField = sortBy,
-    sortOrder = order
+    sortOrder = order,
+    status = statusFilter,
+    searchText = search
   ) => {
     try {
       setLoading(true);
+       const params = new URLSearchParams();
+      params.append("page", page);
+      params.append("limit", limit);
+      params.append("sortBy", sortField);
+      params.append("order", sortOrder);
+
+      if (status === "active") params.append("status", "true");
+      else if (status === "inactive") params.append("status", "false");
+
+      if (searchText?.trim()) {
+        params.append("search", searchText.trim());
+      }
       const response = await axiosWrapper(
-        `api/v1/users/paginateUsers?page=${page}&limit=${limit}&sortBy=${sortField}&order=${sortOrder}`,
+        `api/v1/users/paginateUsers?${params.toString()}`,
         { method: "GET" }
       );
 
       const mappedUsers = response.users.map((user, index) => ({
         ...user,
         index: index + 1 + (page - 1) * limit,
-        status: user.status ,
+        status: user.status,
       }));
 
       setUsers(mappedUsers);
@@ -66,9 +82,17 @@ const User = () => {
   };
 
   useEffect(() => {
-    fetchUsers(currentPage, pageSize, sortBy, order);
-  }, [currentPage, pageSize, sortBy, order]);
+    fetchUsers(currentPage, pageSize, sortBy, order,statusFilter,search);
+  }, [currentPage, pageSize, sortBy, order,statusFilter]);
+const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearch(val);
 
+    clearTimeout(debounceTimeoutRef.current);
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchUsers(1, pageSize, sortBy, order, statusFilter, val);
+    }, 500);
+  };
   const handleSoftDelete = async (row) => {
     try {
       setLoading(true);
@@ -76,37 +100,37 @@ const User = () => {
         method: "POST",
         data: { id: row._id },
       });
-         fetchUsers(currentPage, pageSize, sortBy, order);
+      fetchUsers(currentPage, pageSize, sortBy, order,statusFilter);
     } catch (error) {
       console.error("Soft delete failed:", error.message || error);
     } finally {
       setLoading(false);
     }
   };
-const handlePermanentDeleteUser = async (row) => {
-  const confirmDelete = window.confirm("Are you sure you want to permanently delete this user?");
-  if (!confirmDelete) return;
+  const handlePermanentDeleteUser = async (row) => {
+    const confirmDelete = window.confirm("Are you sure you want to permanently delete this user?");
+    if (!confirmDelete) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const response = await axiosWrapper("api/v1/users/destroyUser", {
-      method: "POST",
-      data: { id: row._id },
-    });
+      const response = await axiosWrapper("api/v1/users/destroyUser", {
+        method: "POST",
+        data: { id: row._id },
+      });
 
-    if (response?.message) {
-      alert(response.message); // shows: "user permanently deleted"
+      if (response?.message) {
+        alert(response.message); // shows: "user permanently deleted"
+      }
+
+      fetchUsers(); // refresh the user list
+    } catch (error) {
+      console.error("Permanent delete failed:", error.message || error);
+      alert("Error deleting user");
+    } finally {
+      setLoading(false);
     }
-
-    fetchUsers(); // refresh the user list
-  } catch (error) {
-    console.error("Permanent delete failed:", error.message || error);
-    alert("Error deleting user");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleSortChange = (key, newOrder) => {
     setSortBy(key);
@@ -116,11 +140,11 @@ const handlePermanentDeleteUser = async (row) => {
 
   return (
     <div className="tb-responsive templatebuilder-body position-relative">
-                {loading && (
-                    <div className="loader-overlay d-flex justify-content-center align-items-center">
-                        <Loader />
-                    </div>
-                )}
+      {loading && (
+        <div className="loader-overlay d-flex justify-content-center align-items-center">
+          <Loader />
+        </div>
+      )}
       <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
         <Breadcrumb title="Users" items={breadcrumbItems} />
 
@@ -129,7 +153,7 @@ const handlePermanentDeleteUser = async (row) => {
           <div className="d-flex gap-4">
             <div className="search-container">
               <img src={search2} alt="Search" />
-              <Search />
+              <Search value={search} onChange={handleSearchChange}/>
             </div>
           </div>
 
@@ -140,7 +164,7 @@ const handlePermanentDeleteUser = async (row) => {
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" }
               ]}
-              onChange={(e) => console.log("Selected:", e.target.value)}
+              onChange={(e) => setStatusFilter(e.target.value)}
             />
 
             <Button name="Add User" onClick={() => navigate("/users/add")} />

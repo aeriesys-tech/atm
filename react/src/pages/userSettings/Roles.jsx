@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Breadcrumb from "../../components/general/Breadcrum";
 import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
@@ -12,7 +12,7 @@ const Role = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(10);
     const [sortBy, setSortBy] = useState("role_code");
     const [order, setOrder] = useState("asc");
     const [totalItems, setTotalItems] = useState(0);
@@ -21,7 +21,11 @@ const Role = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editFormData, setEditFormData] = useState({});
     const [editErrors, setEditErrors] = useState({});
+  const [statusFilter, setStatusFilter] = useState("");
+    const [search, setSearch] = useState('');
 
+
+    const debounceTimeoutRef = useRef(null);
     const breadcrumbItems = [
         { label: "Configure", href: "#" },
         { label: "User Settings", href: "#" },
@@ -37,22 +41,32 @@ const Role = () => {
         { label: "Action", key: "action", sortable: false },
     ];
 
-    const fetchRoles = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order) => {
+    const fetchRoles = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order ,status = statusFilter,
+        searchText = search) => {
         try {
             setLoading(true);
+  const params = new URLSearchParams();
+            params.append("page", page);
+            params.append("limit", limit);
+            params.append("sortBy", sort);
+            params.append("order", sortOrder);
+
+            if (status === "active") params.append("status", "true");
+            else if (status === "inactive") params.append("status", "false");
+
+            if (searchText?.trim()) params.append("search", searchText.trim());
 
             const response = await axiosWrapper(
-                `api/v1/roles/paginateRoles?page=${page}&limit=${limit}&sortBy=${sort}&order=${sortOrder}`,
+                `api/v1/roles/paginateRoles?${params.toString()}`,
                 { method: 'POST' }
             );
 
             const mappedRows = response.roles.map((role, index) => {
-                const matchedGroup = roleGroups.find(group => group._id === role.role_group_id);
                 return {
                     _id: role._id,
                     index: index + 1 + (page - 1) * pageSize,
                     role_group_id: role.role_group_id,
-                    role_group_name: matchedGroup?.role_group_name || "N/A", // 🟢 ADD THIS
+                    role_group_name: role?.role_group?.role_group_name || "N/A", // 🟢 ADD THIS
                     role_code: role.role_code,
                     role_name: role.role_name,
                     status: role.status,
@@ -89,10 +103,18 @@ const Role = () => {
 
     useEffect(() => {
         if (roleGroups && roleGroups?.length) {
-            fetchRoles(currentPage, pageSize, sortBy, order);
+            fetchRoles(currentPage, pageSize, sortBy, order, statusFilter, search);
         }
-    }, [roleGroups, currentPage, pageSize, sortBy, order]);
+    }, [roleGroups, currentPage, pageSize, sortBy, order,statusFilter]);
+  const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setSearch(val);
 
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = setTimeout(() => {
+            fetchRoles(1, pageSize, sortBy, order, statusFilter, val);
+        }, 500);
+    };
     const roleFields = [
         {
             label: "Role Code",
@@ -135,7 +157,7 @@ const Role = () => {
             });
 
             onSuccess();
-            fetchRoles(currentPage, pageSize, sortBy, order);
+            fetchRoles();
 
         } catch (err) {
             const apiErrors = err?.response?.data?.errors;
@@ -183,7 +205,7 @@ const Role = () => {
             });
 
             onSuccess(); // Close modal
-                     fetchRoles(currentPage, pageSize, sortBy, order);
+                     fetchRoles(currentPage, pageSize, sortBy, order,statusFilter);
 
             setEditModalOpen(false);
         } catch (err) {
@@ -211,7 +233,7 @@ const Role = () => {
                 method: "POST",
                 data: { id: row._id },
             });
-            fetchRoles(currentPage, pageSize, sortBy, order);
+            fetchRoles(currentPage, pageSize, sortBy, order,statusFilter);
 
         } catch (err) {
             console.error("Failed to toggle role status:", err.message || err);
@@ -261,6 +283,12 @@ const Role = () => {
                     modalTitle="Add Role"
                     modalFields={roleFields}
                     onSubmit={handleRoleSubmit}
+                    onFilterChange={(val) => {
+                        setStatusFilter(val);
+                        setCurrentPage(1);
+                    }}
+                        searchValue={search}
+                        onSearchChange={handleSearchChange}
                 />
                 <Table
                     headers={headers}

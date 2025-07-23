@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Breadcrumb from "../../components/general/Breadcrum";
 import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
@@ -31,7 +31,7 @@ const Master = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(10);
     const [sortBy, setSortBy] = useState("master_name");
     const [order, setOrder] = useState("asc");
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,6 +45,11 @@ const Master = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingMasterId, setEditingMasterId] = useState(null);
     const [modalLoading, setModalLoading] = useState(false);
+    const [statusFilter, setStatusFilter] = useState("");
+    const [search, setSearch] = useState('');
+
+
+    const debounceTimeoutRef = useRef(null);
     const masterFields = [
         { label: "Master Name", name: "master_name", type: "text", required: true },
         { label: "Slug", name: "slug", type: "text", required: true },
@@ -103,11 +108,23 @@ const Master = () => {
     };
 
 
-    const fetchMasters = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order, silent = false) => {
+    const fetchMasters = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order, silent = false, status = statusFilter,
+        searchText = search) => {
         try {
             if (!silent) setLoading(true);
+            const params = new URLSearchParams();
+            params.append("page", page);
+            params.append("limit", limit);
+            params.append("sortBy", sort);
+            params.append("order", sortOrder);
+
+            if (status === "active") params.append("status", "true");
+            else if (status === "inactive") params.append("status", "false");
+
+            if (searchText?.trim()) params.append("search", searchText.trim());
+
             const response = await axiosWrapper(
-                `api/v1/masters/paginateMasters?page=${page}&limit=${limit}&sortBy=${sort}&order=${sortOrder}`,
+                `api/v1/masters/paginateMasters?${params.toString()}`,
                 { method: "POST" }
             );
 
@@ -139,8 +156,17 @@ const Master = () => {
     };
 
     useEffect(() => {
-        fetchMasters(currentPage, pageSize, sortBy, order);
-    }, [currentPage, pageSize, sortBy, order]);
+        fetchMasters(currentPage, pageSize, sortBy, order,false, statusFilter, search);
+    }, [currentPage, pageSize, sortBy, order, statusFilter]);
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setSearch(val);
+
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = setTimeout(() => {
+            fetchMasters(1, pageSize, sortBy, order, false, statusFilter, val);
+        }, 500);
+    };
     const fetchParameterTypes = async () => {
         try {
             const res = await axiosWrapper("api/v1/parameter-types/getParameterTypes", {
@@ -200,96 +226,96 @@ const Master = () => {
         setIsModalOpen(true);
     };
 
-const handleCreateOrUpdateMaster = async (formData, setErrors, onSuccess) => {
-    try {
-        setModalLoading(true);
+    const handleCreateOrUpdateMaster = async (formData, setErrors, onSuccess) => {
+        try {
+            setModalLoading(true);
 
-        const payload = {
-            masterData: {
-                master_name: formData.master_name,
-                slug: formData.slug,
-                display_name_singular: formData.display_name_singular,
-                display_name_plural: formData.display_name_plural,
-                model_name: formData.model_name,
-                parameter_type_id: formData.parameter_type_id,
-                order: isNaN(Number(formData.order)) ? 1 : Number(formData.order),
-            },
-            masterFieldData: masterFieldData.map((item) => ({
-                ...item,
-                order: isNaN(Number(item.order)) ? 1 : Number(item.order),
-                required: Boolean(item.required),
-                default: Boolean(item.default),
-            })),
-        };
+            const payload = {
+                masterData: {
+                    master_name: formData.master_name,
+                    slug: formData.slug,
+                    display_name_singular: formData.display_name_singular,
+                    display_name_plural: formData.display_name_plural,
+                    model_name: formData.model_name,
+                    parameter_type_id: formData.parameter_type_id,
+                    order: isNaN(Number(formData.order)) ? 1 : Number(formData.order),
+                },
+                masterFieldData: masterFieldData.map((item) => ({
+                    ...item,
+                    order: isNaN(Number(item.order)) ? 1 : Number(item.order),
+                    required: Boolean(item.required),
+                    default: Boolean(item.default),
+                })),
+            };
 
-        let createdMaster = null;
+            let createdMaster = null;
 
-        if (isEditMode) {
-            payload.id = editingMasterId;
-            await axiosWrapper("api/v1/masters/updateMaster", {
-                method: "POST",
-                data: payload,
-            });
-        } else {
-            const res = await axiosWrapper("api/v1/masters/createMaster", {
-                method: "POST",
-                data: payload,
-            });
-            createdMaster = res?.master || res?.data?.master; // adjust based on API format
-        }
-
-        // ✅ Update sessionStorage only on create
-        if (!isEditMode && createdMaster) {
-            const sessionData = JSON.parse(sessionStorage.getItem("parameterTypes"));
-            if (sessionData && Array.isArray(sessionData)) {
-                const updatedSessionData = sessionData.map((item) => {
-                    if (item._id === payload.masterData.parameter_type_id) {
-                        return {
-                            ...item,
-                            masterDetails: [
-                                ...(item.masterDetails || []),
-                                {
-                                    masterId: createdMaster._id,
-                                    masterName: createdMaster.master_name,
-                                    order: createdMaster.order,
-                                },
-                            ],
-                        };
-                    }
-                    return item;
+            if (isEditMode) {
+                payload.id = editingMasterId;
+                await axiosWrapper("api/v1/masters/updateMaster", {
+                    method: "POST",
+                    data: payload,
                 });
-                sessionStorage.setItem("parameterTypes", JSON.stringify(updatedSessionData));
+            } else {
+                const res = await axiosWrapper("api/v1/masters/createMaster", {
+                    method: "POST",
+                    data: payload,
+                });
+                createdMaster = res?.master || res?.data?.master; // adjust based on API format
             }
-        }
 
-        onSuccess();
-        await fetchMasters();
-    } catch (err) {
-        const apiErrors = err?.response?.data?.errors || {};
-        const masterErrors = {};
-        const fieldErrors = [];
-
-        for (const key in apiErrors) {
-            if (key.startsWith("masterData.")) {
-                const field = key.split("masterData.")[1];
-                masterErrors[field] = apiErrors[key];
-            } else if (key.startsWith("masterFieldData[")) {
-                const match = key.match(/masterFieldData\[(\d+)\]\.(.+)/);
-                if (match) {
-                    const index = parseInt(match[1], 10);
-                    const field = match[2];
-                    fieldErrors[index] = fieldErrors[index] || {};
-                    fieldErrors[index][field] = apiErrors[key];
+            // ✅ Update sessionStorage only on create
+            if (!isEditMode && createdMaster) {
+                const sessionData = JSON.parse(sessionStorage.getItem("parameterTypes"));
+                if (sessionData && Array.isArray(sessionData)) {
+                    const updatedSessionData = sessionData.map((item) => {
+                        if (item._id === payload.masterData.parameter_type_id) {
+                            return {
+                                ...item,
+                                masterDetails: [
+                                    ...(item.masterDetails || []),
+                                    {
+                                        masterId: createdMaster._id,
+                                        masterName: createdMaster.master_name,
+                                        order: createdMaster.order,
+                                    },
+                                ],
+                            };
+                        }
+                        return item;
+                    });
+                    sessionStorage.setItem("parameterTypes", JSON.stringify(updatedSessionData));
                 }
             }
-        }
 
-        setFormErrors(masterErrors);
-        setMasterFieldErrors(fieldErrors);
-    } finally {
-        setModalLoading(false);
-    }
-};
+            onSuccess();
+            await fetchMasters();
+        } catch (err) {
+            const apiErrors = err?.response?.data?.errors || {};
+            const masterErrors = {};
+            const fieldErrors = [];
+
+            for (const key in apiErrors) {
+                if (key.startsWith("masterData.")) {
+                    const field = key.split("masterData.")[1];
+                    masterErrors[field] = apiErrors[key];
+                } else if (key.startsWith("masterFieldData[")) {
+                    const match = key.match(/masterFieldData\[(\d+)\]\.(.+)/);
+                    if (match) {
+                        const index = parseInt(match[1], 10);
+                        const field = match[2];
+                        fieldErrors[index] = fieldErrors[index] || {};
+                        fieldErrors[index][field] = apiErrors[key];
+                    }
+                }
+            }
+
+            setFormErrors(masterErrors);
+            setMasterFieldErrors(fieldErrors);
+        } finally {
+            setModalLoading(false);
+        }
+    };
 
     const handleSoftDelete = async (row) => {
         try {
@@ -298,7 +324,7 @@ const handleCreateOrUpdateMaster = async (formData, setErrors, onSuccess) => {
                 method: "POST",
                 data: { id: row._id },
             });
-            fetchMasters(currentPage, pageSize, sortBy, order);
+            fetchMasters(currentPage, pageSize, sortBy, order, statusFilter);
         } catch (error) {
             console.error("Soft delete failed:", error.message || error);
         } finally {
@@ -364,7 +390,7 @@ const handleCreateOrUpdateMaster = async (formData, setErrors, onSuccess) => {
                     <div className="d-flex gap-4">
                         <div className="search-container">
                             <img src={search2} alt="Search" />
-                            <Search />
+                            <Search value={search} onChange={handleSearchChange} />
                         </div>
                     </div>
 
@@ -375,7 +401,10 @@ const handleCreateOrUpdateMaster = async (formData, setErrors, onSuccess) => {
                                 { label: "Active", value: "active" },
                                 { label: "Inactive", value: "inactive" }
                             ]}
-                            onChange={(e) => console.log("Selected:", e.target.value)}
+                            onChange={(e) => {setStatusFilter(e.target.value);
+                                setCurrentPage(1);
+                            }}
+
                         />
 
                         <Button name="Add Master" onClick={() => {

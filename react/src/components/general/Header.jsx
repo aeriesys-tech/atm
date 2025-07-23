@@ -295,163 +295,184 @@ function Header() {
                                     </ul>
                                 </li>
 
-                                <li className="nav-item dropdown" ref={menuWrapperRef}>
+                                <li className={`nav-item dropdown ${openMenu === "main" ? "show" : ""}`} ref={menuWrapperRef}>
                                     <a
-                                        className="nav-link"
-                                        id="navbarDropdown"
+                                        className="nav-link d-flex align-items-center gap-2"
                                         role="button"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
-                                        onClick={() => setOpenMenu(openMenu === "main" ? null : "main")}
+                                        onClick={() => {
+                                            setOpenMenu(openMenu === "main" ? null : "main");
+                                            setOpenSubMenu(null);
+                                        }}
                                     >
-                                        <img src={fi_1828824} />
+                                        <img src={fi_1828824} alt="Configure" />
                                         <span>CONFIGURE</span>
-                                        <img src={ArrowDown} />
+                                        <img src={ArrowDown} alt="Dropdown Arrow" />
                                     </a>
 
                                     {openMenu === "main" && (
-                                        <ul className="dropdown-menu show">
+                                        <ul className="dropdown-menu show menu-list">
                                             {/* Lineage Parameters */}
                                             {parameterTypes.map(pt => (
-                                                <li key={pt._id} className="position-relative">
-                                                    <button className="dropdown-item d-flex justify-content-between align-items-center" onClick={() => setOpenSubMenu(openSubMenu === pt._id ? null : pt._id)}>
-                                                        <div className="d-flex gap-3 align-items-center">            <img src={adjust1} alt="Lineage" /><p className="m-0">{pt.parameter_type_name}</p></div>
-                                                        <img className="icon" src={ArrowLineRight} style={{ transform: openSubMenu === pt._id ? 'rotate(90deg)' : 'rotate(0deg)' }} alt="Toggle Submenu" />
+                                                <li key={pt._id} className={`submenu-parent ${openSubMenu === pt._id ? "show" : ""}`}>
+
+                                                    <button
+                                                        className="dropdown-item d-flex justify-content-between align-items-center"
+                                                        onClick={() => setOpenSubMenu(openSubMenu === pt._id ? null : pt._id)}
+                                                    >
+                                                        <div className="d-flex gap-2 align-items-center">
+                                                            <img src={adjust1} alt="Lineage" />
+                                                            <p className="m-0">{pt.parameter_type_name}</p>
+                                                        </div>
+                                                        <img
+                                                            src={ArrowLineRight}
+                                                            className="icon"
+                                                            alt="Arrow"
+                                                            style={{ transform: openSubMenu === pt._id ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+                                                        />
                                                     </button>
+
                                                     {openSubMenu === pt._id && (
-                                                        <ul className="submenu position-absolute" style={{ left: '100%', top: 0 }}>
-                                                            {pt.masterDetails?.length
-                                                                ? pt.masterDetails.map(md => (
+                                                        <ul className="dropdown-menu submenu show">
+                                                            {pt.masterDetails?.length ? (
+                                                                pt.masterDetails.map(md => (
                                                                     <li key={md.masterId}>
-                                                                        <button className="dropdown-item gap-3" onClick={() => {
-                                                                            navigate(`/masters/${md.masterId}`);
-                                                                            setOpenMenu(null);
-                                                                            setOpenSubMenu(null);
-                                                                        }}>
-                                                                            <img className="icon" src={ArrowLineRight} alt="Toggle Submenu" />
+                                                                        <button
+                                                                            className="dropdown-item d-flex align-items-center gap-2"
+                                                                            onClick={() => {
+                                                                                navigate(`/masters/${md.masterId}`);
+                                                                                setOpenMenu(null);
+                                                                                setOpenSubMenu(null);
+                                                                            }}
+                                                                        >
+                                                                            <img src={ArrowLineRight} alt="Submenu Arrow" />
                                                                             {md.masterName}
                                                                         </button>
                                                                     </li>
                                                                 ))
-                                                                : <li><span className="dropdown-item">— No items —</span></li>
-                                                            }
+                                                            ) : (
+                                                                <li><span className="dropdown-item">— No items —</span></li>
+                                                            )}
                                                         </ul>
                                                     )}
                                                 </li>
                                             ))}
 
-
-                                            {/* Repeat similarly for other menus */}
-                                            <li className="menu-item">
+                                            {/* Users Settings */}
+                                            <li className={`d-flex flex-column position-relative ${openSubMenu === "attribute" ? "show" : ""}`}>
                                                 <button
                                                     className="dropdown-item d-flex justify-content-between align-items-center"
-                                                    onClick={() => handleMenuToggle("attribute")}
+                                                    onClick={() => setOpenSubMenu(openSubMenu === "attribute" ? null : "attribute")}
                                                 >
-                                                    <div className="d-flex gap-3 align-items-center">
+                                                    <div className="d-flex gap-2 align-items-center">
                                                         <img src={tag} alt="Attribute" />
                                                         <p className="m-0">Users Settings</p>
                                                     </div>
-                                                    <img className="icon" src={ArrowLineRight} alt="Arrow" />
+                                                    <img src={ArrowLineRight} className="icon" alt="Arrow" />
                                                 </button>
-                                                {openSubMenu === "attribute" && (
-                                                    <ul className="submenu">
-                                                        {/* <li><a href="equipment-groups.html">Equipment Group</a></li>
-                                                        <li><a href="equipment-types.html">Equipment Type</a></li>
-                                                        <li><a href="#">Equipment Subtype</a></li>
-                                                        <li><a href="#">Components</a></li> */}
-                                                        <li><img src={tag} alt="Lineage" /><Link to="/roleGroup">Role Group</Link></li>
-                                                        <li><img src={tag} alt="Lineage" /><Link to="/roles">Role</Link></li>
-                                                        <li><img src={tag} alt="Lineage" /><Link to="/departments">Department</Link></li>
-                                                        <li><img src={adjust1} alt="Lineage" /><Link to="/users">Users</Link></li>
 
+                                                {openSubMenu === "attribute" && (
+                                                    <ul
+                                                        className="dropdown-menu submenu show"
+                                                        style={{
+                                                            left: '100%',
+                                                            marginTop: 0,
+                                                            padding: '10px',
+                                                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                                                            borderRadius: '8px',
+                                                            backgroundColor: '#fff',
+                                                            minWidth: '90px',
+                                                            height: 'auto',
+                                                        }}
+                                                    >
+                                                        <li>
+                                                            <Link className="dropdown-item" to="/roleGroup">
+                                                                <div
+                                                                    className=" d-flex align-items-center gap-2">
+                                                                    <img src={tag} alt="Role Group" />
+                                                                    <span>Role Group</span>
+                                                                </div>
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link className="dropdown-item" to="/roles">
+                                                                <div className="d-flex gap-2 align-items-center">
+                                                                    <img src={tag} alt="Role" />
+                                                                    <span>Role</span>
+                                                                </div>
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link className="dropdown-item" to="/departments">
+                                                                <div className="d-flex gap-2 align-items-center">
+                                                                    <img src={tag} alt="Department" />
+                                                                    <span>Department</span>
+                                                                </div>
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link className="dropdown-item" to="/users">
+                                                                <div className="d-flex gap-2 align-items-center">
+                                                                    <img src={adjust1} alt="Users" />
+                                                                    <span>Users</span>
+                                                                </div>
+                                                            </Link>
+                                                        </li>
                                                     </ul>
                                                 )}
                                             </li>
-                                            {/* <li className="btn-group dropend d-flex">
-                                                <Link
-                                                    className="dropdown-item d-flex justify-content-start gap-3"
-                                                    to="/master"
-                                                >
-                                                    <div className="d-flex gap-3">
-                                                        <img
-                                                            src={tag}
 
-                                                            alt="Masters"
-                                                        />
-                                                        <p className="m-0">Masters</p>
-                                                    </div>
-                                                </Link >
-                                            </li> */}
 
+                                            {/* Masters */}
                                             <li className="btn-group dropend d-flex">
-                                                <Link
-                                                    className="dropdown-item d-flex justify-content-start gap-3"
-                                                    to="/master"
-                                                >
-                                                    <div className="d-flex gap-3">
-                                                        <img src={tag} alt="Masters" />
-                                                        <p className="m-0">Masters</p>
-                                                    </div>
+                                                <Link className="dropdown-item d-flex justify-content-start gap-3" to="/master">
+                                                    <img src={tag} alt="Masters" />
+                                                    <p className="m-0">Masters</p>
                                                 </Link>
                                             </li>
-
-                                            {/* Add other sections like Variable, Data Source, General, Modal, User similarly */}
                                         </ul>
                                     )}
                                 </li>
 
-                                <li className="nav-item dropdown position-relative">
+
+                                <li className={`nav-item dropdown position-relative ${openMenu === "templates" ? "show" : ""}`}>
                                     <a
                                         type="button"
                                         className="nav-link d-flex align-items-center gap-2"
                                         onClick={() => setOpenMenu(openMenu === "templates" ? null : "templates")}
+                                        role="button"
                                     >
                                         <img src={fi_1828824} alt="Templates" />
-                                        <span>TEMPLATES</span>
+                                        <span className="text-uppercase">TEMPLATES</span>
                                         <img src={ArrowDown} alt="Dropdown" />
                                     </a>
 
                                     {openMenu === "templates" && (
-                                        <ul className="dropdown-menu show">
-                                            <li className="menu-item">
-                                                <button
-                                                    className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
-                                                    onClick={() => window.location.href = 'lineage-templates.html'}
+                                        <ul className="dropdown-menu show menu-list">
+                                            {[
+                                                { icon: IconSet, title: "Lineage Templates", href: "lineage-templates.html" },
+                                                { icon: bag1, title: "Asset Templates" },
+                                                { icon: layout1, title: "Variable Templates" },
+                                                { icon: box1, title: "Modal Templates" },
+                                                { icon: workschedule1, title: "Use Case Templates" },
+                                                { icon: graph1, title: "Analytics Templates" },
+                                            ].map((item, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="menu-item btn-group dropend d-flex"
+                                                    onClick={() => {
+                                                        if (item.href) window.location.href = item.href;
+                                                    }}
                                                 >
-                                                    <img src={IconSet} alt="Lineage Templates" />
-                                                    <p className="m-0">Lineage Templates</p>
-                                                </button>
-                                            </li>
-                                            <li className="menu-item">
-                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
-                                                    <img src={bag1} alt="Asset Templates" />
-                                                    <p className="m-0">Asset Templates</p>
-                                                </button>
-                                            </li>
-                                            <li className="menu-item">
-                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
-                                                    <img src={layout1} alt="Variable Templates" />
-                                                    <p className="m-0">Variable Templates</p>
-                                                </button>
-                                            </li>
-                                            <li className="menu-item">
-                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
-                                                    <img src={box1} alt="Modal Templates" />
-                                                    <p className="m-0">Modal Templates</p>
-                                                </button>
-                                            </li>
-                                            <li className="menu-item">
-                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
-                                                    <img src={workschedule1} alt="Use Case Templates" />
-                                                    <p className="m-0">Use Case Templates</p>
-                                                </button>
-                                            </li>
-                                            <li className="menu-item">
-                                                <button className="dropdown-item d-flex justify-content-start gap-3 align-items-center">
-                                                    <img src={graph1} alt="Analytics Templates" />
-                                                    <p className="m-0">Analytics Templates</p>
-                                                </button>
-                                            </li>
+                                                    <button
+                                                        className="dropdown-item d-flex justify-content-start gap-3 align-items-center w-100"
+                                                        onMouseEnter={(e) => e.currentTarget.classList.add("active")}
+                                                        onMouseLeave={(e) => e.currentTarget.classList.remove("active")}
+                                                    >
+                                                        <img src={item.icon} alt={item.title} />
+                                                        <p className="m-0">{item.title}</p>
+                                                    </button>
+                                                </li>
+                                            ))}
                                         </ul>
                                     )}
                                 </li>

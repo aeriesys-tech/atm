@@ -99,49 +99,57 @@ function Table({
                         </span>
                       ) : header.key === 'action' ? (
                         <span className="d-flex gap-2 justify-content-center">
-                          <a
-                            onClick={(e) => {
-                              e.preventDefault();
-                              onView?.(row);
-                              handleViewClick(row);
-                            }}
-                            title="View"
-                          >
-                            <img src={eyeicon} alt="Edit" style={{ cursor: 'pointer', width: '28px' }} />
-                          </a>
-                          {row.status ? (
+                          {onView ? (
+                            // Only show View icon when onView is passed
                             <a
                               onClick={(e) => {
                                 e.preventDefault();
-                                onEdit(row);
+                                onView?.(row);
+                                handleViewClick(row);
                               }}
-                              title="Edit"
+                              title="View"
                             >
-                              <img src={editicon} alt="Edit" style={{ cursor: 'pointer' }} />
+                              <img src={eyeicon} alt="View" style={{ cursor: 'pointer', width: '28px' }} />
                             </a>
                           ) : (
-                            <img
-                              src={editicon}
-                              alt="Edit Disabled"
-                              style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                              title="Inactive roles cannot be edited"
-                            />
-                          )}
+                            <>
+                              {/* Edit Icon */}
+                              {row.status ? (
+                                <a
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    onEdit(row);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <img src={editicon} alt="Edit" style={{ cursor: 'pointer' }} />
+                                </a>
+                              ) : (
+                                <img
+                                  src={editicon}
+                                  alt="Edit Disabled"
+                                  style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                                  title="Inactive roles cannot be edited"
+                                />
+                              )}
 
-                          {/* Delete Button */}
-                          <a
-                            onClick={(e) => {
-                              e.preventDefault();
-                              onDelete(row);
-                            }}
-                            title="Delete"
-                          >
-                            <img src={deleteicon} alt="Delete" />
-                          </a>
+                              {/* Delete Icon */}
+                              <a
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  onDelete(row);
+                                }}
+                                title="Delete"
+                              >
+                                <img src={deleteicon} alt="Delete" />
+                              </a>
+                            </>
+                          )}
                         </span>
                       ) : (
                         row[header.key]
                       )}
+
                     </td>
                   ))}
                 </tr>
