@@ -29,7 +29,7 @@ const paginatedDepartments = async (req, res) => {
                     { department_code: new RegExp(search, 'i') }
                 ]
             } : {},
-            status !== undefined ? { status: status === 'active' } : {}
+            (status === 'true' || status === 'false') ? { status: status === 'true' } : {}
         ]
     };
 
@@ -71,34 +71,43 @@ const createDepartment = async (req, res) => {
         const department = await Department.findOne({
             $or: [{ department_code }, { department_name }]
         });
+
         if (department) {
             let errors = {};
             if (department.department_code === department_code) errors.department_code = "Department code already exists";
             if (department.department_name === department_name) errors.department_name = "Department name already exists";
+
             await logApiResponse(req, "Duplicate Department", 400, errors);
             return res.status(400).json({ message: "Duplicate Department", errors });
         }
+
         const newDepartment = await Department.create({ department_code, department_name });
         await redisClient.del('departments');
-        await createNotification(req, 'Department', newDepartment._id, 'Department created successfully');
-        await logApiResponse(req, "Department created successfully", 201, newDepartment);
-        res.status(201).json({
-            message: "Department  created successfully", data: newDepartment
+
+        const message = `Department "${newDepartment.department_name}" created successfully`;
+        await createNotification(req, 'Department', newDepartment._id, message);
+        await logApiResponse(req, message, 201, newDepartment);
+
+        return res.status(201).json({
+            message,
+            data: newDepartment
         });
     } catch (error) {
         await logApiResponse(req, "Failed to create Department", 500, { error: error.message });
-        res.status(500).json({ message: "Failed to create Department", error: error.message });
+        return res.status(500).json({ message: "Failed to create Department", error: error.message });
     }
 };
+
 
 
 const updateDepartment = async (req, res) => {
     try {
         const { id, department_code, department_name, status, deleted_at } = req.body;
+
         const existingDepartment = await Department.findById(id);
         if (!existingDepartment) {
-            return logApiResponse(req, "Department not found", 404, { id: "Department not found" }) &&
-                res.status(404).json({ message: "Department not found", errors: { id: "Department  not found" } });
+            await logApiResponse(req, "Department not found", 404, { id: "Department not found" });
+            return res.status(404).json({ message: "Department not found", errors: { id: "Department not found" } });
         }
 
         const [duplicateCode, duplicateName] = await Promise.all([
@@ -111,20 +120,50 @@ const updateDepartment = async (req, res) => {
             if (duplicateCode) errors.department_code = "Department code already exists";
             if (duplicateName) errors.department_name = "Department name already exists";
 
-            return logApiResponse(req, "Validation Error", 400, errors) &&
-                res.status(400).json({ message: "Validation Error", errors });
+            await logApiResponse(req, "Validation Error", 400, errors);
+            return res.status(400).json({ message: "Validation Error", errors });
         }
-        await Department.findByIdAndUpdate(id, { department_code, department_name, status, deleted_at, updated_at: Date.now() });
+
+        const before = {
+            department_code: existingDepartment.department_code,
+            department_name: existingDepartment.department_name,
+            status: existingDepartment.status,
+            deleted_at: existingDepartment.deleted_at
+        };
+
+        await Department.findByIdAndUpdate(id, {
+            department_code,
+            department_name,
+            status,
+            deleted_at,
+            updated_at: Date.now()
+        });
+
         const updatedDepartment = await Department.findById(id);
-        await createNotification(req, 'Department', id, 'Department updated successfully');
+
+        const after = {
+            department_code: updatedDepartment.department_code,
+            department_name: updatedDepartment.department_name,
+            status: updatedDepartment.status,
+            deleted_at: updatedDepartment.deleted_at
+        };
+
+        const message = `Department "${after.department_name}" updated successfully.\n` +
+            `Before: ${JSON.stringify(before)}\n` +
+            `After: ${JSON.stringify(after)}`;
+
+        await createNotification(req, 'Department', id, message);
         await logApiResponse(req, "Department updated successfully", 200, updatedDepartment);
+
         return res.status(200).json({ message: "Department updated successfully", data: updatedDepartment });
 
     } catch (error) {
-        await logApiResponse(req, "Failed to create role", 500, { error: error.message });
-        res.status(500).json({ message: "Failed to create role", error: error.message });
+        await logApiResponse(req, "Failed to update Department", 500, { error: error.message });
+        return res.status(500).json({ message: "Failed to update Department", error: error.message });
     }
 };
+
+
 
 
 const getDepartments = async (req, res) => {
@@ -163,34 +202,41 @@ const deleteDepartment = async (req, res) => {
         const toggleSoftDelete = async (_id) => {
             const department = await Department.findById(_id);
             if (!department) throw new Error(`Department with ID ${_id} not found`);
+
             department.deleted_at = department.deleted_at ? null : new Date();
             department.status = !department.deleted_at;
             department.updated_at = new Date();
-            return department.save();
+            await department.save();
+
+            const action = department.deleted_at ? 'inactivated' : 'activated';
+            const message = `Department "${department.department_name}" is ${action} successfully`;
+            await createNotification(req, 'Department', _id, message);
+            return { department, message };
         };
 
         if (Array.isArray(ids)) {
-            const updatedDepartments = await Promise.all(ids.map(toggleSoftDelete));
+            const results = await Promise.all(ids.map(toggleSoftDelete));
+            const updatedDepartments = results.map(r => r.department);
+            const messages = results.map(r => r.message);
             await logApiResponse(req, 'Departments updated successfully', 200, updatedDepartments);
-            return res.status(200).json({ message: 'Departments updated successfully', data: updatedDepartments });
+            return res.status(200).json({ message: messages.join('; '), data: updatedDepartments });
         }
 
         if (id) {
-            const updatedDepartment = await toggleSoftDelete(id);
-            const message = updatedDepartment.deleted_at ? 'Department is inactivated successfully' : 'Department is activated successfully';
-            await createNotification(req, 'Department', id, message);
-            await logApiResponse(req, message, 200, updatedDepartment);
-            return res.status(200).json({ message, data: updatedDepartment });
+            const { department, message } = await toggleSoftDelete(id);
+            await logApiResponse(req, message, 200, department);
+            return res.status(200).json({ message, data: department });
         }
 
         await logApiResponse(req, 'No ID or IDs provided', 400, {});
         return res.status(400).json({ message: 'No ID or IDs provided' });
 
     } catch (error) {
-        await logApiResponse(req, "Role delete/restore failed", 500, { error: error.message });
-        return res.status(500).json({ message: "Role delete/restore failed", error: error.message });
+        await logApiResponse(req, "Department delete/restore failed", 500, { error: error.message });
+        return res.status(500).json({ message: "Department delete/restore failed", error: error.message });
     }
 };
+
 
 const destroyDepartment = async (req, res) => {
     try {
@@ -198,19 +244,26 @@ const destroyDepartment = async (req, res) => {
         if (!id) {
             return logApiResponse(req, 'Department ID is required', 400, false, null, res);
         }
+
         const department = await Department.findOne({ _id: id }).lean({ virtuals: false });
         if (!department) {
-            return logApiResponse(req, 'Role not found', 404, false, null, res);
+            return logApiResponse(req, 'Department not found', 404, false, null, res);
         }
+
         await Department.deleteOne({ _id: id });
-        await createNotification(req, 'Department', id, 'Department permanently deleted');
-        await logApiResponse(req, 'Department permanently deleted', 200, true, null, res);
-        res.status(200).json({ message: 'Department permanently deleted' });
+
+        const message = `Department "${department.department_name}" permanently deleted`;
+        await createNotification(req, 'Department', id, message);
+        await logApiResponse(req, message, 200, true, null, res);
+
+        return res.status(200).json({ message });
+
     } catch (error) {
-        await logApiResponse(req, "Failed to create Department", 500, { error: error.message });
-        res.status(500).json({ message: "Failed to create Department", error: error.message });
+        await logApiResponse(req, "Failed to delete Department", 500, { error: error.message });
+        return res.status(500).json({ message: "Failed to delete Department", error: error.message });
     }
 };
+
 
 
 module.exports = {

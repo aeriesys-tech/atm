@@ -17,57 +17,80 @@ const paginatedRoles = async (req, res) => {
         status
     } = req.query;
 
-    const allowedSortFields = ['_id', 'role_code', 'role_name', 'created_at'];
-    const cleanSortBy = String(sortBy).trim();
-    const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
+    const safeSortBy = ['_id', 'role_code', 'role_name', 'created_at'].includes(sortBy)
+        ? sortBy
+        : '_id';
 
-    const sort = {
-        [safeSortBy]: order === 'desc' ? -1 : 1
-    };
+    const sort = { [safeSortBy]: order === 'desc' ? -1 : 1 };
 
-    const searchQuery = {
-        $and: [
-            search ? {
-                $or: [
-                    { role_name: new RegExp(search, 'i') },
-                    { role_code: new RegExp(search, 'i') }
-                ]
-            } : {},
-            status !== undefined ? { status: status === 'active' } : {}
-        ]
-    };
+    const match = {};
+
+    if (status === 'true' || status === 'false') {
+        match.status = status === 'true';
+    }
+
+    if (search) {
+        match.$or = [
+            { role_name: new RegExp(search, 'i') },
+            { role_code: new RegExp(search, 'i') },
+            { 'role_group.role_group_name': new RegExp(search, 'i') }
+        ];
+    }
 
     try {
-        const roles = await Role.find(searchQuery)
-            .sort(sort)
-            .skip((page - 1) * limit)
-            .limit(Number(limit));
+        const pipeline = [
+            {
+                $lookup: {
+                    from: 'rolegroups',
+                    localField: 'role_group_id',
+                    foreignField: '_id',
+                    as: 'role_group'
+                }
+            },
+            { $unwind: { path: '$role_group', preserveNullAndEmptyArrays: true } },
+            { $match: match },
+            { $sort: sort },
+            { $skip: (page - 1) * limit },
+            { $limit: Number(limit) }
+        ];
 
-        const count = await Role.countDocuments(searchQuery);
+        const countPipeline = [
+            {
+                $lookup: {
+                    from: 'rolegroups',
+                    localField: 'role_group_id',
+                    foreignField: '_id',
+                    as: 'role_group'
+                }
+            },
+            { $unwind: { path: '$role_group', preserveNullAndEmptyArrays: true } },
+            { $match: match },
+            { $count: 'total' }
+        ];
 
-        await logApiResponse(req, "Paginated roles retrieved successfully", 200, {
-            totalPages: Math.ceil(count / limit),
+        const [roles, countResult] = await Promise.all([
+            Role.aggregate(pipeline),
+            Role.aggregate(countPipeline)
+        ]);
+
+        const totalItems = countResult[0]?.total || 0;
+
+        const responseData = {
+            totalPages: Math.ceil(totalItems / limit),
             currentPage: Number(page),
-            roles,
-            totalItems: count
-        });
+            totalItems,
+            roles
+        };
 
-        res.status(200).json({
-            totalPages: Math.ceil(count / limit),
-            currentPage: Number(page),
-            roles,
-            totalItems: count
-        });
+        await logApiResponse(req, "Paginated roles retrieved successfully", 200, responseData);
+        res.status(200).json(responseData);
     } catch (error) {
         console.error("Error retrieving paginated roles:", error);
         await logApiResponse(req, "Failed to retrieve paginated roles", 500, { error: error.message });
-
-        res.status(500).json({
-            message: "Failed to retrieve paginated roles",
-            error: error.message
-        });
+        res.status(500).json({ message: "Failed to retrieve paginated roles", error: error.message });
     }
 };
+
 
 const createRole = async (req, res) => {
     try {
@@ -87,7 +110,7 @@ const createRole = async (req, res) => {
         await redisClient.del('roles');
 
         await logApiResponse(req, "Role created successfully", 201, newRole);
-        await createNotification(req, 'Role', newRole._id, 'Role created successfully');
+        await createNotification(req, 'Role', newRole._id, ` "${newRole.role_name}" created successfully`);
 
         res.status(201).json({
             message: "Role  created successfully", data: newRole
@@ -102,10 +125,12 @@ const createRole = async (req, res) => {
 const updateRole = async (req, res) => {
     try {
         const { id, role_group_id, role_code, role_name, status, deleted_at } = req.body;
+
         const existingRole = await Role.findById(id);
         if (!existingRole) {
-            return logApiResponse(req, "Role not found", 404, { id: "Role not found" }) &&
-                res.status(404).json({ message: "Role not found", errors: { id: "Role not found" } });
+            const errors = { id: "Role not found" };
+            await logApiResponse(req, "Role not found", 404, errors);
+            return res.status(404).json({ message: "Role not found", errors });
         }
 
         const [duplicateCode, duplicateName] = await Promise.all([
@@ -113,26 +138,55 @@ const updateRole = async (req, res) => {
             Role.findOne({ role_name, _id: { $ne: id } })
         ]);
 
-        if (duplicateCode || duplicateName) {
-            const errors = {};
-            if (duplicateCode) errors.role_code = "Role code already exists";
-            if (duplicateName) errors.role_name = "Role name already exists";
+        const errors = {};
+        if (duplicateCode) errors.role_code = "Role code already exists";
+        if (duplicateName) errors.role_name = "Role name already exists";
 
-            return logApiResponse(req, "Validation Error", 400, errors) &&
-                res.status(400).json({ message: "Validation Error", errors });
+        if (Object.keys(errors).length > 0) {
+            await logApiResponse(req, "Validation Error", 400, errors);
+            return res.status(400).json({ message: "Validation Error", errors });
         }
-        await Role.findByIdAndUpdate(id, { role_group_id, role_code, role_name, status, deleted_at, updated_at: Date.now() });
+
+        const beforeUpdate = {
+            role_group_id: existingRole.role_group_id,
+            role_code: existingRole.role_code,
+            role_name: existingRole.role_name,
+            status: existingRole.status,
+            deleted_at: existingRole.deleted_at
+        };
+
+        await Role.findByIdAndUpdate(id, {
+            role_group_id,
+            role_code,
+            role_name,
+            status,
+            deleted_at,
+            updated_at: Date.now()
+        });
+
         const updatedRole = await Role.findById(id);
-        await createNotification(req, 'Role', id, 'Role Updated successfully');
+
+        const afterUpdate = {
+            role_group_id: updatedRole.role_group_id,
+            role_code: updatedRole.role_code,
+            role_name: updatedRole.role_name,
+            status: updatedRole.status,
+            deleted_at: updatedRole.deleted_at
+        };
+
+        const message = `Role updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
+
+        await createNotification(req, 'Role', id, message);
         await logApiResponse(req, "Role updated successfully", 200, updatedRole);
+
         return res.status(200).json({ message: "Role updated successfully", data: updatedRole });
 
     } catch (error) {
-        await logApiResponse(req, "Failed to create role", 500, { error: error.message });
-
-        res.status(500).json({ message: "Failed to create role", error: error.message });
+        await logApiResponse(req, "Failed to update role", 500, { error: error.message });
+        return res.status(500).json({ message: "Failed to update role", error: error.message });
     }
 };
+
 
 const getRoles = async (req, res) => {
     try {
@@ -169,23 +223,33 @@ const deleteRole = async (req, res) => {
         const toggleSoftDelete = async (_id) => {
             const role = await Role.findById(_id);
             if (!role) throw new Error(`Role with ID ${_id} not found`);
-            role.deleted_at = role.deleted_at ? null : new Date();
+
+            const wasDeleted = !!role.deleted_at;
+            role.deleted_at = wasDeleted ? null : new Date();
             role.status = !role.deleted_at;
             role.updated_at = new Date();
-            return role.save();
+
+            const updatedRole = await role.save();
+            const action = wasDeleted ? 'activated' : 'inactivated';
+            const message = ` "${updatedRole.role_name}" has been ${action} successfully`;
+
+            return { updatedRole, message };
         };
 
         if (Array.isArray(ids)) {
-            const updatedRoles = await Promise.all(ids.map(toggleSoftDelete));
+            const results = await Promise.all(ids.map(toggleSoftDelete));
+            const updatedRoles = results.map(r => r.updatedRole);
+
             await logApiResponse(req, 'Roles updated successfully', 200, updatedRoles);
             return res.status(200).json({ message: 'Roles updated successfully', data: updatedRoles });
         }
 
         if (id) {
-            const updatedRole = await toggleSoftDelete(id);
-            const message = updatedRole.deleted_at ? 'Role is inactivated successfully' : 'Role is activated successfully';
+            const { updatedRole, message } = await toggleSoftDelete(id);
+
             await createNotification(req, 'Role', id, message);
             await logApiResponse(req, message, 200, updatedRole);
+
             return res.status(200).json({ message, data: updatedRole });
         }
 
@@ -201,21 +265,28 @@ const deleteRole = async (req, res) => {
 const destroyRole = async (req, res) => {
     try {
         const { id } = req.body;
+
         if (!id) {
             return logApiResponse(req, 'Role ID is required', 400, false, null, res);
         }
-        const role = await Role.findOne({ _id: id }).lean({ virtuals: false });
+
+        const role = await Role.findById(id).lean();
         if (!role) {
             return logApiResponse(req, 'Role not found', 404, false, null, res);
         }
+
         await Role.deleteOne({ _id: id });
-        await createNotification(req, 'Role', id, 'Role permanently deleted');
-        await logApiResponse(req, 'Role permanently deleted', 200, true, null, res);
-        res.status(200).json({ message: 'role permanently deleted' });
+
+        const message = `"${role.role_name}" permanently deleted`;
+        await createNotification(req, 'Role', id, message);
+        await logApiResponse(req, message, 200, true, null, res);
+
+        return res.status(200).json({ message });
     } catch (error) {
-        await logApiResponse(req, "Failed to create role", 500, { error: error.message });
-        res.status(500).json({ message: "Failed to create role", error: error.message });
+        await logApiResponse(req, "Failed to delete role", 500, { error: error.message });
+        return res.status(500).json({ message: "Failed to delete role", error: error.message });
     }
 };
+
 
 module.exports = { paginatedRoles, createRole, updateRole, getRoles, getRole, deleteRole, destroyRole }

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const masterController = require('../controllers/masterController');
-// const uploadExcelMiddleware = require('../middlewares/uploadExcelMiddleware');
+const uploadExcelMiddleware = require('../middlewares/uploadExcelMiddleware');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { dynamicTableValidation, dynamicTableUpdateValidation } = require('../validations/dynamicTableValidation');
 const { add_master_validation, update_master_validation } = require('../validations/masterValidation');
@@ -18,13 +18,13 @@ router.post('/updateMaster', authMiddleware, update_master_validation, masterCon
 router.post('/masters/add', authMiddleware, dynamicTableValidation, masterController.insertDynamicData);
 router.post('/masters/update', authMiddleware, dynamicTableUpdateValidation, masterController.updateDynamicData);
 router.post('/masters/destroy', authMiddleware, masterController.destroyDynamicData);
-// router.post('/masters/:masterId/add', masterController.insertDynamicData);
+
 
 router.post('/deleteMaster', authMiddleware, Validate([validateId('id', 'Master ID')]), masterController.deleteMaster);
 router.post('/destroyMaster', authMiddleware, Validate([validateId('id', 'Master ID')]), masterController.destroyMaster);
 
 router.post('/masterfields-delete', authMiddleware, masterController.deleteDynamicData);
-// router.post('/restore-master/:id', masterController.restoreMaster);
+
 
 router.post('/paginateMasters', authMiddleware, paginateValidation(['master_name', 'display_name_singular', 'display_name_plural']), masterController.paginatedMasters);
 
@@ -33,5 +33,7 @@ router.post('/getMasters', authMiddleware, masterController.getMasters);
 router.post('/masters/delete', authMiddleware, masterController.deleteMaster);
 
 router.post('/masters-update', authMiddleware, dynamicTableUpdateValidation, masterController.updateDynamicData);
+router.post('/download-empty-sheet', masterController.downloadExcel);
+router.post('/upload-excel', authMiddleware, uploadExcelMiddleware.single('file'), masterController.uploadExcel);
 
 module.exports = router;

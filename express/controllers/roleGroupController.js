@@ -3,6 +3,7 @@ const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");
 const redisClient = require("../config/redisConfig");
 const { createNotification } = require('../utils/notification');
+const { createNotificationUser } = require('./notificationController');
 
 const paginatedRoleGroups = async (req, res) => {
     const {
@@ -21,6 +22,7 @@ const paginatedRoleGroups = async (req, res) => {
     const sort = {
         [safeSortBy]: order === 'desc' ? -1 : 1
     };
+
     const searchQuery = {
         $and: [
             search ? {
@@ -29,7 +31,7 @@ const paginatedRoleGroups = async (req, res) => {
                     { role_group_code: new RegExp(search, 'i') }
                 ]
             } : {},
-            status !== undefined ? { status: status === 'active' } : {}
+            (status === 'true' || status === 'false') ? { status: status === 'true' } : {}
         ]
     };
 
@@ -64,12 +66,15 @@ const paginatedRoleGroups = async (req, res) => {
     }
 };
 
+
 const createRoleGroup = async (req, res) => {
     try {
         const { role_group_code, role_group_name } = req.body;
+
         const role_group = await RoleGroup.findOne({
             $or: [{ role_group_code }, { role_group_name }]
         });
+
         if (role_group) {
             let errors = {};
             if (role_group.role_group_code === role_group_code) errors.role_group_code = "Role Group code already exists";
@@ -78,26 +83,33 @@ const createRoleGroup = async (req, res) => {
             await logApiResponse(req, "Duplicate Role Group", 400, errors);
             return res.status(400).json({ message: "Duplicate Role Group", errors });
         }
+
         const newRoleGroup = await RoleGroup.create({ role_group_code, role_group_name });
         await redisClient.del('role_groups');
-        await createNotification(req, 'Role Group', newRoleGroup._id, 'Role Group created successfully');
-        await logApiResponse(req, "Role Group created successfully", 201, newRoleGroup);
-        res.status(201).json({
-            message: "Role Group  created successfully", data: newRoleGroup
+
+        const message = `Role Group "${newRoleGroup.role_group_name}" created successfully`;
+        await createNotification(req, 'Role Group', newRoleGroup._id, message);
+        await logApiResponse(req, message, 201, newRoleGroup);
+
+        return res.status(201).json({
+            message,
+            data: newRoleGroup
         });
     } catch (error) {
         await logApiResponse(req, "Failed to create role group", 500, { error: error.message });
-        res.status(500).json({ message: "Failed to create role group", error: error.message });
+        return res.status(500).json({ message: "Failed to create role group", error: error.message });
     }
 };
 
 const updateRoleGroup = async (req, res) => {
     try {
         const { id, role_group_code, role_group_name, status, deleted_at } = req.body;
+
         const existingRoleGroup = await RoleGroup.findById(id);
         if (!existingRoleGroup) {
-            return logApiResponse(req, "Role group not found", 404, { id: "Role group not found" }) &&
-                res.status(404).json({ message: "Role group not found", errors: { id: "Role group  not found" } });
+            const errors = { id: "Role group not found" };
+            await logApiResponse(req, "Role group not found", 404, errors);
+            return res.status(404).json({ message: "Role group not found", errors });
         }
 
         const [duplicateCode, duplicateName] = await Promise.all([
@@ -105,26 +117,52 @@ const updateRoleGroup = async (req, res) => {
             RoleGroup.findOne({ role_group_name, _id: { $ne: id } })
         ]);
 
-        if (duplicateCode || duplicateName) {
-            const errors = {};
-            if (duplicateCode) errors.role_group_code = "Role group code already exists";
-            if (duplicateName) errors.role_group_name = "Role group name already exists";
+        const errors = {};
+        if (duplicateCode) errors.role_group_code = "Role group code already exists";
+        if (duplicateName) errors.role_group_name = "Role group name already exists";
 
-            return logApiResponse(req, "Validation Error", 400, errors) &&
-                res.status(400).json({ message: "Validation Error", errors });
+        if (Object.keys(errors).length > 0) {
+            await logApiResponse(req, "Validation Error", 400, errors);
+            return res.status(400).json({ message: "Validation Error", errors });
         }
-        await RoleGroup.findByIdAndUpdate(id, { role_group_code, role_group_name, status, deleted_at, updated_at: Date.now() });
+
+        const beforeUpdate = {
+            role_group_code: existingRoleGroup.role_group_code,
+            role_group_name: existingRoleGroup.role_group_name,
+            status: existingRoleGroup.status,
+            deleted_at: existingRoleGroup.deleted_at
+        };
+
+        await RoleGroup.findByIdAndUpdate(id, {
+            role_group_code,
+            role_group_name,
+            status,
+            deleted_at,
+            updated_at: Date.now()
+        });
+
         const updatedRoleGroup = await RoleGroup.findById(id);
-        await createNotification(req, 'Role Group', id, 'Role Group updated successfully');
+
+        const afterUpdate = {
+            role_group_code: updatedRoleGroup.role_group_code,
+            role_group_name: updatedRoleGroup.role_group_name,
+            status: updatedRoleGroup.status,
+            deleted_at: updatedRoleGroup.deleted_at
+        };
+
+        const message = `Role Group "${updatedRoleGroup.role_group_name}" updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
+
+
+        await createNotificationUser(req, 'Role Group', id, message);
         await logApiResponse(req, "Role group updated successfully", 200, updatedRoleGroup);
+
         return res.status(200).json({ message: "Role group updated successfully", data: updatedRoleGroup });
 
     } catch (error) {
-        await logApiResponse(req, "Failed to create role", 500, { error: error.message });
-        res.status(500).json({ message: "Failed to create role", error: error.message });
+        await logApiResponse(req, "Failed to update role group", 500, { error: error.message });
+        return res.status(500).json({ message: "Failed to update role group", error: error.message });
     }
 };
-
 
 const getRoleGroups = async (req, res) => {
     try {
@@ -162,23 +200,34 @@ const deleteRoleGroup = async (req, res) => {
         const toggleSoftDelete = async (_id) => {
             const role_group = await RoleGroup.findById(_id);
             if (!role_group) throw new Error(`Role group with ID ${_id} not found`);
-            role_group.deleted_at = role_group.deleted_at ? null : new Date();
+
+            const wasDeleted = !!role_group.deleted_at;
+            role_group.deleted_at = wasDeleted ? null : new Date();
             role_group.status = !role_group.deleted_at;
             role_group.updated_at = new Date();
-            return role_group.save();
+
+            const updatedRoleGroup = await role_group.save();
+            const action = wasDeleted ? 'activated' : 'inactivated';
+            const message = `Role Group "${updatedRoleGroup.role_group_name}" has been ${action} successfully`;
+
+            return { updatedRoleGroup, message };
         };
 
         if (Array.isArray(ids)) {
-            const updatedRoleGroups = await Promise.all(ids.map(toggleSoftDelete));
+            const results = await Promise.all(ids.map(toggleSoftDelete));
+            const updatedRoleGroups = results.map(r => r.updatedRoleGroup);
+
+            // Optional: You could also batch notification creation here if needed
             await logApiResponse(req, 'Role Groups updated successfully', 200, updatedRoleGroups);
             return res.status(200).json({ message: 'Role Groups updated successfully', data: updatedRoleGroups });
         }
 
         if (id) {
-            const updatedRoleGroup = await toggleSoftDelete(id);
-            const message = updatedRoleGroup.deleted_at ? 'Role Group is inactivated successfully' : 'Role Group is activated successfully';
+            const { updatedRoleGroup, message } = await toggleSoftDelete(id);
+
             await createNotification(req, 'Role Group', id, message);
             await logApiResponse(req, message, 200, updatedRoleGroup);
+
             return res.status(200).json({ message, data: updatedRoleGroup });
         }
 
@@ -186,30 +235,38 @@ const deleteRoleGroup = async (req, res) => {
         return res.status(400).json({ message: 'No ID or IDs provided' });
 
     } catch (error) {
-        await logApiResponse(req, "Role delete/restore failed", 500, { error: error.message });
-        return res.status(500).json({ message: "Role delete/restore failed", error: error.message });
+        await logApiResponse(req, "Role group delete/restore failed", 500, { error: error.message });
+        return res.status(500).json({ message: "Role group delete/restore failed", error: error.message });
     }
 };
+
 
 const destroyRoleGroup = async (req, res) => {
     try {
         const { id } = req.body;
+
         if (!id) {
             return logApiResponse(req, 'Role Group ID is required', 400, false, null, res);
         }
-        const role_group = await RoleGroup.findOne({ _id: id }).lean({ virtuals: false });
+
+        const role_group = await RoleGroup.findById(id).lean();
         if (!role_group) {
-            return logApiResponse(req, 'Role not found', 404, false, null, res);
+            return logApiResponse(req, 'Role Group not found', 404, false, null, res);
         }
+
         await RoleGroup.deleteOne({ _id: id });
-        await createNotification(req, 'Role Group', id, 'Role Group permanently deleted');
-        await logApiResponse(req, 'Role Group permanently deleted', 200, true, null, res);
-        res.status(200).json({ message: 'Role Group permanently deleted' });
+
+        const message = `Role Group "${role_group.role_group_name}" permanently deleted`;
+        await createNotification(req, 'Role Group', id, message);
+        await logApiResponse(req, message, 200, true, null, res);
+
+        return res.status(200).json({ message });
     } catch (error) {
-        await logApiResponse(req, "Failed to create role group", 500, { error: error.message });
-        res.status(500).json({ message: "Failed to create role group", error: error.message });
+        await logApiResponse(req, "Failed to delete role group", 500, { error: error.message });
+        return res.status(500).json({ message: "Failed to delete role group", error: error.message });
     }
 };
+
 
 
 module.exports = {

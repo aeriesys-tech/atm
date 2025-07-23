@@ -10,10 +10,16 @@ const paginateNotifications = async (req, res) => {
         page = 1,
         limit = 10,
         sortBy = 'created_at',
-        order = 'asc',
+        order = 'desc',
         search = '',
-        status
+        status,
+
     } = req.query;
+
+    const {
+        user_id
+
+    } = req.body;
 
     const allowedSortFields = ['_id', 'data_time', 'module_name', 'notification'];
     const cleanSortBy = String(sortBy).trim();
@@ -22,6 +28,7 @@ const paginateNotifications = async (req, res) => {
     const sort = {
         [safeSortBy]: order === 'desc' ? -1 : 1
     };
+
     const searchQuery = {
         $and: [
             search ? {
@@ -30,7 +37,8 @@ const paginateNotifications = async (req, res) => {
                     { notification: new RegExp(search, 'i') }
                 ]
             } : {},
-            status !== undefined ? { status: status === 'active' } : {}
+            status !== undefined ? { status: status === 'active' } : {},
+            user_id ? { user_id } : {} // <-- conditionally add user_id
         ]
     };
 
@@ -42,19 +50,15 @@ const paginateNotifications = async (req, res) => {
 
         const count = await Notification.countDocuments(searchQuery);
 
-        await logApiResponse(req, "Paginated  notifications retrieved successfully", 200, {
+        const responseData = {
             totalPages: Math.ceil(count / limit),
             currentPage: Number(page),
             notifications,
             totalItems: count
-        });
+        };
 
-        res.status(200).json({
-            totalPages: Math.ceil(count / limit),
-            currentPage: Number(page),
-            notifications,
-            totalItems: count
-        });
+        await logApiResponse(req, "Paginated notifications retrieved successfully", 200, responseData);
+        res.status(200).json(responseData);
     } catch (error) {
         console.error("Error retrieving paginated notifications:", error);
         await logApiResponse(req, "Failed to retrieve paginated notifications", 500, { error: error.message });
@@ -109,6 +113,19 @@ const getNotification = async (req, res) => {
 };
 
 
+const getNotificationUsers = async (req, res) => {
+    const user_id = req.user._id;
+    try {
+        const notification_users = await NotificationUser.findById(user_id);
+        await logApiResponse(req, "Notification retrieved successfully", 200, notification_users);
+        res.status(200).json({ message: "Notification retrieved successfully", data: notification_users });
+    } catch (error) {
+        await logApiResponse(req, "Failed to create role", 500, { error: error.message });
+        res.status(500).json({ message: "Failed to create role", error: error.message });
+    }
+};
+
+
 const countUnreadNotifications = async (req, res) => {
     const user_id = req.user._id;
     try {
@@ -129,14 +146,37 @@ const countUnreadNotifications = async (req, res) => {
 };
 
 
+const readAllNotifications = async (req, res) => {
+    const user_id = req.user._id;
 
+    try {
+        const notifications = await Notification.find();
+        const upserted = [];
+        console.log("notificationsss", notifications);
+        for (const notification of notifications) {
+            const result = await NotificationUser.findOneAndUpdate(
+                { user_id, notification_id: notification._id },
+                { $setOnInsert: { user_id, notification_id: notification._id } },
+                { new: true, upsert: true }
+            );
+            console.log("resulttttt", result);
+            upserted.push(result);
+        }
 
-
+        await logApiResponse(req, "All NotificationUsers upserted successfully", 200, { upserted });
+        res.status(200).json({ message: "All NotificationUsers upserted successfully" });
+    } catch (error) {
+        await logApiResponse(req, "Failed to upsert NotificationUsers", 500, { error: error.message });
+        res.status(500).json({ message: "Failed to upsert NotificationUsers", error: error.message });
+    }
+};
 
 module.exports = {
     paginateNotifications,
     getNotification,
     countUnreadNotifications,
-    createNotificationUser
+    createNotificationUser,
+    readAllNotifications,
+    getNotificationUsers
 
 }
