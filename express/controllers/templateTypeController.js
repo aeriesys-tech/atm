@@ -1,7 +1,7 @@
 const TemplateType = require('../models/templateType');
-const Template = require('../models/template');
+// const Template = require('../models/template');
 const ParameterType = require('../models/parameterType');
-const Master = require('../models/masterModel');
+const Master = require('../models/master');
 const MasterField = require('../models/masterField');
 const { logApiResponse } = require('../utils/responseService');
 
@@ -110,23 +110,23 @@ const getTemplateTypes = async (req, res) => {
 };
 
 
-const getTemplateType = async (req, res) => {
-    try {
-        const { id } = req.params;
+// const getTemplateType = async (req, res) => {
+//     try {
+//         const { id } = req.params;
 
-        const templateType = await TemplateType.findById(id);
-        if (!templateType) {
-            await logApiResponse(req, 'TemplateType not found', 404, {});
-            return res.status(404).json({ message: 'TemplateType not found' });
-        }
+//         const templateType = await TemplateType.findById(id);
+//         if (!templateType) {
+//             await logApiResponse(req, 'TemplateType not found', 404, {});
+//             return res.status(404).json({ message: 'TemplateType not found' });
+//         }
 
-        await logApiResponse(req, 'TemplateType retrieved successfully', 200, templateType);
-        res.status(200).json(templateType);
-    } catch (error) {
-        await logApiResponse(req, 'Server error', 500, { error });
-        res.status(500).json({ message: 'Server error', error });
-    }
-};
+//         await logApiResponse(req, 'TemplateType retrieved successfully', 200, templateType);
+//         res.status(200).json(templateType);
+//     } catch (error) {
+//         await logApiResponse(req, 'Server error', 500, { error });
+//         res.status(500).json({ message: 'Server error', error });
+//     }
+// };
 
 
 const deleteTemplateType = async (req, res) => {
@@ -207,6 +207,8 @@ const paginatedTemplateTypes = async (req, res) => {
 };
 
 
+
+
 const getTemplateTypeMaster = async (req, res) => {
     try {
         const { template_type_id } = req.params;
@@ -258,6 +260,47 @@ const getTemplateTypeMaster = async (req, res) => {
 };
 
 
+const getTemplateType = async (req, res) => {
+    const { id } = req.body;
+
+    try {
+        const templateType = await TemplateType.findById(id);
+        if (!templateType) {
+            return responseService.error(req, res, "Template Type not found", {
+                message: "No Template Type found with the given ID"
+            }, 404);
+        }
+
+        const parameters = await TemplateParameterType.find({ id })
+            .populate('parameter_type_id');
+
+        return responseService.success(req, res, "Template Type fetched successfully", {
+            template_type: templateType,
+            template_parameters: parameters
+        });
+    } catch (error) {
+        console.error("Error fetching template type:", error);
+        return responseService.error(req, res, "Internal Server Error", {
+            message: "An unexpected error occurred"
+        }, 500);
+    }
+};
+
+
+const getAllTemplateTypes = async (req, res) => {
+    try {
+        // Get all template types with status true and sort them by the 'order' field
+        const templateTypes = await TemplateType.find({ status: true }).sort({ order: 1 });
+
+        await logApiResponse(req, 'Template types retrieved successfully', 200, templateTypes);
+        res.status(200).json(templateTypes);
+    } catch (error) {
+        await logApiResponse(req, 'Server error', 500, { error });
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+
 module.exports = {
     createTemplateType,
     updateTemplateType,
@@ -265,5 +308,6 @@ module.exports = {
     getTemplateType,
     deleteTemplateType,
     paginatedTemplateTypes,
-    getTemplateTypeMaster
+    getTemplateTypeMaster,
+    getAllTemplateTypes
 }

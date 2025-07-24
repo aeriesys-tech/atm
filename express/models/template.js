@@ -1,23 +1,22 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const templateTypeSchema = new Schema({
-    template_type_code: {
+const templateSchema = new Schema({
+    template_code: {
         type: String,
         required: true,
         unique: true,
         index: true,
         trim: true
     },
-    template_type_name: {
+    template_name: {
         type: String,
         required: true,
         index: true,
         maxlength: 100 // Limits the maximum length of the parameter type name
     },
-    order: {
-        type: Number,
-        required: true,
+    structure: {
+        type: {}, // Can be an Object or Array, adjust as needed
         index: true,
     },
     icon: {
@@ -42,7 +41,7 @@ const templateTypeSchema = new Schema({
     }
 }, {
     versionKey: false,
-    collection: 'template_type'
+    collection: 'template'
 });
 
-module.exports = mongoose.model('TemplateType', templateTypeSchema);
+module.exports = mongoose.model('Template', templateSchema);

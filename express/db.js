@@ -3,13 +3,14 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const User = require('./models/user');
-const RoleGroup = require('./models/RoleGroup');
-const Role = require("./models/Role");
-const Department = require("./models/department");
-const ParameterType = require("./models/parameterType");
+const RoleGroup = require('./models/roleGroup');
+const Role = require('./models/role');
+const Department = require('./models/department');
+const ParameterType = require('./models/parameterType');
+const TemplateType = require('./models/templateType');
+const TemplateParameterType = require('./models/templateParameterType'); // <-- ensure this is imported
 
-mongoose.connect(process.env.MONGODB_URI, {
-}).then(() => {
+mongoose.connect(process.env.MONGODB_URI).then(() => {
     console.log('MongoDB connected successfully');
     seedUser();
 }).catch(err => {
@@ -18,8 +19,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 const seedUser = async () => {
     try {
-        let roleGroup, role, department, user;
-        roleGroup = await RoleGroup.findOneAndUpdate(
+        const roleGroup = await RoleGroup.findOneAndUpdate(
             {
                 $or: [
                     { role_group_code: "HQ" },
@@ -32,7 +32,8 @@ const seedUser = async () => {
             },
             { new: true, upsert: true }
         );
-        role = await Role.findOneAndUpdate(
+
+        const role = await Role.findOneAndUpdate(
             {
                 $or: [
                     { role_code: "Admin" },
@@ -46,7 +47,8 @@ const seedUser = async () => {
             },
             { new: true, upsert: true }
         );
-        department = await Department.findOneAndUpdate(
+
+        const department = await Department.findOneAndUpdate(
             {
                 $or: [
                     { department_code: "IT" },
@@ -59,9 +61,8 @@ const seedUser = async () => {
             },
             { new: true, upsert: true }
         );
-        const plainPassword = process.env.DEFAULT_USER_PASSWORD || 'admin123';
-        const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
+        const password = await bcrypt.hash("1qaz2wsx", 10);
         await User.findOneAndUpdate(
             {
                 $or: [
@@ -73,7 +74,7 @@ const seedUser = async () => {
                 name: "Bharatesh",
                 username: "bharatesh",
                 email: "bharatesh@aeriesys.com",
-                password: hashedPassword,
+                password: password,
                 mobile_no: "9535342875",
                 role_id: role._id,
                 department_id: department._id,
@@ -82,74 +83,148 @@ const seedUser = async () => {
             { new: true, upsert: true }
         );
 
-        await User.findOneAndUpdate(
+        // Parameter Types
+        const linageParameter = await ParameterType.findOneAndUpdate(
+            { parameter_type_code: "LP_001" },
             {
-                $or: [
-                    { username: "richa" },
-                    { email: "richa@aeriesys.com" }
-                ]
-            },
-            {
-                name: "Richa",
-                username: "richa",
-                email: "richa@aeriesys.com",
-                password: hashedPassword,
-                mobile_no: "9482834174",
-                role_id: role._id,
-                department_id: department._id,
-                avatar: "https://via.placeholder.com/150"
+                parameter_type_code: "LP_001",
+                parameter_type_name: "Lineage Parameter",
+                order: 1,
+                icon: 'adjust(1)1'
             },
             { new: true, upsert: true }
         );
 
-        const linageParameter = await ParameterType.create({
-            parameter_type_code: "LP_001",
-            parameter_type_name: "Lineage Parameter",
-            order: 1,
-            icon: 'adjust(1)1'
-        });
+        const equipmentParameter = await ParameterType.findOneAndUpdate(
+            { parameter_type_code: "EP_002" },
+            {
+                parameter_type_code: "EP_002",
+                parameter_type_name: "Equipment Parameter",
+                order: 2,
+                icon: 'tag(2)1'
+            },
+            { new: true, upsert: true }
+        );
 
-        const equipmentParameter = await ParameterType.create({
-            parameter_type_code: "EP_002",
-            parameter_type_name: "Equipment Parameter",
-            order: 2,
-            icon: 'tag(2)1'
-        });
+        const variableParameter = await ParameterType.findOneAndUpdate(
+            { parameter_type_code: "VP_003" },
+            {
+                parameter_type_code: "VP_003",
+                parameter_type_name: "Variable Parameter",
+                order: 3,
+                icon: 'flag1'
+            },
+            { new: true, upsert: true }
+        );
 
-        const variableParameter = await ParameterType.create({
-            parameter_type_code: "VP_003",
-            parameter_type_name: "Variable Parameter",
-            order: 3,
-            icon: 'flag1'
-        });
+        const modelParameter = await ParameterType.findOneAndUpdate(
+            { parameter_type_code: "MP_004" },
+            {
+                parameter_type_code: "MP_004",
+                parameter_type_name: "Model Parameter",
+                order: 4,
+                icon: '3d1'
+            },
+            { new: true, upsert: true }
+        );
 
-        const modelParameter = await ParameterType.create({
-            parameter_type_code: "MP_004",
-            parameter_type_name: "Model Parameter",
-            order: 4,
-            icon: '3d1'
-        });
+        const dataSourceParameter = await ParameterType.findOneAndUpdate(
+            { parameter_type_code: "DS_005" },
+            {
+                parameter_type_code: "DS_005",
+                parameter_type_name: "Data Source Parameter",
+                order: 5,
+                icon: 'big-data1'
+            },
+            { new: true, upsert: true }
+        );
 
-        const dataSourceParameter = await ParameterType.create({
-            parameter_type_code: "DS_005",
-            parameter_type_name: "Data Source Parameter",
-            order: 5,
-            icon: 'big-data1'
-        });
+        const generalParameter = await ParameterType.findOneAndUpdate(
+            { parameter_type_code: "GP_006" },
+            {
+                parameter_type_code: "GP_006",
+                parameter_type_name: "General Parameter",
+                order: 6,
+                icon: 'verified1'
+            },
+            { new: true, upsert: true }
+        );
 
-        const generalParameter = await ParameterType.create({
-            parameter_type_code: "GP_006",
-            parameter_type_name: "General Parameter",
-            order: 6,
-            icon: 'verified1'
-        });
+        // Template Types and Parameters
+        const templates = [
+            {
+                code: "LT_001",
+                name: "Lineage Template",
+                icon: "IconSet",
+                order: 1,
+                parameterTypes: [linageParameter]
+            },
+            {
+                code: "AT_002",
+                name: "Asset Template",
+                icon: "bag1",
+                order: 2,
+                parameterTypes: [equipmentParameter, variableParameter]
+            },
+            {
+                code: "MT_003",
+                name: "Model Template",
+                icon: "box(4)1",
+                order: 3,
+                parameterTypes: [modelParameter]
+            },
+            {
+                code: "DS_004",
+                name: "Data Source Template",
+                icon: "graph(1)1",
+                order: 4,
+                parameterTypes: [variableParameter, modelParameter, dataSourceParameter, generalParameter]
+            },
+            {
+                code: "UT_005",
+                name: "Use Case Template",
+                icon: "work-schedule1",
+                order: 5,
+                parameterTypes: [variableParameter, modelParameter, dataSourceParameter, generalParameter]
+            }
+        ];
 
+        for (const tpl of templates) {
+            const templateType = await TemplateType.findOneAndUpdate(
+                {
+                    $or: [
+                        { template_type_code: tpl.code },
+                        { template_type_name: tpl.name }
+                    ]
+                },
+                {
+                    template_type_code: tpl.code,
+                    template_type_name: tpl.name,
+                    order: tpl.order,
+                    icon: tpl.icon
+                },
+                { new: true, upsert: true }
+            );
 
-        console.log(" Seed data inserted or updated successfully.");
+            for (const param of tpl.parameterTypes) {
+                await TemplateParameterType.findOneAndUpdate(
+                    {
+                        template_type_id: templateType._id,
+                        parameter_type_id: param._id
+                    },
+                    {
+                        template_type_id: templateType._id,
+                        parameter_type_id: param._id
+                    },
+                    { new: true, upsert: true }
+                );
+            }
+        }
+
+        console.log('✅ Seeding completed successfully.');
+        process.exit();
     } catch (error) {
-        console.error("Error during seed process:", error);
+        console.error('❌ Error during seed process:', error);
         process.exit(1);
     }
 };
-
-

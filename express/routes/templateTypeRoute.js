@@ -10,6 +10,8 @@ router.post('/paginatedTemplateTypes', authMiddleware, templateTypeController.pa
 router.post('/getTemplateTypes', authMiddleware, templateTypeController.getTemplateTypes);
 router.post('/getTemplateType', authMiddleware, templateTypeController.getTemplateType);
 router.post('/deleteTemplateType', authMiddleware, templateTypeController.deleteTemplateType);
+
+router.post('/getAllTemplateTypes', authMiddleware, templateTypeController.getAllTemplateTypes);
 // router.post('/template-type-master/:template_type_id', authMiddleware, templateTypeController.getTemplateTypeMaster);
 // router.post('/template-by-type/', authMiddleware, templateTypeController.getAllTemplatesByTypes);
 
