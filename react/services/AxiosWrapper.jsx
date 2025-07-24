@@ -7,6 +7,7 @@ const axiosWrapper = async (endpoint, options = {}, navigate, rawResponse = fals
 		...options.headers,
 	};
 
+	// Set correct Content-Type
 	if (options.data instanceof FormData) {
 		headers['Content-Type'] = 'multipart/form-data';
 	} else {
@@ -22,9 +23,10 @@ const axiosWrapper = async (endpoint, options = {}, navigate, rawResponse = fals
 	try {
 		const response = await axios({
 			url,
-			method: 'POST',
+			method: options.method || 'POST',       // <-- use method from options
 			headers,
 			data: options.data,
+			responseType: options.responseType || 'json',  // <-- respect responseType
 		});
 
 		if (response.status === 401) {
@@ -33,7 +35,8 @@ const axiosWrapper = async (endpoint, options = {}, navigate, rawResponse = fals
 			return;
 		}
 
-		if (rawResponse) {
+		// If responseType is blob or rawResponse is true, return full response
+		if (rawResponse || options.responseType === 'blob') {
 			return response;
 		}
 
@@ -45,10 +48,10 @@ const axiosWrapper = async (endpoint, options = {}, navigate, rawResponse = fals
 		}
 
 		const errorMessage = error.response?.data || 'Something went wrong';
-		// console.error('Axios error:', errorMessage);
 		error.message = errorMessage;
 		throw error;
 	}
 };
+
 
 export default axiosWrapper;

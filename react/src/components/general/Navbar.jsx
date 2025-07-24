@@ -5,7 +5,8 @@ import Search from '../common/Search';
 import Dropdown from '../common/Dropdown';
 import Modal from '../common/Modal'
 
-function Navbar({ modalTitle = "Add Master", modalFields = [], onSubmit }) {
+function Navbar({ modalTitle = "Add Master", modalFields = [], onSubmit, onFilterChange,  searchValue,
+  onSearchChange }) {
     const [showModal, setShowModal] = useState(false);
     const [formValues, setFormValues] = useState({});
     const [formErrors, setFormErrors] = useState({});
@@ -33,7 +34,7 @@ function Navbar({ modalTitle = "Add Master", modalFields = [], onSubmit }) {
                 <div className="d-flex gap-4">
                     <div className="search-container">
                         <img src={search2} />
-                        <Search />
+                        <Search value={searchValue} onChange={onSearchChange}/>
                     </div>
                 </div>
 
@@ -44,7 +45,7 @@ function Navbar({ modalTitle = "Add Master", modalFields = [], onSubmit }) {
                             { label: "Active", value: "active" },
                             { label: "Inactive", value: "inactive" }
                         ]}
-                        onChange={(e) => console.log("Selected:", e.target.value)}
+                        onChange={(e) => onFilterChange?.(e.target.value)}
                     />
 
                     <Button name={modalTitle} onClick={() => setShowModal(true)} />

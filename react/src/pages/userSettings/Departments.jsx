@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Breadcrumb from "../../components/general/Breadcrum";
 import Table from "../../components/common/Table";
 import Navbar from "../../components/general/Navbar";
@@ -10,7 +10,7 @@ const Department = () => {
     const [departments, setDepartments] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(10);
     const [sortBy, setSortBy] = useState("department_code");
     const [order, setOrder] = useState("asc");
     const [totalItems, setTotalItems] = useState(0);
@@ -18,7 +18,11 @@ const Department = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editFormData, setEditFormData] = useState({});
     const [editErrors, setEditErrors] = useState({});
+  const [statusFilter, setStatusFilter] = useState("");
+    const [search, setSearch] = useState('');
 
+
+    const debounceTimeoutRef = useRef(null);
     const breadcrumbItems = [
         { label: "Configure", href: "#" },
         { label: "Organization", href: "#" },
@@ -33,15 +37,25 @@ const Department = () => {
         { label: "Action", key: "action", sortable: false },
     ];
 
-  const fetchDepartments = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order) => {
+  const fetchDepartments = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order, status = statusFilter,
+        searchText = search) => {
     try {
         setLoading(true);
+ const params = new URLSearchParams();
+            params.append("page", page);
+            params.append("limit", limit);
+            params.append("sortBy", sort);
+            params.append("order", sortOrder);
+
+            if (status === "active") params.append("status", "true");
+            else if (status === "inactive") params.append("status", "false");
+
+            if (searchText?.trim()) params.append("search", searchText.trim());
 
         const response = await axiosWrapper(
-            `api/v1/departments/paginateDepartments?page=${page}&limit=${limit}&sortBy=${sort}&order=${sortOrder}`,
+            `api/v1/departments/paginateDepartments?${params.toString()}`,
             {
                 method: 'POST',
-                data: {} // If you need to send body content like filters, add here
             }
         );
 
@@ -66,9 +80,17 @@ const Department = () => {
 
 
     useEffect(() => {
-        fetchDepartments(currentPage, pageSize, sortBy, order);
-    }, [currentPage, pageSize, sortBy, order]);
+        fetchDepartments(currentPage, pageSize, sortBy, order, statusFilter, search);
+    }, [currentPage, pageSize, sortBy, order,statusFilter]);
+   const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setSearch(val);
 
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = setTimeout(() => {
+            fetchDepartments(1, pageSize, sortBy, order, statusFilter, val);
+        }, 500);
+    };
     const departmentFields = [
         {
             label: "Department Code",
@@ -149,7 +171,7 @@ const Department = () => {
                 method: "POST",
                 data: { id: row._id },
             });
-            fetchDepartments();
+            fetchDepartments(currentPage, pageSize, sortBy, order,statusFilter);
         } catch (err) {
             console.error("Failed to toggle department status:", err.message || err);
         } finally {
@@ -200,6 +222,12 @@ const handleDeleteDepartment = async (row) => {
                     modalTitle="Add Department"
                     modalFields={departmentFields}
                     onSubmit={handleCreateSubmit}
+                    onFilterChange={(val) => {
+                        setStatusFilter(val);
+                        setCurrentPage(1);
+                    }}
+                        searchValue={search}
+                        onSearchChange={handleSearchChange}
                 />
                 <Table
                     headers={headers}
