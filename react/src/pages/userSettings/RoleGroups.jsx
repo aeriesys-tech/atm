@@ -217,7 +217,7 @@ const RoleGroup = () => {
                         onToggleStatus={handleToggleStatus}
                         onDelete={handleDeleteRoleGroup}
                         paginationProps={{
-                            currentPage,
+                            currentPage,    
                             totalPages,
                             pageSize,
                             totalItems,
