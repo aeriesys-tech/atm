@@ -442,7 +442,7 @@ const updateDynamicData = async (req, res) => {
         });
 
         const message = `Document updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(updatedDoc)}`;
-        await createNotificationUser(req, 'Document', docId, message);
+        await createNotification(req, 'Document', docId, message);
 
         const { docId: _docId, masterId: _masterId, ...filteredDoc } = updatedDoc.toObject();
 
