@@ -60,7 +60,7 @@ const updateTemplateType = async (req, res) => {
             '_id': { $in: parameter_type_ids }
         });
 
-        if (parameterTypes.length !== parameter_type_ids.length) {
+        if (parameterTypes.length !== parameter_type_ids.length) {s
             await logApiResponse(req, 'One or more parameter_type_ids are invalid', 400, { parameter_type_ids });
             return res.status(400).json({ message: 'One or more parameter_type_ids are invalid' });
         }
