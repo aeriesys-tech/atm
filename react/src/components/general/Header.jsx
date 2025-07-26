@@ -65,17 +65,30 @@ function Header() {
     const assetsRef = useRef();
     const notificationCount = useSelector((state) => state.user.notificationCount);
     // console.log(notificationCount)
+    const menuAreaRef = useRef();
+
     const [parameterTypes, setParameterTypes] = useState([]);
+    const [templateTypes, setTemplateTypes] = useState([]);
     const menuWrapperRef = useRef(null);
+    const templatesMenuRef = useRef();
 
     useEffect(() => {
         const stored = sessionStorage.getItem("parameterTypes");
+        const storedTemplates = sessionStorage.getItem("templateTypes");
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
                 setParameterTypes(parsed);
             } catch (err) {
                 console.error("Invalid parameterTypes in sessionStorage", err);
+            }
+        }
+        if (storedTemplates) {
+            try {
+                const parsed = JSON.parse(storedTemplates);
+                setTemplateTypes(parsed);
+            } catch (err) {
+                console.error("Invalid templateTypes in sessionStorage", err);
             }
         }
         getNotificationCount();
@@ -95,20 +108,18 @@ function Header() {
             if (!clickedInside && !isLogoutButton) {
                 setShowProfileMenu(false);
             }
-            const clickedProfile = dropdownRef.current?.contains(e.target);
 
-            if (!clickedProfile && !isLogoutButton) {
-                setShowProfileMenu(false);
-            }
-
-            // For main and sub menus
-            const clickedInsideMenu = menuWrapperRef.current?.contains(e.target);
-
-            if (!clickedInsideMenu) {
+            if (
+                menuAreaRef.current &&
+                !menuAreaRef.current.contains(e.target) &&
+                (!templatesMenuRef.current || !templatesMenuRef.current.contains(e.target))
+            ) {
                 setOpenMenu(null);
                 setOpenSubMenu(null);
             }
+
         };
+
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -266,7 +277,7 @@ function Header() {
                 <nav id="navbar" className="navbar navbar-expand-lg navbar-light navbar-2">
                     <div className="container-fluid p-0">
                         <div className="collapse navbar-collapse" id="navbarSupportedContent">
-                            <ul className="navbar-nav navbar w-100 mb-2 mb-lg-0 dropdown-text">
+                            <ul className="navbar-nav navbar w-100 mb-2 mb-lg-0 dropdown-text" ref={menuAreaRef}>
                                 <li className="nav-item dropdown topnav">
                                     <a
                                         className="nav-link active"
@@ -295,7 +306,7 @@ function Header() {
                                     </ul>
                                 </li>
 
-                                <li className={`nav-item dropdown ${openMenu === "main" ? "show" : ""}`} ref={menuWrapperRef}>
+                                <li className={`nav-item dropdown ${openMenu === "main" ? "show" : ""}`} >
                                     <a
                                         className="nav-link d-flex align-items-center gap-2"
                                         role="button"
@@ -434,48 +445,42 @@ function Header() {
                                 </li>
 
 
-                                <li className={`nav-item dropdown position-relative ${openMenu === "templates" ? "show" : ""}`}>
+                                <li ref={templatesMenuRef}
+                                    className={`nav-item dropdown position-relative ${openMenu === "templates" ? "show" : ""}`}
+                                >
                                     <a
-                                        type="button"
                                         className="nav-link d-flex align-items-center gap-2"
-                                        onClick={() => setOpenMenu(openMenu === "templates" ? null : "templates")}
                                         role="button"
+                                        onClick={() => setOpenMenu(openMenu === "templates" ? null : "templates")}
                                     >
                                         <img src={fi_1828824} alt="Templates" />
-                                        <span className="text-uppercase">TEMPLATES</span>
+                                        <span>TEMPLATES</span>
                                         <img src={ArrowDown} alt="Dropdown" />
                                     </a>
 
                                     {openMenu === "templates" && (
                                         <ul className="dropdown-menu show menu-list">
-                                            {[
-                                                { icon: IconSet, title: "Lineage Templates", href: "lineage-templates.html" },
-                                                { icon: bag1, title: "Asset Templates" },
-                                                { icon: layout1, title: "Variable Templates" },
-                                                { icon: box1, title: "Modal Templates" },
-                                                { icon: workschedule1, title: "Use Case Templates" },
-                                                { icon: graph1, title: "Analytics Templates" },
-                                            ].map((item, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="menu-item btn-group dropend d-flex"
-                                                    onClick={() => {
-                                                        if (item.href) window.location.href = item.href;
-                                                    }}
-                                                >
+                                            {templateTypes.map(tpl => (
+                                                <li key={tpl._id}>
                                                     <button
-                                                        className="dropdown-item d-flex justify-content-start gap-3 align-items-center w-100"
-                                                        onMouseEnter={(e) => e.currentTarget.classList.add("active")}
-                                                        onMouseLeave={(e) => e.currentTarget.classList.remove("active")}
+                                                        className="dropdown-item d-flex align-items-center gap-3 w-100"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // still good to keep this
+                                                            navigate(`/template/${tpl._id}`);
+                                                            setOpenMenu(null);
+                                                        }}
                                                     >
-                                                        <img src={item.icon} alt={item.title} />
-                                                        <p className="m-0">{item.title}</p>
+                                                        <img src={IconSet} alt={tpl.template_type_name} />
+                                                        <p className="m-0">{tpl.template_type_name}</p>
                                                     </button>
                                                 </li>
                                             ))}
                                         </ul>
                                     )}
                                 </li>
+
+
+
 
 
                                 <li className="nav-item dropdown" ref={assetsRef}>

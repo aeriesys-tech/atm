@@ -8,6 +8,8 @@ import User from "../src/pages/userSettings/user/Users";
 import UserForm from "../src/pages/userSettings/user/UserForm";
 import Notification from "../src/pages/utilities/Notification";
 import MasterDetail from "../src/pages/configurations/MasterDetails";
+import TemplateTypes from "../src/pages/templates/TemplateTypes";
+import TemplateBuilder from "../src/pages/templates/TemplateBuilder";
 
 const protectedRoutes = [
 	{
@@ -53,7 +55,21 @@ const protectedRoutes = [
 	{
 		path: "/users/edit/:id",
 		element: <UserForm mode="edit" />,
-	}
+	},
+  {
+  path: "/template/:id",
+  element: <TemplateTypes  />
+  },
+  {
+  path: "/template_add",
+  element: <TemplateBuilder />
+},
+{
+  path: "/template/:id/edit/:templateId",
+  element: <TemplateBuilder />
+}
+
+
 ];
 
 export default protectedRoutes;

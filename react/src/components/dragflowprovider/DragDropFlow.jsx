@@ -1,11 +1,11 @@
 import React, { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   addEdge,
-  useNodesState,
-  useEdgesState,
   Background,
   Controls,
   BackgroundVariant,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import Sidebar from "./SideBar";
@@ -13,13 +13,15 @@ import CustomNode from "./CustomNode";
 
 const initialNodes = [];
 const initialEdges = [];
-
-const DragDropFlow = () => {
+const nodeTypes = {
+  custom: CustomNode,
+};
+const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges }) => {
   const reactFlowWrapper = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
+  const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes]);
+  const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), [setEdges]);
   const onConnect = useCallback(
     (params) => {
       console.log("Connecting from", params.sourceHandle, "to", params.targetHandle);
@@ -46,26 +48,42 @@ const DragDropFlow = () => {
         y: event.clientY - reactFlowBounds.top,
       });
 
+      const id = `${+new Date()}`;
+
       const newNode = {
-        id: `${+new Date()}`,
+        id,
         type: "custom",
         position,
-        data: { label: type },
+        data: {
+          label: type,
+          onEdit: (nodeData) => {
+            const newLabel = prompt("Edit label:", nodeData.label);
+            if (newLabel !== null) {
+              setNodes((nds) =>
+                nds.map((node) =>
+                  node.id === nodeData.id ? { ...node, data: { ...node.data, label: newLabel } } : node
+                )
+              );
+            }
+          },
+          onDelete: (nodeData) => {
+            setNodes((nds) => nds.filter((node) => node.id !== id));
+          },
+        },
       };
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance]
+    [reactFlowInstance, setNodes]
   );
 
-  const nodeTypes = {
-    custom: CustomNode,
-  };
+
+
 
   return (
     <div style={{ display: "flex", height: "600px" }}>
       <div style={{ zIndex: 10, position: "relative" }}>
-        <Sidebar />
+        <Sidebar master={master} />
       </div>
 
       <div
@@ -90,8 +108,8 @@ const DragDropFlow = () => {
           fitView
           proOptions={{ hideAttribution: true }}
         >
-          {/* <Controls /> */}
-          <Controls showInteractive={false} position="top-right" />
+          <Controls />
+          {/* <Controls showInteractive={false} position="top-right" /> */}
 
           <Background gap={12} color="#eee" variant={BackgroundVariant.Lines} />
         </ReactFlow>
