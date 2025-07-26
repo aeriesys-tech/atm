@@ -1,6 +1,6 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
-const Role = require('../models/Role');
+const Role = require('../models/role');
 const Department = require('../models/department');
 const mongoose = require('mongoose');
 const { Op } = require("sequelize");

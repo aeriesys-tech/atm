@@ -13,7 +13,7 @@ const { sendEmail } = require('../utils/mailService'); // Adjust path accordingl
 const User = require('../models/user');
 const Otp = require('../models/otp')
 const PasswordResetToken = require('../models/passwordResetToken');
-const Role = require('../models/Role');
+const Role = require('../models/role');
 
 const MAX_FAILED_ATTEMPTS = 5; // Lockout after 5 failed attempts
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes lockout period

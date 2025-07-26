@@ -12,6 +12,7 @@ router.post('/getTemplateType', authMiddleware, templateTypeController.getTempla
 router.post('/deleteTemplateType', authMiddleware, templateTypeController.deleteTemplateType);
 
 router.post('/getAllTemplateTypes', authMiddleware, templateTypeController.getAllTemplateTypes);
+router.post('/templateTypeMaster', authMiddleware, templateTypeController.getTemplateTypeMaster);
 // router.post('/template-type-master/:template_type_id', authMiddleware, templateTypeController.getTemplateTypeMaster);
 // router.post('/template-by-type/', authMiddleware, templateTypeController.getAllTemplatesByTypes);
 

@@ -1,4 +1,4 @@
-const Role = require('../models/Role');
+const Role = require('../models/role');
 const RoleGroup = require('../models/RoleGroup');
 const mongoose = require('mongoose');
 const { logApiResponse } = require('../utils/responseService');

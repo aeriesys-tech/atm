@@ -4,6 +4,7 @@ const ParameterType = require('../models/parameterType');
 const Master = require('../models/master');
 const MasterField = require('../models/masterField');
 const { logApiResponse } = require('../utils/responseService');
+const TemplateParameterType = require('../models/TemplateParameterType');
 
 // Create a new TemplateType
 const createTemplateType = async (req, res) => {
@@ -29,7 +30,7 @@ const createTemplateType = async (req, res) => {
 
         // Create a new TemplateType instance
         const newTemplateType = new TemplateType({
-            parameter_type_id: parameter_type_ids, // now an array of IDs
+            parameter_type_id: parameter_type_ids,
             template_type_code,
             order,
             template_type_name,
@@ -206,30 +207,76 @@ const paginatedTemplateTypes = async (req, res) => {
     }
 };
 
+// const getTemplateTypeMaster = async (req, res) => {
+//     try {
+//         const { template_type_id } = req.body;
+//         const templateType = await TemplateType.findById(template_type_id);
+//         if (!templateType) {
+//             await logApiResponse(req, 'TemplateType not found', 404, { message: 'TemplateType not found' });
+//             return res.status(404).json({ message: 'TemplateType not found' });
+//         }
 
+//         // Fetch detailed information for each parameter_type_id, including names
+//         const parameter_types = await Promise.all(templateType.parameter_type_id.map(async paramId => {
+//             // Retrieve the parameter type details
+//             const parameterType = await ParameterType.findById(paramId);
+//             if (!parameterType) {
+//                 await logApiResponse(req, `ParameterType with ID ${paramId} not found`, 404, { message: `ParameterType with ID ${paramId} not found` });
+//                 return res.status(404).json({ message: `ParameterType with ID ${paramId} not found` });
+//             }
 
+//             const masters = await Master.find({ parameter_type_id: paramId, status: true });
+//             const orderedMasters = masters.sort((a, b) => a.order - b.order);  // Sorting masters by their order
+//             const mastersWithFields = await Promise.all(orderedMasters.map(async master => {
+//                 const masterFields = await MasterField.find({ master_id: master._id });
+//                 return {
+//                     ...master.toObject(),
+//                     masterFields
+//                 };
+//             }));
+
+//             return {
+//                 parameterTypeId: paramId,
+//                 parameterTypeName: parameterType.parameter_type_name,  // Assuming 'name' is the field for the parameter type's name
+//                 masters: mastersWithFields
+//             };
+//         }));
+
+//         const response = {
+//             templateType,
+//             parameter_types
+//         };
+
+//         await logApiResponse(req, 'TemplateType master data retrieved successfully', 200, response);
+//         res.status(200).json(response);
+//     } catch (error) {
+//         console.log(error);
+//         await logApiResponse(req, 'Server error', 500, { message: 'Server error', error });
+//         res.status(500).json({ message: 'Server error', error });
+//     }
+// };
 
 const getTemplateTypeMaster = async (req, res) => {
     try {
-        const { template_type_id } = req.params;
-
-        // Find the TemplateType by ID
+        const { template_type_id } = req.body;
         const templateType = await TemplateType.findById(template_type_id);
         if (!templateType) {
             await logApiResponse(req, 'TemplateType not found', 404, { message: 'TemplateType not found' });
             return res.status(404).json({ message: 'TemplateType not found' });
         }
-
-        // Fetch detailed information for each parameter_type_id, including names
-        const parameter_types = await Promise.all(templateType.parameter_type_id.map(async paramId => {
-            // Retrieve the parameter type details
-            const parameterType = await ParameterType.findById(paramId);
+        const templateParameterTypes = await TemplateParameterType.find({ template_type_id: template_type_id }).populate('parameter_type_id');
+        if (!templateParameterTypes || templateParameterTypes.length === 0) {
+            await logApiResponse(req, 'No parameter types found for this TemplateType', 404, { message: 'No parameter types found' });
+            return res.status(404).json({ message: 'No parameter types found for this TemplateType' });
+        }
+        const parameter_types = await Promise.all(templateParameterTypes.map(async (templateParam) => {
+            const parameterType = templateParam.parameter_type_id;
             if (!parameterType) {
-                await logApiResponse(req, `ParameterType with ID ${paramId} not found`, 404, { message: `ParameterType with ID ${paramId} not found` });
-                return res.status(404).json({ message: `ParameterType with ID ${paramId} not found` });
+                await logApiResponse(req, `ParameterType with ID ${templateParam.parameter_type_id} not found`, 404, { message: `ParameterType with ID ${templateParam.parameter_type_id} not found` });
+                return res.status(404).json({ message: `ParameterType with ID ${templateParam.parameter_type_id} not found` });
             }
 
-            const masters = await Master.find({ parameter_type_id: paramId, status: true });
+            const masters = await Master.find({ parameter_type_id: templateParam.parameter_type_id, status: true });
             const orderedMasters = masters.sort((a, b) => a.order - b.order);  // Sorting masters by their order
             const mastersWithFields = await Promise.all(orderedMasters.map(async master => {
                 const masterFields = await MasterField.find({ master_id: master._id });
@@ -240,8 +287,8 @@ const getTemplateTypeMaster = async (req, res) => {
             }));
 
             return {
-                parameterTypeId: paramId,
-                parameterTypeName: parameterType.parameter_type_name,  // Assuming 'name' is the field for the parameter type's name
+                parameterTypeId: templateParam.parameter_type_id,
+                parameterTypeName: parameterType.parameter_type_name,  // Assuming 'parameter_type_name' is the field for the parameter type's name
                 masters: mastersWithFields
             };
         }));
@@ -254,10 +301,12 @@ const getTemplateTypeMaster = async (req, res) => {
         await logApiResponse(req, 'TemplateType master data retrieved successfully', 200, response);
         res.status(200).json(response);
     } catch (error) {
+        console.log(error);
         await logApiResponse(req, 'Server error', 500, { message: 'Server error', error });
         res.status(500).json({ message: 'Server error', error });
     }
 };
+
 
 
 const getTemplateType = async (req, res) => {

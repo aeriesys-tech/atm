@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const templateSchema = new Schema({
+    template_type_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TemplateType',
+        required: true,
+    },
     template_code: {
         type: String,
         required: true,
@@ -16,7 +21,7 @@ const templateSchema = new Schema({
         maxlength: 100 // Limits the maximum length of the parameter type name
     },
     structure: {
-        type: {}, // Can be an Object or Array, adjust as needed
+        type: {},
         index: true,
     },
     icon: {

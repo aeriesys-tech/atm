@@ -1,7 +1,7 @@
 const { body, param } = require('express-validator');
 const mongoose = require('mongoose');
 const { Validate } = require('../middlewares/validationMiddleware');
-const Role = require('../models/Role');
+const Role = require('../models/role');
 const { validateId } = require('./commonValidation');
 const department = require('../models/department');
 
