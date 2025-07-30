@@ -3,7 +3,6 @@ const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");
 const redisClient = require("../config/redisConfig");
 const { createNotification } = require('../utils/notification');
-const { createNotificationUser } = require('./notificationController');
 
 const paginatedRoleGroups = async (req, res) => {
     const {
@@ -88,7 +87,7 @@ const createRoleGroup = async (req, res) => {
         await redisClient.del('role_groups');
 
         const message = `Role Group "${newRoleGroup.role_group_name}" created successfully`;
-        await createNotification(req, 'Role Group', newRoleGroup._id, message);
+        await createNotification(req, 'Role Group', newRoleGroup._id, message, 'master');
         await logApiResponse(req, message, 201, newRoleGroup);
 
         return res.status(201).json({
@@ -153,7 +152,7 @@ const updateRoleGroup = async (req, res) => {
         const message = `Role Group "${updatedRoleGroup.role_group_name}" updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
 
 
-        await createNotificationUser(req, 'Role Group', id, message);
+        await createNotification(req, 'Role Group', id, message, 'master');
         await logApiResponse(req, "Role group updated successfully", 200, updatedRoleGroup);
 
         return res.status(200).json({ message: "Role group updated successfully", data: updatedRoleGroup });
@@ -225,7 +224,7 @@ const deleteRoleGroup = async (req, res) => {
         if (id) {
             const { updatedRoleGroup, message } = await toggleSoftDelete(id);
 
-            await createNotification(req, 'Role Group', id, message);
+            await createNotification(req, 'Role Group', id, message, 'master');
             await logApiResponse(req, message, 200, updatedRoleGroup);
 
             return res.status(200).json({ message, data: updatedRoleGroup });
@@ -257,7 +256,7 @@ const destroyRoleGroup = async (req, res) => {
         await RoleGroup.deleteOne({ _id: id });
 
         const message = `Role Group "${role_group.role_group_name}" permanently deleted`;
-        await createNotification(req, 'Role Group', id, message);
+        await createNotification(req, 'Role Group', id, message, 'master');
         await logApiResponse(req, message, 200, true, null, res);
 
         return res.status(200).json({ message });

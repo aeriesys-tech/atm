@@ -27,7 +27,6 @@ const createTemplateType = async (req, res) => {
             await logApiResponse(req, 'Template type code already exists', 400, { template_type_code });
             return res.status(400).json({ message: 'Template type code already exists' });
         }
-
         // Create a new TemplateType instance
         const newTemplateType = new TemplateType({
             parameter_type_id: parameter_type_ids,
@@ -37,7 +36,6 @@ const createTemplateType = async (req, res) => {
             status: status !== undefined ? status : true,
             deleted_at: deleted_at || null
         });
-
         // Save the new TemplateType to the database
         const savedTemplateType = await newTemplateType.save();
 
@@ -60,7 +58,8 @@ const updateTemplateType = async (req, res) => {
             '_id': { $in: parameter_type_ids }
         });
 
-        if (parameterTypes.length !== parameter_type_ids.length) {s
+        if (parameterTypes.length !== parameter_type_ids.length) {
+            s
             await logApiResponse(req, 'One or more parameter_type_ids are invalid', 400, { parameter_type_ids });
             return res.status(400).json({ message: 'One or more parameter_type_ids are invalid' });
         }
@@ -161,7 +160,6 @@ const deleteTemplateType = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-
 
 const paginatedTemplateTypes = async (req, res) => {
     const { page = 1, limit = 10, sortBy = 'created_at', order = 'desc', search = '', status } = req.query;
@@ -348,7 +346,6 @@ const getAllTemplateTypes = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-
 
 module.exports = {
     createTemplateType,

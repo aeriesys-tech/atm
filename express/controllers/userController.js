@@ -41,7 +41,7 @@ const createUser = async (req, res) => {
 
 		const message = `User "${newUser.name}" created successfully.`;
 
-		await createNotification(req, 'User', newUser._id, message);
+		await createNotification(req, 'User', newUser._id, message, 'master');
 		await logApiResponse(req, message, 201, newUser);
 
 		res.status(201).json({
@@ -114,7 +114,7 @@ const updateUser = async (req, res) => {
 
 		const message = `User "${updatedUser.name}" updated successfully.\nBefore: ${JSON.stringify(before)}\nAfter: ${JSON.stringify(after)}`;
 
-		await createNotification(req, 'User', id, message);
+		await createNotification(req, 'User', id, message, 'master');
 		await logApiResponse(req, "User updated successfully", 200, updatedUser);
 
 		return res.status(200).json({ message: "User updated successfully", data: updatedUser });
@@ -202,7 +202,7 @@ const deleteUser = async (req, res) => {
 
 			const action = user.deleted_at ? 'inactivated' : 'activated';
 			const message = `User "${user.name}" is ${action} successfully`;
-			await createNotification(req, 'User', _id, message);
+			await createNotification(req, 'User', _id, message, 'master');
 			return { user, message };
 		};
 
@@ -312,7 +312,7 @@ const destroyUser = async (req, res) => {
 		await User.deleteOne({ _id: id });
 
 		const message = `User "${user.name}" permanently deleted`;
-		await createNotification(req, 'User', id, message);
+		await createNotification(req, 'User', id, message, 'master');
 		await logApiResponse(req, message, 200, true, null, res);
 
 		return res.status(200).json({ message });

@@ -15,6 +15,7 @@ const createNotification = async (
     module_name,
     module_id,
     message,
+    notification_type,
     date_time = new Date()
 ) => {
     const user_id = req.user?.id || req.user?._id || null;
@@ -28,6 +29,7 @@ const createNotification = async (
         module_name,
         module_id,
         notification: message,
+        notification_type,
         date_time,
     });
 

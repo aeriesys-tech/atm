@@ -112,7 +112,7 @@ const createMaster = async (req, res) => {
         );
 
         const message = `Master "${masterData.master_name}" created successfully`;
-        await createNotification(req, 'Master', savedMaster._id, message);
+        await createNotification(req, 'Master', savedMaster._id, message, 'master');
         await logApiResponse(req, message, 201, {
             masterId: savedMaster._id,
             master: savedMaster,
@@ -242,7 +242,7 @@ const updateMaster = async (req, res) => {
 
         const successMessage = `Master "${after.master_name}" updated successfully.`;
 
-        await createNotification(req, 'Master', id, successMessage, { before, after });
+        await createNotification(req, 'Master', id, successMessage, { before, after }, 'master');
         await logApiResponse(req, successMessage, 200, {
             before,
             after,
@@ -335,7 +335,7 @@ const insertDynamicData = async (req, res) => {
         const newDocument = new DynamicModel(inputData);
         const savedDocument = await newDocument.save();
         const message = `${collectionName} document added successfully`;
-        await createNotification(req, collectionName, newDocument._id, message);
+        await createNotification(req, collectionName, newDocument._id, message, 'master');
         await logApiResponse(req, "Document added successfully", 201, newDocument);
         res.status(201).json({
             message: "Document added successfully",
@@ -442,7 +442,7 @@ const updateDynamicData = async (req, res) => {
         });
 
         const message = `Document updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(updatedDoc)}`;
-        await createNotification(req, 'Document', docId, message);
+        await createNotification(req, 'Document', docId, message, 'master');
 
         const { docId: _docId, masterId: _masterId, ...filteredDoc } = updatedDoc.toObject();
 
@@ -476,7 +476,7 @@ const destroyMaster = async (req, res) => {
         await Master.deleteOne({ _id: id });
 
         const message = `Master "${master.master_name}" permanently deleted`;
-        await createNotification(req, 'Master', id, message);
+        await createNotification(req, 'Master', id, message, 'master');
         await logApiResponse(req, message, 200, true, null, res);
 
         return res.status(200).json({ message });
@@ -512,7 +512,7 @@ const deleteMaster = async (req, res) => {
 
             master.updated_at = new Date();
             await master.save();
-            await createNotification(req, 'Master', masterId, message);
+            await createNotification(req, 'Master', masterId, message, 'master');
             return { master, message };
         };
 
@@ -726,7 +726,7 @@ const deleteDynamicData = async (req, res) => {
             const updatedDoc = await document.save();
 
             const message = `Document "${collectionName}" with ID ${documentId} has been ${action} successfully.`;
-            await createNotification(req, 'Document', documentId, message);
+            await createNotification(req, 'Document', documentId, message, 'master');
 
             return updatedDoc;
         };
@@ -816,7 +816,7 @@ const destroyDynamicData = async (req, res) => {
         for (const doc of docsToDelete) {
             const title = doc?.name || doc?.title || doc?._id; // Try to get a meaningful name
             const message = `${collectionName} document "${title}" permanently deleted`;
-            await createNotification(req, collectionName, doc._id, message);
+            await createNotification(req, collectionName, doc._id, message, 'master');
         }
 
         await logApiResponse(

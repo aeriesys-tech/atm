@@ -110,7 +110,7 @@ const createRole = async (req, res) => {
         await redisClient.del('roles');
 
         await logApiResponse(req, "Role created successfully", 201, newRole);
-        await createNotification(req, 'Role', newRole._id, ` "${newRole.role_name}" created successfully`);
+        await createNotification(req, 'Role', newRole._id, ` "${newRole.role_name}" created successfully`, 'master');
 
         res.status(201).json({
             message: "Role  created successfully", data: newRole
@@ -176,7 +176,7 @@ const updateRole = async (req, res) => {
 
         const message = `Role updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
 
-        await createNotification(req, 'Role', id, message);
+        await createNotification(req, 'Role', id, message, 'master');
         await logApiResponse(req, "Role updated successfully", 200, updatedRole);
 
         return res.status(200).json({ message: "Role updated successfully", data: updatedRole });
@@ -247,7 +247,7 @@ const deleteRole = async (req, res) => {
         if (id) {
             const { updatedRole, message } = await toggleSoftDelete(id);
 
-            await createNotification(req, 'Role', id, message);
+            await createNotification(req, 'Role', id, message, 'master');
             await logApiResponse(req, message, 200, updatedRole);
 
             return res.status(200).json({ message, data: updatedRole });
@@ -278,7 +278,7 @@ const destroyRole = async (req, res) => {
         await Role.deleteOne({ _id: id });
 
         const message = `"${role.role_name}" permanently deleted`;
-        await createNotification(req, 'Role', id, message);
+        await createNotification(req, 'Role', id, message, 'master');
         await logApiResponse(req, message, 200, true, null, res);
 
         return res.status(200).json({ message });

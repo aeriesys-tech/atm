@@ -23,6 +23,10 @@ const notificationSchema = new mongoose.Schema(
             type: String,
             required: true, // message content
         },
+        notification_type: {
+            type: String,
+            required: true,
+        },
         timestamp: {
             type: Date,
             default: Date.now, // automatically set

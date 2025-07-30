@@ -85,7 +85,7 @@ const createDepartment = async (req, res) => {
         await redisClient.del('departments');
 
         const message = `Department "${newDepartment.department_name}" created successfully`;
-        await createNotification(req, 'Department', newDepartment._id, message);
+        await createNotification(req, 'Department', newDepartment._id, message, 'master');
         await logApiResponse(req, message, 201, newDepartment);
 
         return res.status(201).json({
@@ -152,7 +152,7 @@ const updateDepartment = async (req, res) => {
             `Before: ${JSON.stringify(before)}\n` +
             `After: ${JSON.stringify(after)}`;
 
-        await createNotification(req, 'Department', id, message);
+        await createNotification(req, 'Department', id, message, 'master');
         await logApiResponse(req, "Department updated successfully", 200, updatedDepartment);
 
         return res.status(200).json({ message: "Department updated successfully", data: updatedDepartment });
@@ -210,7 +210,7 @@ const deleteDepartment = async (req, res) => {
 
             const action = department.deleted_at ? 'inactivated' : 'activated';
             const message = `Department "${department.department_name}" is ${action} successfully`;
-            await createNotification(req, 'Department', _id, message);
+            await createNotification(req, 'Department', _id, message, 'master');
             return { department, message };
         };
 
@@ -253,7 +253,7 @@ const destroyDepartment = async (req, res) => {
         await Department.deleteOne({ _id: id });
 
         const message = `Department "${department.department_name}" permanently deleted`;
-        await createNotification(req, 'Department', id, message);
+        await createNotification(req, 'Department', id, message, 'master');
         await logApiResponse(req, message, 200, true, null, res);
 
         return res.status(200).json({ message });
