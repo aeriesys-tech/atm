@@ -80,7 +80,7 @@ function Header() {
                 const parsed = JSON.parse(stored);
                 setParameterTypes(parsed);
             } catch (err) {
-                console.error("Invalid parameterTypes in sessionStorage", err);
+                // console.error("Invalid parameterTypes in sessionStorage", err);
             }
         }
         if (storedTemplates) {
@@ -88,7 +88,7 @@ function Header() {
                 const parsed = JSON.parse(storedTemplates);
                 setTemplateTypes(parsed);
             } catch (err) {
-                console.error("Invalid templateTypes in sessionStorage", err);
+                // console.error("Invalid templateTypes in sessionStorage", err);
             }
         }
         getNotificationCount();
@@ -140,7 +140,7 @@ function Header() {
             dispatch(setNotificationCount(response.data))
 
         } catch (error) {
-            console.error("Failed to fetch roles:", error.message || error);
+            // console.error("Failed to fetch roles:", error.message || error);
         }
     };
 
@@ -185,6 +185,18 @@ function Header() {
             window.removeEventListener("scroll", handleScroll);
         };
     }, []);
+    const handleDQClick = () => { 
+
+    const token = sessionStorage.getItem('token');
+
+    const params = new URLSearchParams({
+        token: token || ''
+    });
+    const dqUrl = `http://192.168.0.147:5173/?${params.toString()}`;
+    console.log("Opening URL:", dqUrl);
+    window.open(dqUrl, '_blank');
+};
+
     return (
         <>
 
@@ -220,6 +232,14 @@ function Header() {
 
                     </div>
                     <div className="d-flex justify-content-between align-content-center flex-wrap">
+                        <button
+                            onClick={() => handleDQClick()}
+                            className="bell-icon me-3"
+                            title="DQ Action"   style={{ border: "1px solid #ccc", backgroundColor: "#F8F9FA", padding: "1px 2px", borderRadius: "12px",fontSize: "22px" }}
+                        >
+                            DQ
+                        </button>
+
                         <Link to="/notifications" className="bell-icon me-2" style={{ textDecoration: 'none' }}>
                             <img src={bellIcon} alt="Notifications" />
                             {notificationCount > 0 && (

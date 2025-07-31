@@ -61,7 +61,7 @@ const User = () => {
       }
       const response = await axiosWrapper(
         `api/v1/users/paginateUsers?${params.toString()}`,
-        { method: "GET" }
+        { method: "POST" }
       );
 
       const mappedUsers = response.users.map((user, index) => ({
@@ -75,7 +75,7 @@ const User = () => {
       setTotalPages(response.totalPages);
       setTotalItems(response.totalItems);
     } catch (error) {
-      console.error("Error fetching users:", error.message || error);
+      // console.error("Error fetching users:", error.message || error);
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ const handleSearchChange = (e) => {
       });
       fetchUsers(currentPage, pageSize, sortBy, order,statusFilter);
     } catch (error) {
-      console.error("Soft delete failed:", error.message || error);
+      // console.error("Soft delete failed:", error.message || error);
     } finally {
       setLoading(false);
     }
@@ -125,8 +125,8 @@ const handleSearchChange = (e) => {
 
       fetchUsers(); // refresh the user list
     } catch (error) {
-      console.error("Permanent delete failed:", error.message || error);
-      alert("Error deleting user");
+      // console.error("Permanent delete failed:", error.message || error);
+      alert("Error deleting user:",error.message );
     } finally {
       setLoading(false);
     }

@@ -18,7 +18,7 @@ const Department = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editFormData, setEditFormData] = useState({});
     const [editErrors, setEditErrors] = useState({});
-  const [statusFilter, setStatusFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
     const [search, setSearch] = useState('');
 
 
@@ -37,11 +37,11 @@ const Department = () => {
         { label: "Action", key: "action", sortable: false },
     ];
 
-  const fetchDepartments = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order, status = statusFilter,
+    const fetchDepartments = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order, status = statusFilter,
         searchText = search) => {
-    try {
-        setLoading(true);
- const params = new URLSearchParams();
+        try {
+            setLoading(true);
+            const params = new URLSearchParams();
             params.append("page", page);
             params.append("limit", limit);
             params.append("sortBy", sort);
@@ -52,37 +52,37 @@ const Department = () => {
 
             if (searchText?.trim()) params.append("search", searchText.trim());
 
-        const response = await axiosWrapper(
-            `api/v1/departments/paginateDepartments?${params.toString()}`,
-            {
-                method: 'POST',
-            }
-        );
+            const response = await axiosWrapper(
+                `api/v1/departments/paginateDepartments?${params.toString()}`,
+                {
+                    method: 'POST',
+                }
+            );
 
-        const mappedRows = response.Departments.map((dept, index) => ({
-            _id: dept._id,
-            index: index + 1,
-            department_code: dept.department_code,
-            department_name: dept.department_name,
-            status: dept.status,
-        }));
+            const mappedRows = response.Departments.map((dept, index) => ({
+                _id: dept._id,
+                index: index + 1,
+                department_code: dept.department_code,
+                department_name: dept.department_name,
+                status: dept.status,
+            }));
 
-        setDepartments(mappedRows);
-        setCurrentPage(response.currentPage);
-        setTotalPages(response.totalPages);
-        setTotalItems(response.totalItems);
-    } catch (error) {
-        console.error("Failed to fetch departments:", error.message || error);
-    } finally {
-        setLoading(false);
-    }
-};
+            setDepartments(mappedRows);
+            setCurrentPage(response.currentPage);
+            setTotalPages(response.totalPages);
+            setTotalItems(response.totalItems);
+        } catch (error) {
+            // console.error("Failed to fetch departments:", error.message || error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
     useEffect(() => {
         fetchDepartments(currentPage, pageSize, sortBy, order, statusFilter, search);
-    }, [currentPage, pageSize, sortBy, order,statusFilter]);
-   const handleSearchChange = (e) => {
+    }, [currentPage, pageSize, sortBy, order, statusFilter]);
+    const handleSearchChange = (e) => {
         const val = e.target.value;
         setSearch(val);
 
@@ -171,37 +171,40 @@ const Department = () => {
                 method: "POST",
                 data: { id: row._id },
             });
-            fetchDepartments(currentPage, pageSize, sortBy, order,statusFilter);
+            fetchDepartments(currentPage, pageSize, sortBy, order, statusFilter);
         } catch (err) {
-            console.error("Failed to toggle department status:", err.message || err);
+            // console.error("Failed to toggle department status:", err.message || err);
+            alert(err?.message?.message)
+
         } finally {
             setLoading(false);
         }
     };
-const handleDeleteDepartment = async (row) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this department permanently?");
-    if (!confirmDelete) return;
+    const handleDeleteDepartment = async (row) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this department permanently?");
+        if (!confirmDelete) return;
 
-    try {
-        setLoading(true);
+        try {
+            setLoading(true);
 
-        const response = await axiosWrapper("api/v1/departments/destroyDepartment ", {
-            method: "POST",
-            data: { id: row._id },
-        });
+            const response = await axiosWrapper("api/v1/departments/destroyDepartment ", {
+                method: "POST",
+                data: { id: row._id },
+            });
 
-        if (response?.message) {
-            alert(response.message); // Shows: "rdepartment permanently deleted"
+            if (response?.message) {
+                alert(response.message); // Shows: "rdepartment permanently deleted"
+            }
+
+            fetchDepartments(); // Refresh the table
+        } catch (error) {
+            // console.error("Failed to delete department permanently:", error.message || error);
+            alert(error?.message?.message);
+
+        } finally {
+            setLoading(false);
         }
-
-        fetchDepartments(); // Refresh the table
-    } catch (error) {
-        console.error("Failed to delete department permanently:", error.message || error);
-        alert("Error deleting department");
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     const handleSortChange = (key, newOrder) => {
         setSortBy(key);
@@ -210,12 +213,12 @@ const handleDeleteDepartment = async (row) => {
     };
 
     return (
-       <div className="tb-responsive templatebuilder-body position-relative">
-                {loading && (
-                    <div className="loader-overlay d-flex justify-content-center align-items-center">
-                        <Loader />
-                    </div>
-                )}
+        <div className="tb-responsive templatebuilder-body position-relative">
+            {loading && (
+                <div className="loader-overlay d-flex justify-content-center align-items-center">
+                    <Loader />
+                </div>
+            )}
             <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 <Breadcrumb title="Departments" items={breadcrumbItems} />
                 <Navbar
@@ -226,8 +229,8 @@ const handleDeleteDepartment = async (row) => {
                         setStatusFilter(val);
                         setCurrentPage(1);
                     }}
-                        searchValue={search}
-                        onSearchChange={handleSearchChange}
+                    searchValue={search}
+                    onSearchChange={handleSearchChange}
                 />
                 <Table
                     headers={headers}

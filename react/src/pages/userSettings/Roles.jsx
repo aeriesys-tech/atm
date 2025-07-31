@@ -21,7 +21,7 @@ const Role = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editFormData, setEditFormData] = useState({});
     const [editErrors, setEditErrors] = useState({});
-  const [statusFilter, setStatusFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
     const [search, setSearch] = useState('');
 
 
@@ -41,11 +41,11 @@ const Role = () => {
         { label: "Action", key: "action", sortable: false },
     ];
 
-    const fetchRoles = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order ,status = statusFilter,
+    const fetchRoles = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order, status = statusFilter,
         searchText = search) => {
         try {
             setLoading(true);
-  const params = new URLSearchParams();
+            const params = new URLSearchParams();
             params.append("page", page);
             params.append("limit", limit);
             params.append("sortBy", sort);
@@ -79,7 +79,7 @@ const Role = () => {
             setTotalPages(response.totalPages);
             setTotalItems(response.totalItems);
         } catch (error) {
-            console.error("Failed to fetch roles:", error.message || error);
+            // console.error("Failed to fetch roles:", error.message || error);
         } finally {
             setLoading(false);
         }
@@ -93,7 +93,7 @@ const Role = () => {
             setRoleGroups(response.role_groups);
             fetchRoles(currentPage, pageSize, sortBy, order, response.roleGroups);
         } catch (error) {
-            console.error("Failed to fetch role groups:", error.message || error);
+            // console.error("Failed to fetch role groups:", error.message || error);
         }
     };
 
@@ -105,8 +105,8 @@ const Role = () => {
         if (roleGroups && roleGroups?.length) {
             fetchRoles(currentPage, pageSize, sortBy, order, statusFilter, search);
         }
-    }, [roleGroups, currentPage, pageSize, sortBy, order,statusFilter]);
-  const handleSearchChange = (e) => {
+    }, [roleGroups, currentPage, pageSize, sortBy, order, statusFilter]);
+    const handleSearchChange = (e) => {
         const val = e.target.value;
         setSearch(val);
 
@@ -205,7 +205,7 @@ const Role = () => {
             });
 
             onSuccess(); // Close modal
-                     fetchRoles(currentPage, pageSize, sortBy, order,statusFilter);
+            fetchRoles(currentPage, pageSize, sortBy, order, statusFilter);
 
             setEditModalOpen(false);
         } catch (err) {
@@ -233,10 +233,11 @@ const Role = () => {
                 method: "POST",
                 data: { id: row._id },
             });
-            fetchRoles(currentPage, pageSize, sortBy, order,statusFilter);
+            fetchRoles(currentPage, pageSize, sortBy, order, statusFilter);
 
         } catch (err) {
-            console.error("Failed to toggle role status:", err.message || err);
+            // console.error("Failed to toggle role status:", err.message || err);
+            alert(err?.message?.message);
         } finally {
             setLoading(false);
         }
@@ -257,8 +258,8 @@ const Role = () => {
             }
             fetchRoles();
         } catch (error) {
-            console.error("Failed to delete role permanently:", error.message || error);
-            alert("Error deleting role");
+            // console.error("Failed to delete role permanently:", error.message || error);
+            alert(error?.message?.message);
         } finally {
             setLoading(false);
         }
@@ -287,8 +288,8 @@ const Role = () => {
                         setStatusFilter(val);
                         setCurrentPage(1);
                     }}
-                        searchValue={search}
-                        onSearchChange={handleSearchChange}
+                    searchValue={search}
+                    onSearchChange={handleSearchChange}
                 />
                 <Table
                     headers={headers}

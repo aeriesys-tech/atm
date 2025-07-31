@@ -13,7 +13,7 @@ const TemplateBuilder = () => {
     const [templateNameState, setTemplateName] = useState(templateName || "");
     const [templateCodeState, setTemplateCode] = useState(templateCode || "");
     const templateNameRef = useRef();
-
+    const [selectedNodeId, setSelectedNodeId] = useState(null);
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
     const [contextMenu, setContextMenu] = useState({ isOpen: false, position: {}, nodeId: null });
@@ -38,37 +38,42 @@ const TemplateBuilder = () => {
                 const { parameter_types } = response || {};
                 setMaster(parameter_types || []);
             } catch (err) {
-                console.error("Error fetching master data:", err);
+                // console.error("Error fetching master data:", err);
             } finally {
                 setLoading(false);
             }
         };
         fetchMasterData();
     }, [templateTypeId]);
-   useEffect(() => {
-  if (structure) {
-    try {
-      const parsed = JSON.parse(structure);
-      const nodeList = parsed?.[0]?.nodes || [];
-      const edgeList = parsed?.[1]?.edges || [];
+    useEffect(() => {
+        if (structure) {
+            try {
+                const parsed = JSON.parse(structure);
+                const nodeList = parsed?.[0]?.nodes || [];
+                const edgeList = parsed?.[1]?.edges || [];
 
-      // 💡 Inject callback handlers into each node
-      const updatedNodes = nodeList.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          onEdit: (nodeData) => handleEditNode(node.id, nodeData.label),
-          onDelete: () => handleDeleteNode(node.id),
-        },
-      }));
+                const updatedNodes = nodeList.map((node) => ({
+                    ...node,
+                    data: {
+                        ...node.data,
+                        onEdit: (nodeData) => handleEditNode(node.id, nodeData.label),
+                        onDelete: () => handleDeleteNode(node.id),
+                    },
+                }));
 
-      setNodes(updatedNodes);
-      setEdges(edgeList);
-    } catch (e) {
-      console.error("Failed to parse structure:", e);
-    }
-  }
-}, [structure]);
+                // ✅ Set initial selected node
+                if (updatedNodes.length > 0) {
+                    setSelectedNodeId(updatedNodes[0].id);
+                }
+
+                setNodes(updatedNodes);
+                setEdges(edgeList);
+
+            } catch (e) {
+                //   console.error("Failed to parse structure:", e);
+            }
+        }
+    }, [structure]);
 
     const handleSave = async () => {
         if (!templateCodeState || !templateNameState || !templateTypeId) {
@@ -77,6 +82,8 @@ const TemplateBuilder = () => {
         }
 
         try {
+            setLoading(true);
+
             const structure = JSON.stringify([{ nodes }, { edges }]);
 
             const payload = {
@@ -95,8 +102,11 @@ const TemplateBuilder = () => {
 
             navigate(`/template/${templateTypeId}`);
         } catch (error) {
-            console.error("Error saving template:", error);
+            // console.error("Error saving template:", error);
             alert("Error saving template. Check console.");
+        }
+        finally {
+            setLoading(false);
         }
     };
     const handleUpdate = async () => {
@@ -124,7 +134,7 @@ const TemplateBuilder = () => {
             alert("Template updated successfully!");
             navigate(`/template/${templateTypeId}`);
         } catch (error) {
-            console.error("Error updating template:", error);
+            // console.error("Error updating template:", error);
             alert("Error updating template. Check console.");
         }
     };
@@ -141,11 +151,15 @@ const TemplateBuilder = () => {
     };
 
     const handleDeleteNode = (id) => {
-        setNodes((nds) => nds.filter((node) => node.id !== id));
+        setNodes((prevNodes) => {
+            const filtered = prevNodes.filter((node) => node.id !== id);
+            const nextSelected = filtered.length > 0 ? filtered[0].id : null;
+            setSelectedNodeId(nextSelected);
+            return filtered;
+        });
+
+        setEdges((eds) => eds.filter((edge) => edge.source !== id && edge.target !== id));
     };
-
-
-
     return (
         <div>
             <TemplateBuilderWrapper
@@ -169,6 +183,8 @@ const TemplateBuilder = () => {
                 edgeLabelModal={edgeLabelModal}
                 setEdgeLabelModal={setEdgeLabelModal}
                 templateTypeName={templateTypeName}
+                selectedNodeId={selectedNodeId}
+                setSelectedNodeId={setSelectedNodeId}
             />
 
         </div>

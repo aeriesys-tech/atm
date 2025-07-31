@@ -84,8 +84,6 @@ const MasterDetail = () => {
         try {
             setLoading(true);
 
-            console.log("Calling API with masterId:", masterId);
-
             const response = await axiosWrapper(
                 `api/v1/masters/dynamic-data/paginate?page=${currentPage}&limit=${pageSize}&sortBy=${sortBy}&order=${order}`,
                 {
@@ -96,7 +94,6 @@ const MasterDetail = () => {
                     },
                 }
             );
-            console.log(response)
             const { master, data: dataRows, currentPage: resPage, totalPages } = response.data;
             setMaster(response);
             setData(response.data);
@@ -104,7 +101,7 @@ const MasterDetail = () => {
             setTotalItems(response?.data?.length);
             setTotalPages(Math.ceil(totalItems / pageSize));
         } catch (error) {
-            console.error("Error fetching master detail:", error.message || error);
+            // console.error("Error fetching master detail:", error.message || error);
         } finally {
             setLoading(false);
         }
@@ -191,7 +188,6 @@ const MasterDetail = () => {
             fetchMasterData();
             onSuccess();
         } catch (error) {
-            console.error("Error creating master entry:", error?.message?.message);
             alert(error?.message?.message);
             if (error?.response?.data?.errors) {
                 setErrors(error.response.data.errors);  // This will map to form field error messages
@@ -214,7 +210,7 @@ const MasterDetail = () => {
 
 
         } catch (error) {
-            console.error("Failed to soft delete dynamic field:", error.message || error);
+            // console.error("Failed to soft delete dynamic field:", error.message || error);
         } finally {
             setLoading(false);
         }
@@ -315,7 +311,7 @@ const MasterDetail = () => {
 		link.remove();
 	} catch (err) {
 		alert("Failed to download template.");
-		console.error(err);
+		// console.error(err);
 	}
 };
 
@@ -357,7 +353,7 @@ const uploadExcel = async (e, templateId) => {
         setShowUploadModal(false);
         fetchMasterData(); // Refresh data
     } catch (err) {
-        console.error(err);
+        // console.error(err);
         const errors = err?.response?.data?.errors || ["Upload failed"];
         setErrorMessages(errors);
     } finally {

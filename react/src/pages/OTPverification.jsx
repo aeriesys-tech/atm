@@ -72,7 +72,7 @@ function OtpVerification() {
 			sessionStorage.setItem("templateTypes", JSON.stringify(templateTypes));
 			navigate("/dashboard");
 		} catch (err) {
-			console.error(err);
+			// console.error(err);
 			if (err?.errors?.otp) {
 				setError(err.errors.otp);
 			} else {

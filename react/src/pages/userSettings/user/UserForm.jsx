@@ -59,7 +59,7 @@ const UserForm = ({ mode }) => {
             });
             setRoles(res.roles || []);
         } catch (e) {
-            console.error("Failed to fetch roles");
+            // console.error("Failed to fetch roles");
         }
     };
 
@@ -70,7 +70,7 @@ const UserForm = ({ mode }) => {
             });
             setDepartments(res.departments || []);
         } catch (e) {
-            console.error("Failed to fetch departments");
+            // console.error("Failed to fetch departments");
         }
     };
 
@@ -91,7 +91,7 @@ const UserForm = ({ mode }) => {
                 avatar: null,
             });
         } catch (err) {
-            console.error("Failed to fetch user:", err);
+            // console.error("Failed to fetch user:", err);
         }
     };
 
@@ -130,6 +130,7 @@ const UserForm = ({ mode }) => {
         } catch (err) {
             const apiErrors = err?.response?.data?.errors || {};
             setErrors(apiErrors);
+            alert(err?.response?.data?.message);
         }
     };
 

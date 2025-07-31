@@ -26,7 +26,7 @@ function ForgotPassword() {
             email: fullEmail,
         };
 
-        console.log('Forgot Password Request:', payload);
+        // console.log('Forgot Password Request:', payload);
         // navigate('/some-confirmation-screen');
     };
 

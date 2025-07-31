@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Handle, Position } from "reactflow";
 
-const CustomNode = ({ data }) => {
+const CustomNode = ({ data, id }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const nodeRef = useRef();
-
+  const isSelected = data.selectedNodeId === id;
   const handleContextMenu = (e) => {
     e.preventDefault();
 
@@ -39,26 +39,27 @@ const CustomNode = ({ data }) => {
 
   const handleDelete = () => {
     setShowMenu(false);
-    if (data.onDelete) data.onDelete(data); // call parent delete handler
+    if (data.onDelete) data.onDelete({ ...data, id });
+
   };
 
   return (
     <div
       ref={nodeRef}
-className="resizable-node"
+      className="resizable-node"
       onContextMenu={handleContextMenu}
     >
       {/* Handles */}
-      <Handle type="target" position={Position.Top} id="t" />
+      {/* <Handle type="target" position={Position.Top} id="t" /> */}
       <Handle type="target" position={Position.Right} id="r" />
-      <Handle type="target" position={Position.Bottom} id="b" />
+      {/* <Handle type="target" position={Position.Bottom} id="b" /> */}
       <Handle type="target" position={Position.Left} id="l" />
 
-      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.label}</div>
+      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: isSelected ? 'red' : 'black' }}>{data.label}</div>
 
-      <Handle type="source" position={Position.Top} id="st" />
+      {/* <Handle type="source" position={Position.Top} id="st" /> */}
       <Handle type="source" position={Position.Right} id="sr" />
-      <Handle type="source" position={Position.Bottom} id="sb" />
+      {/* <Handle type="source" position={Position.Bottom} id="sb" /> */}
       <Handle type="source" position={Position.Left} id="sl" />
 
       {/* Context Menu */}
@@ -70,11 +71,11 @@ className="resizable-node"
             left: menuPosition.x,
             background: "#ffffff",
             border: "1px solid #e0e0e0",
-            borderRadius: "6px",
+            borderRadius: "5px",
             boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
             zIndex: 999,
             padding: "4px 0",
-            width: "36px", // smaller width
+            width: "36px",
           }}
         >
           <button
@@ -94,7 +95,7 @@ className="resizable-node"
             onMouseEnter={(e) => (e.target.style.background = "#f5f5f5")}
             onMouseLeave={(e) => (e.target.style.background = "transparent")}
           >
-             Edit
+            Edit
           </button>
           <button
             style={{

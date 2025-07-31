@@ -3,7 +3,7 @@ import Sidebarfield from "../../assets/icons/adjust(1)1.svg";
 import dropdownicon from "../../assets/icons/ArrowLineRight.svg";
 import tagIcon from "../../assets/icons/tag(2)1.svg";
 
-const Sidebar = ({ master }) => {
+const Sidebar = ({ master, usedTypes = [] }) => {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData("application/reactflow", nodeType);
     event.dataTransfer.effectAllowed = "move";
@@ -23,7 +23,7 @@ const Sidebar = ({ master }) => {
     >
       <div className="accordion" id="accordionExample">
         {master?.map((param, idx) => (
-          <div className="accordion-item tb-accordion-item" key={param?.parameterTypeId}>
+          <div className="accordion-item tb-accordion-item" key={param?.parameterTypeId?._id}>
             <h2 className="accordion-header" id={`heading-${idx}`}>
               <button
                 className="accordion-button d-flex align-content-center justify-content-between"
@@ -49,16 +49,25 @@ const Sidebar = ({ master }) => {
             >
               <div className="accordion-body tb-accordion-body px-3">
                 <div style={gridRowStyle}>
-                  {param.masters?.map((master) => (
-                    <div
-                      key={master._id}
-                      draggable
-                      onDragStart={(e) => onDragStart(e, master.master_name)}
-                      style={boxStyle}
-                    >
-                      {master.master_name}
-                    </div>
-                  ))}
+                  {param.masters?.map((master) => {
+                    const isUsed = usedTypes.includes(master.master_name);
+                    return (
+                      <div
+                        key={master._id}
+                        draggable={!isUsed}
+                        onDragStart={(e) => !isUsed && onDragStart(e, master.master_name)}
+                        style={{
+                          ...boxStyle,
+                          opacity: isUsed ? 0.5 : 1,
+                          cursor: isUsed ? "not-allowed" : "grab",
+                          pointerEvents: isUsed ? "none" : "auto",
+                        }}
+                      >
+                        {master.master_name}
+                      </div>
+                    );
+                  })}
+
                 </div>
               </div>
             </div>

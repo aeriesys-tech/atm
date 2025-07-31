@@ -82,7 +82,7 @@ const TemplateTypes = () => {
             setTotalItems(response.totalItems);
             setTemplateTypeDetails(response.templateType);
         } catch (error) {
-            console.error("Error fetching template types:", error.message || error);
+            // console.error("Error fetching template types:", error.message || error);
         } finally {
             setLoading(false);
         }
@@ -116,15 +116,9 @@ const TemplateTypes = () => {
                     id: row._id, // 👈 send single ID
                 },
             });
-
-            console.log("Response:", response);
-
             fetchTemplateTypes(currentPage, pageSize, sortBy, order, statusFilter, search);
-
-
         } catch (error) {
-            console.error("Error:", error);
-            toast.error(
+            alert(
                 error?.response?.data?.message || "Failed to update template status"
             );
         }
@@ -141,8 +135,8 @@ const TemplateTypes = () => {
             });
             fetchTemplateTypes();
         } catch (error) {
-            console.error("Failed to delete template:", error.message || error);
-            toast.error("Failed to delete template");
+            // console.error("Failed to delete template:", error.message || error);
+            alert(error?.message?.message);
         }
     };
 

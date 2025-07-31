@@ -5,7 +5,7 @@ import searchicon from '../../assets/icons/search1.svg'
 import foldericon from '../../assets/icons/folder.svg'
 const TemplateBuilderWrapper = ({
   master,
-   isEditMode,
+  isEditMode,
   usedTemplateTypeIds,
   templateCode,
   setTemplateCode,
@@ -17,7 +17,8 @@ const TemplateBuilderWrapper = ({
   nodes,            // add these lines
   setNodes,
   edges,
-  setEdges,
+  setEdges,selectedNodeId,
+setSelectedNodeId,
   // ...flowProps
 }) => {
   return (
@@ -94,6 +95,8 @@ const TemplateBuilderWrapper = ({
               setNodes={setNodes}
               edges={edges}
               setEdges={setEdges}
+              selectedNodeId={selectedNodeId}
+              setSelectedNodeId={setSelectedNodeId}
             />
           </ReactFlowProvider>
         </div>

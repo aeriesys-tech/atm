@@ -91,7 +91,7 @@ const RoleGroup = () => {
             setTotalPages(response.totalPages);
             setTotalItems(response.totalItems);
         } catch (error) {
-            console.error("Error fetching roles", error);
+            // console.error("Error fetching roles", error);
         } finally {
             setLoading(false);
         }
@@ -127,13 +127,10 @@ const RoleGroup = () => {
                 data: payload
             });
 
-            console.log("Created:", res.data);
-            onSuccess(); // Close modal
-            fetchRoles(); // Refresh the table
+            onSuccess();
+            fetchRoles();
 
         } catch (err) {
-            console.error("Error creating role:", err.message);
-
             const apiErrors = err?.response?.data?.errors;
             if (apiErrors) {
                 setErrors({
@@ -143,6 +140,7 @@ const RoleGroup = () => {
             } else {
                 setErrors({ roleName: "An unexpected error occurred." });
             }
+            alert(err?.message?.message);
         } finally {
             setLoading(false);
         }
@@ -192,7 +190,8 @@ const RoleGroup = () => {
             fetchRoles(currentPage, pageSize, sortBy, order, statusFilter);
 
         } catch (err) {
-            console.error("Failed to toggle role status:", err.message || err);
+            // console.error("Failed to toggle role status:", err.message || err);
+            alert(err?.message?.message);
         } finally {
             setLoading(false);
         }
@@ -214,8 +213,8 @@ const RoleGroup = () => {
             }
             fetchRoles();
         } catch (error) {
-            console.error("Failed to delete role group permanently:", error.message || error);
-            alert("Error deleting role group");
+            // console.error("Failed to delete role group permanently:", error.message || error);
+            alert(error?.message?.message);
         } finally {
             setLoading(false);
         }
@@ -253,7 +252,7 @@ const RoleGroup = () => {
                         onToggleStatus={handleToggleStatus}
                         onDelete={handleDeleteRoleGroup}
                         paginationProps={{
-                            currentPage,    
+                            currentPage,
                             totalPages,
                             pageSize,
                             totalItems,
@@ -266,7 +265,7 @@ const RoleGroup = () => {
                     />
                     {editModalOpen && (
                         <Modal
-                            title="Edit Role"
+                            title="Edit Role Group"
                             fields={roleFields}
                             values={editFormData}
                             errors={editErrors}

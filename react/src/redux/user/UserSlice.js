@@ -25,7 +25,7 @@ const userSlice = createSlice({
             state.user = null;
         },
         setNotificationCount: (state, action) => {
-            console.log(state, action)
+            // console.log(state, action)
             state.notificationCount = action.payload;
         },
     },

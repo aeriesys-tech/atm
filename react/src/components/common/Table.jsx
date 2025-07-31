@@ -18,11 +18,11 @@ function Table({
 }) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedRow, setSelectedRow] = useState('');
-	console.log("selectedRow Table", selectedRow?.notification)
-	console.log("rowData", rows, headers)
+	// console.log("selectedRow Table", selectedRow?.notification)
+	// console.log("rowData", rows, headers)
 	const handleViewClick = (rowData) => {
 
-		console.log("rowData???", rowData)
+		// console.log("rowData???", rowData)
 		setSelectedRow(rowData);
 
 		setIsModalOpen(true);
