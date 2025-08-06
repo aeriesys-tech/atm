@@ -68,6 +68,8 @@ const Master = () => {
             tooltip: "",
             required: false,
             default: false,
+            is_unique: false,
+
         },
     ]);
     const handleAddField = () => {
@@ -81,6 +83,7 @@ const Master = () => {
                 tooltip: "",
                 required: false,
                 default: false,
+                is_unique: false,
             },
         ]);
     };
@@ -98,7 +101,7 @@ const Master = () => {
                     ? {
                         ...field,
                         [name]:
-                            name === "required" || name === "default"
+                            name === "required" || name === "default" || name === "is_unique"
                                 ? value === "true" || value === true
                                 : value,
                     }
@@ -218,6 +221,7 @@ const Master = () => {
                 tooltip: field.tooltip,
                 required: Boolean(field.required),
                 default: Boolean(field.default),
+                is_unique: Boolean(field.is_unique),
             }))
         );
 
@@ -245,6 +249,7 @@ const Master = () => {
                     order: isNaN(Number(item.order)) ? 1 : Number(item.order),
                     required: Boolean(item.required),
                     default: Boolean(item.default),
+                    is_unique: Boolean(item.is_unique),
                 })),
             };
 
@@ -423,6 +428,7 @@ const Master = () => {
                                     tooltip: "",
                                     required: false,
                                     default: false,
+                                    is_unique: false,
                                 },
                             ]);
                             setIsModalOpen(true);
@@ -489,6 +495,7 @@ const Master = () => {
                                                 tooltip: "",
                                                 required: false,
                                                 default: false,
+                                                is_unique: false,
                                             },
                                         ]);
                                     }
@@ -531,7 +538,7 @@ const Master = () => {
                                         <div key={index} className="master-field-box position-relative p-3">
                                             <div className="d-flex justify-content-center align-items-center position-relative mb-3">
                                                 {masterFieldData.length > 1 && (<>
-                                                <h7 className="m-0">Master Field {index + 1}</h7>
+                                                    <h7 className="m-0">Master Field {index + 1}</h7>
 
                                                     <a
                                                         type="button"
@@ -541,7 +548,7 @@ const Master = () => {
                                                     >
                                                         <img src="src/assets/icons/close.svg" width="28px" height="28px" alt="Close" />
                                                     </a>
-                                                    </>
+                                                </>
                                                 )}
                                             </div>
                                             <div className="row">
@@ -628,6 +635,27 @@ const Master = () => {
                                                             }, index)
                                                         }
                                                         error={masterFieldErrors[index]?.default}
+                                                    />
+
+                                                </div>
+                                                <div className="col-md-6 mb-3">
+                                                    <Dropdown
+                                                        label="Select Unique"
+                                                        name="is_unique"
+                                                        options={[
+                                                            { label: "Yes", value: "true" },
+                                                            { label: "No", value: "false" },
+                                                        ]}
+                                                        value={String(field.is_unique)}
+                                                        onChange={(e) =>
+                                                            handleFieldChange({
+                                                                target: {
+                                                                    name: "is_unique",
+                                                                    value: e.target.value === "true",
+                                                                },
+                                                            }, index)
+                                                        }
+                                                        error={masterFieldErrors[index]?.is_unique}
                                                     />
 
                                                 </div>

@@ -205,6 +205,17 @@ const TemplateTypes = () => {
                             },
                         })
                     }
+                    onViewTemplate ={(row) =>
+                        navigate(`/template/${templateTypeId}/view/${row._id}`, {
+                            state: {
+                                templateCode: row.template_code,
+                                templateName: row.template_name,
+                                structure: row.structure,
+                                templateTypeId: templateTypeId,
+                                templateTypeName: templateTypeDetails?.template_type_name,
+                            },
+                        })
+                    }
                     onDelete={handleDelete}
                     paginationProps={{
                         currentPage,

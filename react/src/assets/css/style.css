@@ -161,7 +161,58 @@ th .fa-angle-down.icon-down {
   -ms-overflow-style: none;
   /* IE 10+ */
 }
+.addunit-card2 {
+  width: 100vw;
+  max-height: 100vh;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* block card from overflowing */
+  position: relative;
 
+    width: 100vw; /* responsive width */
+  max-width: auto;
+  height: 100vh; /* take up most of the screen height */
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.addunit-card2 .scrollable-table {
+  overflow-y: auto;
+  max-height: 60vh; /* set height for scrollable content area */
+}
+.addunit-card2::-webkit-scrollbar,
+.scrollable-table::-webkit-scrollbar {
+  display: none;
+}
+.scrollable-table {
+  position: relative; /* Ensure positioning context */
+  overflow: visible !important; /* Important to override auto */
+  z-index: 1;
+}
+.addunit-card2 {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.modal-overlay1 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  overflow: auto; /* ✅ allow scrolling if modal content is taller than viewport */
+}
 .addunit-card1::-webkit-scrollbar {
   display: none;
   /* Chrome, Safari */
@@ -295,4 +346,51 @@ th .fa-angle-down.icon-down {
   position: relative;
   font-size: 8px;
   /* font-weight: 500; */
+}
+
+/* this is dropdown modal node */
+.custom-select-container {
+  position: relative;
+}
+
+.custom-select {
+  width: 100%;
+  background-color: white;
+  border: 1px solid #CED4DA;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: black;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: #007BFF;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.custom-select:hover {
+  border-color: #007BFF;
+}
+
+.custom-select option {
+  padding: 4px 8px;
+  font-size: 12px;
+  height: 30px;
+  background-color: white;
+  color: black;
+}
+
+.custom-select option:hover,
+.custom-select option:focus,
+.custom-select option:checked {
+  background-color: #E9ECEF;
+  color: black;
+}
+
+.custom-select:focus::-ms-expand,
+.custom-select:focus {
+  z-index: 9999;
 }

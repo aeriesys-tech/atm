@@ -19,7 +19,7 @@ const TemplateBuilder = () => {
     const [contextMenu, setContextMenu] = useState({ isOpen: false, position: {}, nodeId: null });
     const [edgeLabelModal, setEdgeLabelModal] = useState({ isOpen: false, label: "", edgeId: null });
     const navigate = useNavigate();
-
+    const [templateDataMap, setTemplateDataMap] = useState({});
     //   const [masterData, setMasterData] = useState(null); 
     const [master, setMaster] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -138,6 +138,30 @@ const TemplateBuilder = () => {
             alert("Error updating template. Check console.");
         }
     };
+    const handleSaveNodeData = async () => {
+        try {
+            if (!templateCodeState || !templateNameState || !templateTypeId) {
+                alert("Please fill all required fields before saving node data.");
+                return;
+            }
+
+            const payload = {
+                id: templateId,
+                templateNodeData: templateDataMap,
+            };
+
+            await axiosWrapper("api/v1/template-masters/createTemplateMaster", {
+                method: "POST",
+                data: payload,
+            });
+
+            alert("Node data saved successfully!");
+        } catch (error) {
+            alert("Error saving node data. Check console.");
+            console.error(error);
+        }
+    };
+
 
     const handleEditNode = (id, label) => {
         const newLabel = prompt("Edit label:", label);
@@ -165,6 +189,7 @@ const TemplateBuilder = () => {
             <TemplateBuilderWrapper
                 master={master}
                 isEditMode={!!templateId}
+                isViewMode={location.pathname.includes("/view")}
                 usedTemplateTypeIds={[]}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -185,6 +210,9 @@ const TemplateBuilder = () => {
                 templateTypeName={templateTypeName}
                 selectedNodeId={selectedNodeId}
                 setSelectedNodeId={setSelectedNodeId}
+                templateDataMap={templateDataMap}
+                setTemplateDataMap={setTemplateDataMap}
+                handleSaveNodeData={handleSaveNodeData}
             />
 
         </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Handle, Position } from "reactflow";
 
-const CustomNode = ({ data, id }) => {
+const CustomNode = ({ data, id, onDoubleClick }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const nodeRef = useRef();
@@ -48,6 +48,7 @@ const CustomNode = ({ data, id }) => {
       ref={nodeRef}
       className="resizable-node"
       onContextMenu={handleContextMenu}
+       onDoubleClick={() => onDoubleClick && onDoubleClick({ id, data })}
     >
       {/* Handles */}
       {/* <Handle type="target" position={Position.Top} id="t" /> */}

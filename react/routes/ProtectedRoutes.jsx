@@ -67,6 +67,10 @@ const protectedRoutes = [
 {
   path: "/template/:id/edit/:templateId",
   element: <TemplateBuilder />
+},
+{
+  path: "/template/:id/view/:templateId",
+  element: <TemplateBuilder />
 }
 
 

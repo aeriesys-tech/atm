@@ -17,8 +17,8 @@ const TemplateBuilderWrapper = ({
   nodes,            // add these lines
   setNodes,
   edges,
-  setEdges,selectedNodeId,
-setSelectedNodeId,
+  setEdges, selectedNodeId,
+  setSelectedNodeId, templateDataMap, setTemplateDataMap,isViewMode, handleSaveNodeData,
   // ...flowProps
 }) => {
   return (
@@ -77,9 +77,16 @@ setSelectedNodeId,
                     onChange={(e) => setTemplateName(e.target.value)}
                     ref={templateNameRef}
                   />
-                  <button onClick={handleSave} className="tb-save-btn">
-                    SAVE
-                  </button>
+                  {isViewMode ? (
+                    <button onClick={handleSaveNodeData} className="tb-save-btn">
+                      Update Node
+                    </button>
+                  ) : (
+                    <button onClick={handleSave} className="tb-save-btn">
+                      SAVE
+                    </button>
+                  )}
+
                 </div>
               </div>
             </div>
@@ -97,6 +104,8 @@ setSelectedNodeId,
               setEdges={setEdges}
               selectedNodeId={selectedNodeId}
               setSelectedNodeId={setSelectedNodeId}
+              templateDataMap={templateDataMap}
+              setTemplateDataMap={setTemplateDataMap}
             />
           </ReactFlowProvider>
         </div>

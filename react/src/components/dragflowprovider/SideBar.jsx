@@ -5,7 +5,7 @@ import tagIcon from "../../assets/icons/tag(2)1.svg";
 
 const Sidebar = ({ master, usedTypes = [] }) => {
   const onDragStart = (event, nodeType) => {
-    event.dataTransfer.setData("application/reactflow", nodeType);
+     event.dataTransfer.setData("application/reactflow", JSON.stringify(nodeType));
     event.dataTransfer.effectAllowed = "move";
   };
 
@@ -55,7 +55,7 @@ const Sidebar = ({ master, usedTypes = [] }) => {
                       <div
                         key={master._id}
                         draggable={!isUsed}
-                        onDragStart={(e) => !isUsed && onDragStart(e, master.master_name)}
+                        onDragStart={(e) => !isUsed && onDragStart(e, master)}
                         style={{
                           ...boxStyle,
                           opacity: isUsed ? 0.5 : 1,
