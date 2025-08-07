@@ -57,12 +57,8 @@ const createTemplate = async (req, res) => {
             deleted_at: deleted_at || null
         });
 
-
-        // console.log("Template saved:", savedTemplate);
-
         if (req.body.source_id !== '1') {
             let parsedStructure;
-
             try {
                 parsedStructure = typeof newTemplate.structure === 'string'
                     ? JSON.parse(newTemplate.structure)
@@ -89,66 +85,55 @@ const createTemplate = async (req, res) => {
                 });
             }
 
+            const sanitize = str => str.toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '_');
+
             const nodeMap = new Map(nodes.map(node => [node.id, node]));
             const sourceIds = new Set(edges.map(edge => edge.source));
             const leafNodes = nodes.filter(node => !sourceIds.has(node.id));
 
-            console.log('Leaf Nodes:', leafNodes);
-
-            // Helper to sanitize collection name
-            const sanitizeCollectionName = name => name.replace(/[^\w]/g, '_').toLowerCase();
-
-            // Ancestor traversal for each leaf node
-            const getAncestors = (leafId, visited = new Set()) => {
-                const result = [];
-                const stack = [leafId];
-
-                while (stack.length) {
-                    const current = stack.pop();
-                    if (visited.has(current)) continue;
-                    visited.add(current);
-
-                    const node = nodeMap.get(current);
-                    if (node) result.push(node);
-
-                    // Find parents (source of edges pointing to this node)
-                    const parentEdges = edges.filter(edge => edge.target === current);
-                    for (const edge of parentEdges) {
-                        stack.push(edge.source);
-                    }
-                }
-                return result;
-            };
-
             for (const leaf of leafNodes) {
-                const visited = new Set();
-                const allAncestors = getAncestors(leaf.id, visited);
+                const leafLabel = leaf.data?.label || 'unnamed';
+                const incomingEdge = edges.find(edge => edge.target === leaf.id);
+                const parentNodeId = incomingEdge?.source || null;
+                const parentNode = parentNodeId ? nodeMap.get(parentNodeId) : null;
+                const parentLabel = parentNode?.data?.label || null;
 
-                if (allAncestors.length > 0) {
-                    const sanitizedName = sanitizeCollectionName(`${template_name}_${leaf.data?.label || 'unnamed'}`);
-                    const dynamicSchema = new mongoose.Schema({
-                        id: String,
-                        type: String,
-                        position: Object,
-                        data: Object,
-                        template_id: mongoose.Schema.Types.ObjectId,
-                        label: String
-                    }, { strict: false });
+                const sanitizedLeafLabel = sanitize(leafLabel);
+                const sanitizedParentLabel = parentLabel ? sanitize(parentLabel) : null;
 
-                    const DynamicModel = mongoose.model(sanitizedName, dynamicSchema);
+                const collectionName = sanitize(`${template_name}_${leafLabel}`);
+                const modelName = `Dynamic_${leaf.id}_${newTemplate._id}`;
 
-                    const dataToInsert = allAncestors.map(node => ({
-                        ...node,
-                        label: node.data?.label || '',
-                        template_id: newTemplate._id
-                    }));
-
-                    await DynamicModel.insertMany(dataToInsert);
+                if (mongoose.models[modelName]) {
+                    delete mongoose.models[modelName];
                 }
+
+                const schemaFields = {
+                    template_id: mongoose.Schema.Types.ObjectId
+                };
+                const entry = {
+                    template_id: newTemplate._id
+                };
+
+                // Add leaf label field (e.g., section_id)
+                schemaFields[`${sanitizedLeafLabel}_id`] = String;
+                entry[`${sanitizedLeafLabel}_id`] = leaf.id;
+
+                // Add parent label field (e.g., plant_id) if parent exists
+                if (sanitizedParentLabel) {
+                    schemaFields[`${sanitizedParentLabel}_id`] = String;
+                    entry[`${sanitizedParentLabel}_id`] = parentNodeId;
+                }
+
+                const dynamicSchema = new mongoose.Schema(schemaFields, { collection: collectionName });
+                const DynamicModel = mongoose.model(modelName, dynamicSchema);
+
+                await DynamicModel.insertMany([entry]);
             }
 
-            console.log("Dynamic collections created for all leaf nodes.");
+            console.log(" Dynamic collections created for all leaf nodes.");
         }
+
         const savedTemplate = await newTemplate.save();
 
         const message = `Template "${newTemplate.template_name}" created successfully`;
@@ -163,6 +148,155 @@ const createTemplate = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+
+// structed code
+// const createTemplate = async (req, res) => {
+//     try {
+//         const {
+//             template_type_id,
+//             template_code,
+//             template_name,
+//             structure,
+//             status,
+//             deleted_at
+//         } = req.body;
+
+//         const validationErrors = {};
+//         if (!template_type_id || !mongoose.Types.ObjectId.isValid(template_type_id)) {
+//             validationErrors.template_type_id = 'Invalid or missing template type ID';
+//         } else {
+//             const templateTypeExists = await TemplateType.findById(template_type_id);
+//             if (!templateTypeExists) {
+//                 validationErrors.template_type_id = 'Template type does not exist';
+//             }
+//         }
+
+//         if (!template_code || template_code.trim() === '') {
+//             validationErrors.template_code = 'Template code is required';
+//         } else {
+//             const existingTemplate = await Template.findOne({ template_code: template_code.trim() });
+//             if (existingTemplate) {
+//                 validationErrors.template_code = 'Template code already exists';
+//             }
+//         }
+
+//         if (!template_name || template_name.trim() === '') {
+//             validationErrors.template_name = 'Template name is required';
+//         }
+
+//         if (Object.keys(validationErrors).length > 0) {
+//             const errorMessage = Object.values(validationErrors).join(', ');
+//             await logApiResponse(req, 'Validation Error', 400, validationErrors);
+//             return res.status(400).json({ message: errorMessage, errors: validationErrors });
+//         }
+
+//         const newTemplate = new Template({
+//             template_type_id,
+//             template_code: template_code.trim(),
+//             template_name: template_name.trim(),
+//             structure: structure || null,
+//             status: status !== undefined ? status : true,
+//             deleted_at: deleted_at || null
+//         });
+
+//         if (req.body.source_id !== '1') {
+//             let parsedStructure;
+//             try {
+//                 parsedStructure = typeof newTemplate.structure === 'string'
+//                     ? JSON.parse(newTemplate.structure)
+//                     : newTemplate.structure;
+//             } catch (err) {
+//                 await logApiResponse(req, 'Invalid structure JSON', 400, {
+//                     structure: 'Could not parse structure'
+//                 });
+//                 return res.status(400).json({ message: 'Invalid structure format' });
+//             }
+
+//             const nodesItem = parsedStructure.find(item => Array.isArray(item.nodes));
+//             const edgesItem = parsedStructure.find(item => Array.isArray(item.edges));
+
+//             const nodes = nodesItem?.nodes || [];
+//             const edges = edgesItem?.edges || [];
+
+//             if (nodes.length === 0) {
+//                 await logApiResponse(req, 'Validation Error', 400, {
+//                     message: 'Selected items must have at least one node selected.'
+//                 });
+//                 return res.status(400).json({
+//                     message: 'Selected items must have at least one node selected.'
+//                 });
+//             }
+
+//             const sanitize = str => str.toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '_');
+
+//             const nodeMap = new Map(nodes.map(node => [node.id, node]));
+//             const sourceIds = new Set(edges.map(edge => edge.source));
+//             const leafNodes = nodes.filter(node => !sourceIds.has(node.id));
+
+//             for (const leaf of leafNodes) {
+//                 const leafLabel = leaf.data?.label || 'unnamed';
+//                 const incomingEdge = edges.find(edge => edge.target === leaf.id);
+//                 const parentNodeId = incomingEdge?.source || null;
+//                 const parentNode = parentNodeId ? nodeMap.get(parentNodeId) : null;
+//                 const parentLabel = parentNode?.data?.label || null;
+
+//                 const sanitizedLeafLabel = sanitize(leafLabel);
+//                 const sanitizedParentLabel = parentLabel ? sanitize(parentLabel) : null;
+
+//                 const collectionName = sanitize(`${template_name}_${leafLabel}`);
+//                 const modelName = `Dynamic_${leaf.id}_${newTemplate._id}`;
+
+//                 if (mongoose.models[modelName]) {
+//                     delete mongoose.models[modelName];
+//                 }
+
+//                 const schemaFields = {
+//                     template_id: mongoose.Schema.Types.ObjectId
+//                 };
+//                 const entry = {
+//                     template_id: newTemplate._id
+//                 };
+
+//                 if (sanitizedParentLabel && parentNodeId) {
+//                     // Add parent_id field
+//                     schemaFields[`${sanitizedParentLabel}_id`] = String;
+//                     entry[`${sanitizedParentLabel}_id`] = parentNodeId;
+
+//                     // Add parent object with child inside
+//                     schemaFields[sanitizedParentLabel] = mongoose.Schema.Types.Mixed;
+//                     entry[sanitizedParentLabel] = {
+//                         [`${sanitizedLeafLabel}_id`]: leaf.id
+//                     };
+//                 } else {
+//                     // If no parent, store child normally
+//                     schemaFields[`${sanitizedLeafLabel}_id`] = String;
+//                     entry[`${sanitizedLeafLabel}_id`] = leaf.id;
+//                 }
+
+//                 const dynamicSchema = new mongoose.Schema(schemaFields, { collection: collectionName });
+//                 const DynamicModel = mongoose.model(modelName, dynamicSchema);
+
+//                 await DynamicModel.insertMany([entry]);
+//             }
+
+//             console.log("Dynamic collections created for all leaf nodes.");
+//         }
+
+//         const savedTemplate = await newTemplate.save();
+
+//         const message = `Template "${newTemplate.template_name}" created successfully`;
+//         await createNotification(req, 'Template', newTemplate._id, message, 'template');
+//         await logApiResponse(req, 'Template created successfully', 201, savedTemplate);
+
+//         res.status(201).json(savedTemplate);
+
+//     } catch (error) {
+//         console.error('Create Template Error:', error);
+//         await logApiResponse(req, 'Server error', 500, { error: error.message });
+//         res.status(500).json({ message: 'Server error', error: error.message });
+//     }
+// };
 
 
 const updateTemplate = async (req, res) => {
@@ -251,52 +385,76 @@ const updateTemplate = async (req, res) => {
         }
 
         if (parsedStructure) {
-            const nodesMap = new Map();
-            parsedStructure.forEach(item => {
-                if (item.nodes) {
-                    item.nodes.forEach(node => {
-                        nodesMap.set(node.key, node);
-                    });
-                }
-            });
+            const nodes = parsedStructure.find(item => Array.isArray(item.nodes))?.nodes || [];
+            const edges = parsedStructure.find(item => Array.isArray(item.edges))?.edges || [];
 
-            const getAncestors = (nodeKey, visited = new Set()) => {
-                if (visited.has(nodeKey)) return [];
-                visited.add(nodeKey);
-                const ancestors = [];
-                for (const item of parsedStructure) {
-                    if (item.nodes && item.nodes.find(n => n.key === nodeKey)) {
-                        ancestors.push(...getAncestors(item.key, visited), item);
+            const nodeMap = new Map(nodes.map(node => [node.id, node]));
+            const sourceIds = new Set(edges.map(edge => edge.source));
+            const leafNodes = nodes.filter(node => !sourceIds.has(node.id));
+
+            const getAncestors = (leafId, visited = new Set()) => {
+                const result = [];
+                const stack = [leafId];
+
+                while (stack.length) {
+                    const current = stack.pop();
+                    if (visited.has(current)) continue;
+                    visited.add(current);
+
+                    const node = nodeMap.get(current);
+                    if (node) result.push(node);
+
+                    const parentEdges = edges.filter(edge => edge.target === current);
+                    for (const edge of parentEdges) {
+                        stack.push(edge.source);
                     }
                 }
-                return ancestors;
+                return result;
             };
 
-            const leafNodes = parsedStructure
-                .flatMap(item => item.nodes || [])
-                .filter(node => !parsedStructure.find(p => p.key === node.key));
-
             const existingCollections = await mongoose.connection.db.listCollections().toArray();
-            const templatePrefix = `${template_name}_`.replace(/\s+/g, '_');
+            const templatePrefix = `${template_name}_`.replace(/[^\w]/g, '_').toLowerCase();
             for (const coll of existingCollections) {
                 if (coll.name.startsWith(templatePrefix)) {
                     await mongoose.connection.db.dropCollection(coll.name);
                 }
             }
 
+            const sanitizeCollectionName = name => name.replace(/[^\w]/g, '_').toLowerCase();
+
             for (const leaf of leafNodes) {
-                const modelName = `${template_name}_${leaf.label}`.replace(/\s+/g, '_');
                 const visited = new Set();
-                const ancestors = getAncestors(leaf.key, visited);
-                const fullChain = [...ancestors, nodesMap.get(leaf.key)];
+                const allAncestors = getAncestors(leaf.id, visited);
+                allAncestors.reverse();
 
-                const DynamicModel = mongoose.model(
-                    modelName,
-                    new mongoose.Schema({}, { strict: false }),
-                    modelName
-                );
+                const sanitizedName = sanitizeCollectionName(`${template_name}_${leaf.data?.label || 'unnamed'}`);
 
-                await DynamicModel.insertMany(fullChain);
+                const dynamicSchema = new mongoose.Schema({}, { strict: false });
+
+                let DynamicModel;
+                try {
+                    DynamicModel = mongoose.model(sanitizedName);
+                } catch (err) {
+                    DynamicModel = mongoose.model(sanitizedName, dynamicSchema);
+                }
+
+                const dataToInsert = [
+                    Object.assign(
+                        Object.fromEntries(
+                            allAncestors.map(node => {
+                                const key = `${node.data?.label?.toLowerCase().replace(/\s+/g, '_')}_id`;
+                                return [key, node.id];
+                            })
+                        ),
+                        {
+                            [`${leaf.data?.label?.toLowerCase().replace(/\s+/g, '_')}_id`]: leaf.id,
+                            template_id: updatedTemplate._id,
+                            node_id: leaf.id
+                        }
+                    )
+                ];
+
+                await DynamicModel.insertMany(dataToInsert);
             }
         }
 
@@ -322,8 +480,6 @@ const updateTemplate = async (req, res) => {
         }
     }
 };
-
-
 
 
 
@@ -502,6 +658,183 @@ const updateTemplate = async (req, res) => {
 //     } catch (error) {
 //         await logApiResponse(req, "Error retrieving templates", 500, { error: error.message }); // Log the error response
 //         res.status(500).json({ error: error.message });
+//     }
+// };
+
+// structured code
+// const updateTemplate = async (req, res) => {
+//     try {
+//         const {
+//             id,
+//             template_type_id,
+//             template_code,
+//             template_name,
+//             structure,
+//             status
+//         } = req.body;
+
+//         let validationErrors = {};
+
+//         if (!mongoose.Types.ObjectId.isValid(id)) {
+//             validationErrors.id = 'Invalid template ID';
+//         }
+
+//         if (!template_type_id || !mongoose.Types.ObjectId.isValid(template_type_id)) {
+//             validationErrors.template_type_id = 'Invalid or missing template type ID';
+//         } else {
+//             const templateType = await TemplateType.findById(template_type_id);
+//             if (!templateType) {
+//                 validationErrors.template_type_id = 'Invalid template type ID';
+//             }
+//         }
+
+//         if (!template_code) {
+//             validationErrors.template_code = 'Template code is required';
+//         } else {
+//             const existingCodeTemplate = await Template.findOne({ template_code });
+//             if (existingCodeTemplate && existingCodeTemplate._id.toString() !== id) {
+//                 validationErrors.template_code = 'Template code already exists';
+//             }
+//         }
+
+//         if (!template_name) {
+//             validationErrors.template_name = 'Template name is required';
+//         }
+
+//         const existingTemplate = await Template.findById(id);
+//         if (!existingTemplate) {
+//             validationErrors.id = 'Template not found';
+//         }
+
+//         let parsedStructure = null;
+//         if (structure) {
+//             try {
+//                 const tryParse = typeof structure === 'string' ? JSON.parse(structure) : structure;
+
+//                 if (existingTemplate && JSON.stringify(tryParse) !== JSON.stringify(existingTemplate.structure)) {
+//                     await TemplateMaster.deleteMany({ template_id: id });
+//                 }
+
+//                 parsedStructure = tryParse;
+//             } catch (err) {
+//                 validationErrors.structure = 'Invalid structure format. Must be valid JSON.';
+//             }
+//         }
+
+//         if (Object.keys(validationErrors).length > 0) {
+//             const errorMessage = validationErrors.structure || 'Validation Error';
+//             await logApiResponse(req, errorMessage, 400, validationErrors);
+//             return res.status(400).json({ message: errorMessage, errors: validationErrors });
+//         }
+
+//         const updateFields = {
+//             template_type_id,
+//             template_code,
+//             template_name,
+//             structure: parsedStructure !== null ? JSON.stringify(parsedStructure) : existingTemplate.structure,
+//             status: status !== undefined ? status : true,
+//             updated_at: new Date()
+//         };
+
+//         const updatedTemplate = await Template.findByIdAndUpdate(
+//             id,
+//             updateFields,
+//             { new: true, runValidators: true }
+//         );
+
+//         if (!updatedTemplate) {
+//             await logApiResponse(req, "Template not found", 404, { id: 'Template not found' });
+//             return res.status(404).json({ message: "Validation Error", errors: { id: 'Template not found' } });
+//         }
+
+//         if (parsedStructure) {
+//             const nodes = parsedStructure.find(item => Array.isArray(item.nodes))?.nodes || [];
+//             const edges = parsedStructure.find(item => Array.isArray(item.edges))?.edges || [];
+
+//             const nodeMap = new Map(nodes.map(node => [node.id, node]));
+//             const sourceIds = new Set(edges.map(edge => edge.source));
+//             const leafNodes = nodes.filter(node => !sourceIds.has(node.id));
+
+//             const sanitize = str => str.toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '_');
+
+//             // Drop old collections
+//             const existingCollections = await mongoose.connection.db.listCollections().toArray();
+//             const templatePrefix = `${template_name}_`.replace(/[^\w]/g, '_').toLowerCase();
+//             for (const coll of existingCollections) {
+//                 if (coll.name.startsWith(templatePrefix)) {
+//                     await mongoose.connection.db.dropCollection(coll.name);
+//                 }
+//             }
+
+//             for (const leaf of leafNodes) {
+//                 const leafLabel = leaf.data?.label || 'unnamed';
+//                 const leafId = leaf.id;
+//                 const incomingEdge = edges.find(edge => edge.target === leafId);
+//                 const parentNodeId = incomingEdge?.source || null;
+//                 const parentNode = parentNodeId ? nodeMap.get(parentNodeId) : null;
+//                 const parentLabel = parentNode?.data?.label || null;
+
+//                 const sanitizedLeafLabel = sanitize(leafLabel);
+//                 const sanitizedParentLabel = parentLabel ? sanitize(parentLabel) : null;
+
+//                 const collectionName = sanitize(`${template_name}_${leafLabel}`);
+//                 const modelName = `Dynamic_${leafId}_${updatedTemplate._id}`;
+//                 const schemaFields = {
+//                     template_id: mongoose.Schema.Types.ObjectId
+//                 };
+
+//                 const entry = {
+//                     template_id: updatedTemplate._id
+//                 };
+
+//                 if (sanitizedParentLabel && parentNodeId) {
+//                     // e.g., plant_id: "parent_id"
+//                     schemaFields[`${sanitizedParentLabel}_id`] = String;
+//                     entry[`${sanitizedParentLabel}_id`] = parentNodeId;
+
+//                     // e.g., plant: { area_id: leafId }
+//                     schemaFields[sanitizedParentLabel] = mongoose.Schema.Types.Mixed;
+//                     entry[sanitizedParentLabel] = {
+//                         [`${sanitizedLeafLabel}_id`]: leafId
+//                     };
+//                 } else {
+//                     // No parent: only store child info
+//                     schemaFields[`${sanitizedLeafLabel}_id`] = String;
+//                     entry[`${sanitizedLeafLabel}_id`] = leafId;
+//                 }
+
+//                 const dynamicSchema = new mongoose.Schema(schemaFields, { collection: collectionName });
+
+//                 if (mongoose.models[modelName]) {
+//                     delete mongoose.models[modelName];
+//                 }
+
+//                 const DynamicModel = mongoose.model(modelName, dynamicSchema);
+
+//                 await DynamicModel.insertMany([entry]);
+//             }
+//         }
+
+//         const message = `Template "${updatedTemplate.template_name}" updated successfully`;
+//         await createNotification(req, 'Template', updatedTemplate._id, message, 'template');
+//         await logApiResponse(req, message, 200, updatedTemplate);
+
+//         return res.status(200).json({ message, data: updatedTemplate });
+
+//     } catch (error) {
+//         console.error('Error updating template:', error);
+
+//         if (error.name === 'ValidationError') {
+//             const errors = {};
+//             Object.keys(error.errors).forEach(key => {
+//                 errors[key] = error.errors[key].message;
+//             });
+//             await logApiResponse(req, "Validation Error", 400, errors);
+//             return res.status(400).json({ message: "Validation Error", errors });
+//         } else {
+//             await logApiResponse(req, "Server error", 500, { error: error.message });
+//             return res.status(500).json({ message: 'Server error', error: error.message });
+//         }
 //     }
 // };
 

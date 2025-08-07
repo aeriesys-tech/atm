@@ -13,148 +13,286 @@ const SchemaDefinitions = mongoose.model('SchemaDefinition');
 const { logApiResponse } = require('../utils/responseService');
 const { createNotification } = require('../utils/notification');
 
-const createMaster = async (req, res) => {
-    let savedMaster = null;
+// const createMaster = async (req, res) => {
+//     let savedMaster = null;
 
+//     try {
+//         const { masterData, masterFieldData } = req.body;
+//         const { model_name } = masterData;
+
+//         let validationErrors = { master: {}, masterFields: [] };
+
+//         // Master field validations
+//         if (!masterData.master_name) validationErrors.master.master_name = "Master name is required";
+//         if (!masterData.parameter_type_id || !mongoose.Types.ObjectId.isValid(masterData.parameter_type_id)) {
+//             validationErrors.master.parameter_type_id = "Parameter type ID is required and must be valid";
+//         }
+//         if (!masterData.display_name_singular) validationErrors.master.display_name_singular = "Display name (singular) is required";
+//         if (!masterData.display_name_plural) validationErrors.master.display_name_plural = "Display name (plural) is required";
+//         if (!model_name) validationErrors.master.model_name = "Model name is required";
+
+//         if (!Array.isArray(masterFieldData) || masterFieldData.length === 0) {
+//             validationErrors.masterFields.push({ message: "Master field data is required" });
+//         } else {
+//             masterFieldData.forEach((field, index) => {
+//                 let fieldErrors = {};
+//                 if (!field.field_name) fieldErrors.field_name = "Field name is required";
+//                 if (!field.field_type) fieldErrors.field_type = "Field type is required";
+//                 if (!field.display_name) fieldErrors.display_name = "Display name is required";
+//                 if (!field.order) fieldErrors.order = "Order is required";
+//                 if (!field.tooltip) fieldErrors.tooltip = "Tooltip is required";
+//                 if (field.required === undefined) fieldErrors.required = "Required status is required";
+//                 if (field.default === undefined) fieldErrors.default = "Default value is required";
+//                 if (field.is_unique === undefined) fieldErrors.is_unique = "Unique value is required";
+//                 if (Object.keys(fieldErrors).length > 0) {
+//                     validationErrors.masterFields.push({ field: `Field ${index + 1}`, errors: fieldErrors });
+//                 }
+//             });
+//         }
+
+//         if (Object.keys(validationErrors.master).length > 0 || validationErrors.masterFields.length > 0) {
+//             await logApiResponse(req, "Validation Error", 400, validationErrors);
+//             return res.status(400).json({ message: "Validation Error", errors: validationErrors });
+//         }
+
+//         const existingMaster = await Master.findOne({ master_name: masterData.master_name });
+//         if (existingMaster) {
+//             const duplicateError = { master_name: "A master with this name already exists" };
+//             await logApiResponse(req, "Duplicate Key Error", 409, { master: duplicateError });
+//             return res.status(409).json({ message: "Duplicate Key Error", errors: { master: duplicateError } });
+//         }
+
+//         // Create master
+//         const master = new Master(masterData);
+//         savedMaster = await master.save();
+
+//         // Insert master fields
+//         const masterFieldEntries = masterFieldData.map(field => ({
+//             ...field,
+//             master_id: savedMaster._id
+//         }));
+
+//         let savedMasterFields;
+//         try {
+//             savedMasterFields = await MasterField.insertMany(masterFieldEntries);
+//         } catch (insertError) {
+//             if (insertError.code === 11000) {
+//                 const duplicateKey = Object.keys(insertError.keyPattern || {})[0];
+//                 const duplicateValue = insertError.keyValue?.[duplicateKey];
+//                 const errorMessage = `${duplicateKey} "${duplicateValue}" already exists. Please use a unique value.`;
+//                 await Master.findByIdAndDelete(savedMaster._id);
+//                 await logApiResponse(req, "Duplicate Key Error", 409, {
+//                     masterFields: { [duplicateKey]: errorMessage }
+//                 });
+//                 return res.status(409).json({
+//                     message: "Duplicate Key Error",
+//                     errors: {
+//                         masterFields: { [duplicateKey]: errorMessage }
+//                     }
+//                 });
+//             }
+//             throw insertError;
+//         }
+
+//         // Build schema for dynamic model
+//         let schemaDefinition = {};
+//         masterFieldData.forEach(field => {
+//             const isDefaultTrue = field.default === true || field.default === 'true';
+//             if (!typeMapping[field.field_type]) {
+//                 throw new Error(`Invalid type: ${field.field_type} for field: ${field.field_name}`);
+//             }
+//             schemaDefinition[field.field_name] = {
+//                 type: typeMapping[field.field_type],
+//                 required: field.required,
+//                 default: field.default || undefined,
+//                 unique: field.is_unique || isDefaultTrue || undefined,
+//                 index: true
+//             };
+//         });
+
+//         schemaDefinition.status = { type: Boolean, required: true, default: true };
+//         schemaDefinition.created_at = { type: Date, default: Date.now };
+//         schemaDefinition.updated_at = { type: Date, default: Date.now };
+//         schemaDefinition.deleted_at = { type: Date, default: null };
+
+//         const dynamicSchema = new mongoose.Schema(schemaDefinition, {
+//             versionKey: false,
+//             strict: false,
+//             collection: model_name
+//         });
+
+//         if (!mongoose.models[model_name]) {
+//             mongoose.model(model_name, dynamicSchema);
+//         }
+
+//         await SchemaDefinitionModel.findOneAndUpdate(
+//             { collectionName: model_name },
+//             { schemaDefinition },
+//             { upsert: true, new: true }
+//         );
+
+//         const message = `Master "${masterData.master_name}" created successfully`;
+//         await createNotification(req, 'Master', savedMaster._id, message, 'master');
+//         await logApiResponse(req, message, 201, {
+//             masterId: savedMaster._id,
+//             master: savedMaster,
+//             masterFields: savedMasterFields
+//         });
+
+//         return res.status(201).json({
+//             message,
+//             masterId: savedMaster._id,
+//             master: savedMaster,
+//             masterFields: savedMasterFields
+//         });
+
+//     } catch (error) {
+//         console.error('Error during master creation:', error);
+
+//         if (savedMaster?._id) {
+//             await Master.findByIdAndDelete(savedMaster._id);
+//         }
+
+//         if (error.name === 'ValidationError') {
+//             const errors = {};
+//             Object.keys(error.errors).forEach(key => {
+//                 errors[key] = error.errors[key].message;
+//             });
+//             await logApiResponse(req, "Validation Error", 400, { master: errors });
+//             return res.status(400).json({ message: "Validation Error", errors: { master: errors } });
+//         }
+
+//         if (error.code === 11000) {
+//             const errors = { master_name: "A master with this name already exists" };
+//             await logApiResponse(req, "Duplicate Key Error", 409, { master: errors });
+//             return res.status(409).json({ message: "Duplicate Key Error", errors: { master: errors } });
+//         }
+
+//         await logApiResponse(req, "Internal Server Error", 500, { error: error.message });
+//         return res.status(500).json({
+//             message: "Internal Server Error",
+//             errors: { message: "An unexpected error occurred" }
+//         });
+//     }
+// };
+
+const createMaster = async (req, res) => {
     try {
         const { masterData, masterFieldData } = req.body;
-        const { model_name } = masterData;
 
-        let validationErrors = { master: {}, masterFields: [] };
-
-        if (!masterData.master_name) {
-            validationErrors.master.master_name = "Master name is required";
-        }
-        if (!masterData.parameter_type_id || !mongoose.Types.ObjectId.isValid(masterData.parameter_type_id)) {
-            validationErrors.master.parameter_type_id = "Parameter type ID is required and must be valid";
-        }
-        if (!masterData.display_name_singular) {
-            validationErrors.master.display_name_singular = "Display name (singular) is required";
-        }
-        if (!masterData.display_name_plural) {
-            validationErrors.master.display_name_plural = "Display name (plural) is required";
-        }
-        if (!model_name) {
-            validationErrors.master.model_name = "Model name is required";
-        }
-
-        if (!Array.isArray(masterFieldData) || masterFieldData.length === 0) {
-            validationErrors.masterFields.push({ message: "Master field data is required" });
-        } else {
-            masterFieldData.forEach((field, index) => {
-                let fieldErrors = {};
-                if (!field.field_name) fieldErrors.field_name = "Field name is required";
-                if (!field.field_type) fieldErrors.field_type = "Field type is required";
-                if (!field.display_name) fieldErrors.display_name = "Display name is required";
-                if (!field.order) fieldErrors.order = "Order is required";
-                if (!field.tooltip) fieldErrors.tooltip = "Tooltip is required";
-                if (field.required === undefined) fieldErrors.required = "Required status is required";
-                if (field.default === undefined) fieldErrors.default = "Default value is required";
-
-                if (Object.keys(fieldErrors).length > 0) {
-                    validationErrors.masterFields.push({ field: `Field ${index + 1}`, errors: fieldErrors });
-                }
-            });
-        }
-
-        if (Object.keys(validationErrors.master).length > 0 || validationErrors.masterFields.length > 0) {
-            await logApiResponse(req, "Validation Error", 400, validationErrors);
-            return res.status(400).json({ message: "Validation Error", errors: validationErrors });
-        }
-
-        const existingMaster = await Master.findOne({ master_name: masterData.master_name });
-        if (existingMaster) {
-            const duplicateError = { master_name: "A master with this name already exists" };
-            await logApiResponse(req, "Duplicate Key Error", 409, { master: duplicateError });
-            return res.status(409).json({ message: "Duplicate Key Error", errors: { master: duplicateError } });
-        }
-
-        const master = new Master(masterData);
-        savedMaster = await master.save();
-
-        const masterFieldEntries = masterFieldData.map(field => ({
-            ...field,
-            master_id: savedMaster._id
-        }));
-        const savedMasterFields = await MasterField.insertMany(masterFieldEntries);
-
-        let schemaDefinition = {};
-        masterFieldData.forEach(field => {
-            const isDefaultTrue = field.default === true || field.default === 'true';
-            if (!typeMapping[field.field_type]) {
-                throw new Error(`Invalid type: ${field.field_type} for field: ${field.field_name}`);
+        // Check for duplicate field names in masterFieldData
+        const fieldNameSet = new Set();
+        for (let i = 0; i < masterFieldData.length; i++) {
+            const field = masterFieldData[i];
+            if (fieldNameSet.has(field.field_name)) {
+                return res.status(400).json({
+                    message: 'The given data was invalid',
+                    errors: {
+                        [`masterFieldData[${i}].field_name`]: `Field name '${field.field_name}' already exists. Please use a unique name.`
+                    }
+                });
             }
+            fieldNameSet.add(field.field_name);
+        }
+
+        // Save master entry
+        const newMaster = await Master.create(masterData);
+
+        // Link fields to master
+        const fieldsWithMaster = masterFieldData.map(field => ({
+            ...field,
+            master_id: newMaster._id,
+        }));
+
+        await MasterField.insertMany(fieldsWithMaster);
+
+        const modelName = masterData.model_name;
+
+        // Construct dynamic schema
+        const schemaDefinition = {};
+        fieldsWithMaster.forEach(field => {
             schemaDefinition[field.field_name] = {
-                type: typeMapping[field.field_type],
+                type: String,
                 required: field.required,
-                default: field.default || undefined,
-                unique: isDefaultTrue,
-                index: true
+                unique: field.is_unique,
+                default: field.default === true || field.default === 'true' ? true : undefined
             };
         });
 
-        schemaDefinition.status = { type: Boolean, required: true, default: true };
-        schemaDefinition.created_at = { type: Date, default: Date.now };
-        schemaDefinition.updated_at = { type: Date, default: Date.now };
-        schemaDefinition.deleted_at = { type: Date, default: null };
+        // Avoid OverwriteModelError
+        let DynamicModel;
+        if (mongoose.models[modelName]) {
+            DynamicModel = mongoose.model(modelName);
+        } else {
+            const dynamicSchema = new mongoose.Schema(schemaDefinition, {
+                versionKey: false,
+                strict: false,
+                collection: modelName
+            });
+            DynamicModel = mongoose.model(modelName, dynamicSchema);
+        }
 
-        const dynamicSchema = new mongoose.Schema(schemaDefinition, {
-            versionKey: false,
-            strict: false,
-            collection: model_name
-        });
-        mongoose.model(model_name, dynamicSchema);
+        // Check for multiple default:true values before inserting
+        for (const field of fieldsWithMaster) {
+            const isDefault = field.default === true || field.default === 'true';
+            if (isDefault) {
+                const fieldName = field.field_name;
 
-        await SchemaDefinitionModel.findOneAndUpdate(
-            { collectionName: model_name },
-            { schemaDefinition },
-            { upsert: true, new: true }
-        );
+                const existingDefault = await DynamicModel.findOne({
+                    [fieldName]: true
+                });
 
-        const message = `Master "${masterData.master_name}" created successfully`;
-        await createNotification(req, 'Master', savedMaster._id, message, 'master');
-        await logApiResponse(req, message, 201, {
-            masterId: savedMaster._id,
-            master: savedMaster,
-            masterFields: savedMasterFields
-        });
+                if (existingDefault) {
+                    return res.status(400).json({
+                        message: `Only one default entry allowed for field '${fieldName}'`,
+                        errors: {
+                            [fieldName]: `A record already has '${fieldName}' set as default (true).`
+                        }
+                    });
+                }
+            }
+        }
 
         return res.status(201).json({
-            message,
-            masterId: savedMaster._id,
-            master: savedMaster,
-            masterFields: savedMasterFields
+            message: 'Master and fields created successfully',
+            master: newMaster
         });
 
     } catch (error) {
         console.error('Error during master creation:', error);
 
-        if (savedMaster?._id) {
-            await Master.findByIdAndDelete(savedMaster._id);
-        }
-
-        if (error.name === 'ValidationError') {
-            const errors = {};
-            Object.keys(error.errors).forEach(key => {
-                errors[key] = error.errors[key].message;
+        // Duplicate key error (e.g., master_name must be unique)
+        if (error.code === 11000 && error.keyPattern && error.keyValue) {
+            const duplicatedField = Object.keys(error.keyPattern)[0];
+            const duplicatedValue = error.keyValue[duplicatedField];
+            return res.status(400).json({
+                message: 'The given data was invalid',
+                errors: {
+                    [`masterData.${duplicatedField}`]: `'${duplicatedValue}' already exists. ${duplicatedField} must be unique.`
+                }
             });
-            await logApiResponse(req, "Validation Error", 400, { master: errors });
-            return res.status(400).json({ message: "Validation Error", errors: { master: errors } });
         }
 
-        if (error.code === 11000) {
-            const errors = { master_name: "A master with this name already exists" };
-            await logApiResponse(req, "Duplicate Key Error", 409, { master: errors });
-            return res.status(409).json({ message: "Duplicate Key Error", errors: { master: errors } });
+        // Mongoose validation error
+        if (error.name === 'ValidationError') {
+            const formattedErrors = {};
+            for (const field in error.errors) {
+                formattedErrors[field] = error.errors[field].message;
+            }
+            return res.status(400).json({
+                message: 'The given data was invalid',
+                errors: formattedErrors
+            });
         }
 
-        await logApiResponse(req, "Internal Server Error", 500, { error: error.message });
         return res.status(500).json({
-            message: "Internal Server Error",
-            errors: { message: "An unexpected error occurred" }
+            message: 'Server error during master creation',
+            error: error.message
         });
     }
 };
+
+
 
 
 
@@ -166,7 +304,7 @@ async function updateDynamicSchema(collectionName, masterFieldData) {
             type: typeMapping[field.field_type] || mongoose.Schema.Types.Mixed,
             required: field.required,
             default: field.default || undefined,
-            unique: isDefaultTrue, // Use isDefaultTrue here
+            unique: field.is_unique || isDefaultTrue,
             index: true
         };
         return acc;
@@ -201,10 +339,10 @@ async function updateDynamicSchema(collectionName, masterFieldData) {
 }
 
 const updateMaster = async (req, res) => {
-    const { id } = req.body;
-    const { masterData, masterFieldData } = req.body;
+    const { id, masterData, masterFieldData } = req.body;
+
     try {
-        let master = await Master.findById(id).lean(); // fetch previous state
+        let master = await Master.findById(id).lean();
         if (!master) {
             const notFoundError = { id: "Master with provided ID does not exist" };
             await logApiResponse(req, "Master not found", 404, notFoundError);
@@ -219,7 +357,9 @@ const updateMaster = async (req, res) => {
             _id: { $ne: id }
         });
         if (existingMaster) {
-            const duplicateError = { master: { master_name: "A master with this name already exists" } };
+            const duplicateError = {
+                "masterData.master_name": `'${masterData.master_name}' already exists. master_name must be unique.`
+            };
             await logApiResponse(req, "Duplicate Key Error", 409, duplicateError);
             return res.status(409).json({
                 message: "Duplicate Key Error",
@@ -227,22 +367,38 @@ const updateMaster = async (req, res) => {
             });
         }
 
-        const before = { ...master }; // save before
+        // 🔁 Check for duplicate field_name in masterFieldData
+        const fieldNameSet = new Set();
+        for (let i = 0; i < masterFieldData.length; i++) {
+            const field = masterFieldData[i];
+            if (fieldNameSet.has(field.field_name)) {
+                return res.status(400).json({
+                    message: "The given data was invalid",
+                    errors: {
+                        [`masterFieldData[${i}].field_name`]: `Field name '${field.field_name}' already exists. Please use a unique name.`
+                    }
+                });
+            }
+            fieldNameSet.add(field.field_name);
+        }
 
-        // Update master
+        const before = { ...master }; // store before update
+
+        // 📝 Update master
         await Master.findByIdAndUpdate(id, masterData, { new: true });
-        const after = await Master.findById(id).lean(); // fetch after update
+        const after = await Master.findById(id).lean(); // after update
 
-        // Replace fields
+        // 🔄 Replace master fields
         await MasterField.deleteMany({ master_id: id });
         const newMasterFields = masterFieldData.map(field => ({ ...field, master_id: id }));
         await MasterField.insertMany(newMasterFields);
 
+        // 🔁 Update dynamic schema
         await updateDynamicSchema(after.model_name, masterFieldData);
 
         const successMessage = `Master "${after.master_name}" updated successfully.`;
 
-        await createNotification(req, 'Master', id, successMessage, { before, after }, 'master');
+        await createNotification(req, "Master", id, successMessage, "master", { before, after });
         await logApiResponse(req, successMessage, 200, {
             before,
             after,
@@ -250,15 +406,15 @@ const updateMaster = async (req, res) => {
             masterFields: newMasterFields
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             message: successMessage,
             master: after,
             masterFields: newMasterFields
         });
     } catch (error) {
-        console.error('Error updating master:', error);
+        console.error("Error updating master:", error);
         await logApiResponse(req, "Internal Server Error", 500, { message: "An unexpected error occurred" });
-        res.status(500).json({
+        return res.status(500).json({
             message: "Internal Server Error",
             errors: {
                 message: "An unexpected error occurred"

@@ -36,6 +36,11 @@ const masterFieldSchema = new Schema({
         index: true,
         default: false
     },
+    is_unique: {
+        type: Boolean,
+        required: [true, 'Field unique is required'],
+        index: true,
+    },
     // order: {
     //     type: Number,
     //     index: true,
@@ -105,5 +110,14 @@ const masterFieldSchema = new Schema({
 }, {
     versionKey: false
 });
+
+masterFieldSchema.index(
+    { master_id: 1, field_name: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { is_unique: true }
+    }
+);
+
 
 module.exports = mongoose.model('MasterField', masterFieldSchema);

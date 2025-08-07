@@ -35,8 +35,6 @@ const roleSchema = new Schema({
         updatedAt: 'updated_at',
     },
 });
-
-// Partial indexes to support Cosmos DB sorting & soft delete
 roleSchema.index(
     { role_name: 1 },
     { unique: true, partialFilterExpression: { deleted_at: null } }

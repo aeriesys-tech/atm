@@ -43,6 +43,9 @@ const add_master_validation = (req, res, next) => {
 
         body('masterFieldData.*.default', 'Field default value must be a boolean')
             .isBoolean().withMessage("Default must be a boolean"),
+
+        body('masterFieldData.*.is_unique', 'Field unique is required')
+            .isBoolean().withMessage("unique must be a boolean"),
     ])(req, res, next);
 };
 
@@ -80,6 +83,9 @@ const update_master_validation = (req, res, next) => {
 
         body('masterFieldData.*.default', 'Field default value must be a boolean')
             .isBoolean().withMessage("Default must be a boolean"),
+
+        body('masterFieldData.*.is_unique', 'Field unique value must be a boolean')
+            .isBoolean().withMessage("Unique must be a boolean"),
     ])(req, res, next);
 };
 

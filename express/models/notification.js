@@ -1,42 +1,39 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const notificationSchema = new mongoose.Schema(
-    {
-        user_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true,
-        },
-        date_time: {
-            type: Date,
-            required: true,
-        },
-        module_name: {
-            type: String,
-            required: true, // e.g., 'User', 'Order'
-        },
-        module_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true, // ObjectId from related model
-        },
-        notification: {
-            type: String,
-            required: true, // message content
-        },
-        notification_type: {
-            type: String,
-            required: true,
-        },
-        timestamp: {
-            type: Date,
-            default: Date.now, // automatically set
-        },
+const notificationSchema = new Schema({
+    user_id: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
     },
-    {
-        versionKey: false,
+    module_name: {
+        type: String,
+        required: true,
+    },
+    module_id: {
+        type: Schema.Types.ObjectId,
+        required: true,
+    },
+    notification: {
+        type: String,
+        required: true,
+    },
+    notification_type: {
+        type: String,
+        default: 'info',
+    },
+    date_time: {
+        type: Schema.Types.Mixed, // <-- supports both Date or object with { before, after }
+        default: () => new Date()
+    },
+    created_at: {
+        type: Date,
+        default: Date.now,
     }
-);
+}, {
+    versionKey: false,
+    collection: 'notifications'
+});
 
-const Notification = mongoose.model('notification', notificationSchema);
-
-module.exports = Notification;
+module.exports = mongoose.model('Notification', notificationSchema);

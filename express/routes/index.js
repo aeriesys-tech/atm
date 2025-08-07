@@ -12,6 +12,9 @@ const masterRoute = require("./masterRoute");
 const notificationRoute = require('./notificationRoute');
 const templateTypeRoute = require('./templateTypeRoute');
 const templateRoute = require('./templateRoute');
+const templateMasterRoute = require('./templateMasterRoute');
+const batchRoute = require('./batchRoute');
+
 
 router.use('/', authRoute);
 router.use('/users', userRoute);
@@ -23,5 +26,8 @@ router.use('/masters', masterRoute);
 router.use('/notifications', notificationRoute);
 router.use('/template-types', templateTypeRoute);
 router.use('/templates', templateRoute);
+router.use('/template-masters', templateMasterRoute);
+router.use('/batch', batchRoute);
+
 
 module.exports = router;
