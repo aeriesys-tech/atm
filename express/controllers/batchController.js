@@ -249,15 +249,16 @@ const uploadExcel = async (req, res) => {
 
 
 const paginateBatches = async (req, res) => {
-    const {
-        page = 1,
-        limit = 10,
-        sortBy = '_id',
-        order = 'desc',
-        search = ''
-    } = req.body;
-
     try {
+        // Support both body and query params
+        const {
+            page = 1,
+            limit = 10,
+            sortBy = '_id',
+            order = 'desc',
+            search = ''
+        } = req.body || req.query || {};
+
         const query = {
             $or: [
                 { data: { $regex: search, $options: 'i' } },
@@ -270,22 +271,32 @@ const paginateBatches = async (req, res) => {
         const total = await Batch.countDocuments(query);
         const batches = await Batch.find(query)
             .sort({ [sortBy]: order === 'asc' ? 1 : -1 })
-            .skip((page - 1) * limit)
-            .limit(limit);
+            .skip((Number(page) - 1) * Number(limit))
+            .limit(Number(limit));
 
-        return responseService.success(req, res, "Batches fetched successfully", {
-            data: batches,
-            pagination: {
-                page: Number(page),
-                totalItems: total,
-                totalPages: Math.ceil(total / limit)
-            }
-        }, 200);
+        return responseService.success(
+            req,
+            res,
+            "Batches fetched successfully",
+            {
+                data: batches,
+                pagination: {
+                    page: Number(page),
+                    totalItems: total,
+                    totalPages: Math.ceil(total / Number(limit))
+                }
+            },
+            200
+        );
     } catch (error) {
         console.error("Error in paginateBatches:", error);
-        return responseService.error(req, res, "Internal Server Error", {
-            message: "Something went wrong"
-        }, 500);
+        return responseService.error(
+            req,
+            res,
+            "Internal Server Error",
+            { message: "Something went wrong" },
+            500
+        );
     }
 };
 

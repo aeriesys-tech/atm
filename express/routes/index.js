@@ -14,6 +14,7 @@ const templateTypeRoute = require('./templateTypeRoute');
 const templateRoute = require('./templateRoute');
 const templateMasterRoute = require('./templateMasterRoute');
 const batchRoute = require('./batchRoute');
+const variableRoute = require('./variableRoute');
 
 
 router.use('/', authRoute);
@@ -28,6 +29,8 @@ router.use('/template-types', templateTypeRoute);
 router.use('/templates', templateRoute);
 router.use('/template-masters', templateMasterRoute);
 router.use('/batch', batchRoute);
+router.use('/variable', variableRoute);
+
 
 
 module.exports = router;

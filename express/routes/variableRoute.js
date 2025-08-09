@@ -5,8 +5,8 @@ const { editVariablesValidation, paginateBatchVariablesValidation } = require(".
 const authMiddleware = require('../middlewares/authMiddleware');
 
 
-router.post('/editVariables', editVariablesValidation, variableController.editVariables);
+router.post('/updateStatus', editVariablesValidation, variableController.updateStatus);
 router.post('/paginateBatchVariables', paginateBatchVariablesValidation, variableController.paginateBatchVariables);
-
+router.post('/updateVariableDetails', variableController.updateVariableDetails);
 
 module.exports = router;

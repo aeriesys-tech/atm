@@ -21,30 +21,44 @@ const createTemplateMaster = async (req, res) => {
         const recordsToInsert = [];
 
         for (const document_code of documentCodes) {
-            // Format: masterName-clusterName-adiName
             const parts = document_code.split('-');
             if (parts.length < 3) continue;
 
-            const [masterName, clusterName, ...adiParts] = parts;
-            const adiName = adiParts.join('-'); // handle hyphenated adi
+            let master = null;
+            let cluster = null;
+            let adi = null;
 
-            // Find matching objects
-            const master = masterTests.find(m => m.master_test?.name === masterName);
-            const cluster = clusters.find(c => c.Cluster?.gh === clusterName);
-            const adi = adis.find(a => a.adi?.adi === adiName);
+            for (const part of parts) {
+                if (!master) {
+                    master = masterTests.find(m => m.master_test?.name === part);
+                    if (master) continue;
+                }
+                if (!cluster && clusters.length) {
+                    cluster = clusters.find(c => c.Cluster?.gh === part);
+                    if (cluster) continue;
+                }
+                if (!adi) {
+                    adi = adis.find(a => a.adi?.adi === part);
+                    if (adi) continue;
+                }
+            }
 
-            if (!master || !cluster || !adi) {
-                console.warn(`Skipping invalid document_code: ${document_code}`);
+            // Skip if required matches not found
+            if (!master || !adi || (clusters.length && !cluster)) {
+                console.warn(`Skipping invalid document_code: ${document_code}`, {
+                    masterFound: !!master,
+                    clusterFound: !!cluster,
+                    adiFound: !!adi
+                });
                 continue;
             }
 
-            // Push record with static key-based document_code
             recordsToInsert.push({
                 template_id,
                 master_test: master.master_test._id,
-                cluster: cluster.Cluster._id,
+                cluster: cluster ? cluster.Cluster._id : null,
                 adi: adi.adi._id,
-                document_code: 'master_test-Cluster-adi',
+                document_code,
                 created_at: new Date(),
                 updated_at: new Date(),
                 deleted_at: null

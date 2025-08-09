@@ -3,7 +3,7 @@ const Variable = require('../models/variable');
 const { responseService, logApiResponse } = require('../utils/responseService');
 
 
-const editVariables = async (req, res) => {
+const updateStatus = async (req, res) => {
     const { variable_ids } = req.body;
 
     if (!Array.isArray(variable_ids) || variable_ids.length === 0) {
@@ -41,6 +41,46 @@ const editVariables = async (req, res) => {
         }, 500);
     }
 };
+
+const updateVariableDetails = async (req, res) => {
+    const { _id, ds_tag_id, ds_tag_code, min, max, lcl, ucl, flatline_length, status } = req.body;
+    const variable_id = _id;
+    if (!mongoose.Types.ObjectId.isValid(variable_id)) {
+        return responseService.error(req, res, "Validation Error", {
+            variable_id: "Invalid Variable ID"
+        }, 400);
+    }
+
+    try {
+        const variable = await Variable.findById(variable_id);
+        if (!variable) {
+            return responseService.error(req, res, "Not Found", {
+                variable_id: "Variable not found"
+            }, 404);
+        }
+
+        // Update only specific fields
+        variable.ds_tag_id = ds_tag_id ?? variable.ds_tag_id;
+        variable.ds_tag_code = ds_tag_code ?? variable.ds_tag_code;
+        variable.min = min ?? variable.min;
+        variable.max = max ?? variable.max;
+        variable.lcl = lcl ?? variable.lcl;
+        variable.ucl = ucl ?? variable.ucl;
+        variable.flatline_length = flatline_length ?? variable.flatline_length;
+        variable.status = status ?? variable.status;
+        await variable.save();
+
+        return responseService.success(req, res, "Variable details updated successfully", {
+            updated_variable: variable
+        }, 200);
+    } catch (error) {
+        console.error("Failed to update variable details:", error);
+        return responseService.error(req, res, "Internal Server Error", {
+            message: "An unexpected error occurred"
+        }, 500);
+    }
+};
+
 
 
 const paginateBatchVariables = async (req, res) => {
@@ -95,6 +135,7 @@ const paginateBatchVariables = async (req, res) => {
 
 
 module.exports = {
-    editVariables,
-    paginateBatchVariables
+    updateStatus,
+    updateVariableDetails,
+    paginateBatchVariables,
 };

@@ -179,8 +179,10 @@ const { createNotification } = require('../utils/notification');
 const createMaster = async (req, res) => {
     try {
         const { masterData, masterFieldData } = req.body;
+        delete masterData._id;
+        masterFieldData.forEach(f => delete f._id);
 
-        // Check for duplicate field names in masterFieldData
+        // ✅ 1. Check for duplicate field names in request body
         const fieldNameSet = new Set();
         for (let i = 0; i < masterFieldData.length; i++) {
             const field = masterFieldData[i];
@@ -195,10 +197,21 @@ const createMaster = async (req, res) => {
             fieldNameSet.add(field.field_name);
         }
 
-        // Save master entry
+        // ✅ 2. Pre-check for duplicate master_name in DB
+        const existingMaster = await Master.findOne({ master_name: masterData.master_name });
+        if (existingMaster) {
+            return res.status(400).json({
+                message: 'The given data was invalid',
+                errors: {
+                    [`masterData.master_name`]: `Master name '${masterData.master_name}' already exists.`
+                }
+            });
+        }
+
+        // ✅ 3. Save master entry
         const newMaster = await Master.create(masterData);
 
-        // Link fields to master
+        // ✅ 4. Link fields to master
         const fieldsWithMaster = masterFieldData.map(field => ({
             ...field,
             master_id: newMaster._id,
@@ -208,7 +221,7 @@ const createMaster = async (req, res) => {
 
         const modelName = masterData.model_name;
 
-        // Construct dynamic schema
+        // ✅ 5. Construct dynamic schema
         const schemaDefinition = {};
         fieldsWithMaster.forEach(field => {
             schemaDefinition[field.field_name] = {
@@ -219,7 +232,6 @@ const createMaster = async (req, res) => {
             };
         });
 
-        // Avoid OverwriteModelError
         let DynamicModel;
         if (mongoose.models[modelName]) {
             DynamicModel = mongoose.model(modelName);
@@ -232,7 +244,6 @@ const createMaster = async (req, res) => {
             DynamicModel = mongoose.model(modelName, dynamicSchema);
         }
 
-        // Check for multiple default:true values before inserting
         for (const field of fieldsWithMaster) {
             const isDefault = field.default === true || field.default === 'true';
             if (isDefault) {
@@ -244,9 +255,9 @@ const createMaster = async (req, res) => {
 
                 if (existingDefault) {
                     return res.status(400).json({
-                        message: `Only one default entry allowed for field '${fieldName}'`,
+                        message: 'The given data was invalid',
                         errors: {
-                            [fieldName]: `A record already has '${fieldName}' set as default (true).`
+                            [`masterFieldData.${fieldName}`]: `A record already has '${fieldName}' set as default (true).`
                         }
                     });
                 }
@@ -261,23 +272,37 @@ const createMaster = async (req, res) => {
     } catch (error) {
         console.error('Error during master creation:', error);
 
-        // Duplicate key error (e.g., master_name must be unique)
         if (error.code === 11000 && error.keyPattern && error.keyValue) {
             const duplicatedField = Object.keys(error.keyPattern)[0];
             const duplicatedValue = error.keyValue[duplicatedField];
+
+            // Check if it's from masterFieldData
+            const fieldIndex = masterFieldData.findIndex(f => f[duplicatedField] === duplicatedValue);
+            if (fieldIndex !== -1) {
+                return res.status(400).json({
+                    message: 'The given data was invalid',
+                    errors: {
+                        [`masterFieldData[${fieldIndex}].${duplicatedField}`]:
+                            `'${duplicatedValue}' already exists. Please use a unique value.`
+                    }
+                });
+            }
             return res.status(400).json({
                 message: 'The given data was invalid',
                 errors: {
-                    [`masterData.${duplicatedField}`]: `'${duplicatedValue}' already exists. ${duplicatedField} must be unique.`
+                    [`masterData.${duplicatedField}`]:
+                        `'${duplicatedValue}' already exists. ${duplicatedField} must be unique.`
                 }
             });
         }
-
-        // Mongoose validation error
         if (error.name === 'ValidationError') {
             const formattedErrors = {};
             for (const field in error.errors) {
-                formattedErrors[field] = error.errors[field].message;
+                if (field.includes('.')) {
+                    formattedErrors[field] = error.errors[field].message;
+                } else {
+                    formattedErrors[`masterData.${field}`] = error.errors[field].message;
+                }
             }
             return res.status(400).json({
                 message: 'The given data was invalid',
@@ -298,7 +323,7 @@ const createMaster = async (req, res) => {
 
 async function updateDynamicSchema(collectionName, masterFieldData) {
     const schemaDefinition = masterFieldData.reduce((acc, field) => {
-        const isDefaultTrue = field.default === true || field.default === 'true'; // Move this inside the reduce function
+        const isDefaultTrue = field.default === true || field.default === 'true';
 
         acc[field.field_name] = {
             type: typeMapping[field.field_type] || mongoose.Schema.Types.Mixed,
