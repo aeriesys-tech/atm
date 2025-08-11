@@ -13,13 +13,13 @@ const app = express();
 
 // Environment variables
 const PORT = process.env.PORT || 8080;
-const URL = process.env.APP_URL || 'http://192.168.0.217';
+const URL = process.env.APP_URL || 'http://localhost';
 
 // CORS configuration 
 const corsOptions = {
-    origin: '*', // ⚠️ Replace with specific domains in production
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: ['Content-Type', 'Authorization'],
+	origin: '*', // ⚠️ Replace with specific domains in production
+	methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+	allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
 
@@ -43,22 +43,22 @@ app.use(express.static(reactPath))
 
 // Global error handler
 app.use((err, req, res, next) => {
-    console.error("Unhandled Error:", err.stack);
-    res.status(500).json({ error: 'Internal Server Error' });
+	console.error("Unhandled Error:", err.stack);
+	res.status(500).json({ error: 'Internal Server Error' });
 });
 
 // Connect to MongoDB and start server
 mongoose
-    .connect(process.env.MONGODB_URI, {})
-    .then(() => {
-        console.log(" MongoDB connected successfully");
-        initializeDynamicModels();
-        app.listen(PORT, () => {
-            console.log(` PERP Server running at ${URL}:${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error(" MongoDB connection error:", err);
-    });
+	.connect(process.env.MONGODB_URI, {})
+	.then(() => {
+		console.log(" MongoDB connected successfully");
+		initializeDynamicModels();
+		app.listen(PORT, () => {
+			console.log(` PERP Server running at ${URL}:${PORT}`);
+		});
+	})
+	.catch((err) => {
+		console.error(" MongoDB connection error:", err);
+	});
 
 module.exports = app;
