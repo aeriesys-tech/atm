@@ -68,6 +68,8 @@ const Master = () => {
             tooltip: "",
             required: false,
             default: false,
+            is_unique: false,
+
         },
     ]);
     const handleAddField = () => {
@@ -81,6 +83,7 @@ const Master = () => {
                 tooltip: "",
                 required: false,
                 default: false,
+                is_unique: false,
             },
         ]);
     };
@@ -98,7 +101,7 @@ const Master = () => {
                     ? {
                         ...field,
                         [name]:
-                            name === "required" || name === "default"
+                            name === "required" || name === "default" || name === "is_unique"
                                 ? value === "true" || value === true
                                 : value,
                     }
@@ -149,14 +152,14 @@ const Master = () => {
             setTotalItems(response.totalItems);
             fetchParameterTypes();
         } catch (error) {
-            console.error("Failed to fetch masters:", error.message || error);
+            // console.error("Failed to fetch masters:", error.message || error);
         } finally {
             if (!silent) setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchMasters(currentPage, pageSize, sortBy, order,false, statusFilter, search);
+        fetchMasters(currentPage, pageSize, sortBy, order, false, statusFilter, search);
     }, [currentPage, pageSize, sortBy, order, statusFilter]);
     const handleSearchChange = (e) => {
         const val = e.target.value;
@@ -178,7 +181,7 @@ const Master = () => {
             }));
             setParameterTypeOptions(formatted);
         } catch (err) {
-            console.error("Failed to fetch parameter types", err.message || err);
+            // console.error("Failed to fetch parameter types", err.message || err);
         }
     };
     const handleSortChange = (key, newOrder) => {
@@ -218,6 +221,7 @@ const Master = () => {
                 tooltip: field.tooltip,
                 required: Boolean(field.required),
                 default: Boolean(field.default),
+                is_unique: Boolean(field.is_unique),
             }))
         );
 
@@ -245,6 +249,7 @@ const Master = () => {
                     order: isNaN(Number(item.order)) ? 1 : Number(item.order),
                     required: Boolean(item.required),
                     default: Boolean(item.default),
+                    is_unique: Boolean(item.is_unique),
                 })),
             };
 
@@ -326,7 +331,7 @@ const Master = () => {
             });
             fetchMasters(currentPage, pageSize, sortBy, order, statusFilter);
         } catch (error) {
-            console.error("Soft delete failed:", error.message || error);
+            // console.error("Soft delete failed:", error.message || error);
         } finally {
             setLoading(false);
         }
@@ -363,7 +368,7 @@ const Master = () => {
 
             await fetchMasters(currentPage, pageSize, sortBy, order);
         } catch (error) {
-            console.error("Hard delete failed:", error.message || error);
+            // console.error("Hard delete failed:", error.message || error);
         } finally {
             setLoading(false);
         }
@@ -401,7 +406,8 @@ const Master = () => {
                                 { label: "Active", value: "active" },
                                 { label: "Inactive", value: "inactive" }
                             ]}
-                            onChange={(e) => {setStatusFilter(e.target.value);
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
                                 setCurrentPage(1);
                             }}
 
@@ -422,6 +428,7 @@ const Master = () => {
                                     tooltip: "",
                                     required: false,
                                     default: false,
+                                    is_unique: false,
                                 },
                             ]);
                             setIsModalOpen(true);
@@ -488,13 +495,14 @@ const Master = () => {
                                                 tooltip: "",
                                                 required: false,
                                                 default: false,
+                                                is_unique: false,
                                             },
                                         ]);
                                     }
                                 );
                             }}
                         >
-                            <div className="addunit-form p-3">
+                            <div className="addunit-form p-4" >
                                 <div className="row">
                                     {masterFields.map((field, index) => (
                                         <div className="col-md-6" key={index}>
@@ -527,15 +535,22 @@ const Master = () => {
 
                                     <h6 className="mt-3 mb-3">Master Fields</h6>
                                     {masterFieldData.map((field, index) => (
-                                        <div key={index} className="master-field-box">
-                                            {masterFieldData.length > 1 && (
-                                                <Button
-                                                    type="button"
-                                                    onClick={() => handleRemoveField(index)}
-                                                    className="btn-close position-absolute top-0 end-0 m-2"
-                                                    aria-label="Close"
-                                                />
-                                            )}
+                                        <div key={index} className="master-field-box position-relative p-3">
+                                            <div className="d-flex justify-content-center align-items-center position-relative mb-3">
+                                                {masterFieldData.length > 1 && (<>
+                                                    <h7 className="m-0">Master Field {index + 1}</h7>
+
+                                                    <a
+                                                        type="button"
+                                                        onClick={() => handleRemoveField(index)}
+                                                        className=" position-absolute top-0 end-0 "
+                                                        aria-label="Close"
+                                                    >
+                                                        <img src="src/assets/icons/close.svg" width="28px" height="28px" alt="Close" />
+                                                    </a>
+                                                </>
+                                                )}
+                                            </div>
                                             <div className="row">
                                                 <div className="col-md-6">
                                                     <Dropdown
@@ -620,6 +635,27 @@ const Master = () => {
                                                             }, index)
                                                         }
                                                         error={masterFieldErrors[index]?.default}
+                                                    />
+
+                                                </div>
+                                                <div className="col-md-6 mb-3">
+                                                    <Dropdown
+                                                        label="Select Unique"
+                                                        name="is_unique"
+                                                        options={[
+                                                            { label: "Yes", value: "true" },
+                                                            { label: "No", value: "false" },
+                                                        ]}
+                                                        value={String(field.is_unique)}
+                                                        onChange={(e) =>
+                                                            handleFieldChange({
+                                                                target: {
+                                                                    name: "is_unique",
+                                                                    value: e.target.value === "true",
+                                                                },
+                                                            }, index)
+                                                        }
+                                                        error={masterFieldErrors[index]?.is_unique}
                                                     />
 
                                                 </div>

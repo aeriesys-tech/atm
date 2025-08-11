@@ -68,9 +68,11 @@ function OtpVerification() {
 			}));
 			const paramTypes = await axiosWrapper("api/v1/parameter-types/getParameterTypes", { method: "POST" });
 			sessionStorage.setItem("parameterTypes", JSON.stringify(paramTypes));
+			const templateTypes = await axiosWrapper("api/v1/template-types/getAllTemplateTypes", { method: "POST" });
+			sessionStorage.setItem("templateTypes", JSON.stringify(templateTypes));
 			navigate("/dashboard");
 		} catch (err) {
-			console.error(err);
+			// console.error(err);
 			if (err?.errors?.otp) {
 				setError(err.errors.otp);
 			} else {

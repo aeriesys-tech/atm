@@ -17,7 +17,7 @@ const AssetName = () => {
   const [edgeLabelModal, setEdgeLabelModal] = useState({ isOpen: false, label: "", edgeId: null });
 
   const handleSave = () => {
-    console.log("Saving Template", { templateName, templateCode });
+    // console.log("Saving Template", { templateName, templateCode });
   };
 
   return (

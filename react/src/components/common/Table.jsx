@@ -14,15 +14,16 @@ function Table({
 	onEdit,
 	onToggleStatus,
 	onDelete,
-	onView
+	onView,
+	onViewTemplate
 }) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedRow, setSelectedRow] = useState('');
-	console.log("selectedRow Table", selectedRow?.notification)
-	console.log("rowData", rows, headers)
+	// console.log("selectedRow Table", selectedRow?.notification)
+	// console.log("rowData", rows, headers)
 	const handleViewClick = (rowData) => {
 
-		console.log("rowData???", rowData)
+		// console.log("rowData???", rowData)
 		setSelectedRow(rowData);
 
 		setIsModalOpen(true);
@@ -103,26 +104,25 @@ function Table({
 												</span>
 											) : header.key === 'action' ? (
 												<span className="d-flex gap-2 justify-content-center">
-													{onView ? (
-														// Only show View icon when onView is passed
-														<a
-															onClick={(e) => {
-																e.preventDefault();
-																onView?.(row);
-																handleViewClick(row);
-															}}
-															title="View"
-														>
-															<img src={eyeicon} alt="View" style={{ cursor: 'pointer', width: '28px' }} />
-														</a>
-													) : (
+													{onViewTemplate ? (
 														<>
-															{/* Edit Icon */}
+															{/* 🔹 View Icon */}
+															<a
+																onClick={(e) => {
+																	e.preventDefault();
+																	onViewTemplate(row);
+																}}
+																title="View"
+															>
+																<img src={eyeicon} alt="View" style={{ cursor: 'pointer', width: '28px' }} />
+															</a>
+
+															{/* 🔹 Edit Icon */}
 															{row.status ? (
 																<a
 																	onClick={(e) => {
 																		e.preventDefault();
-																		onEdit(row);
+																		onEdit?.(row);
 																	}}
 																	title="Edit"
 																>
@@ -137,11 +137,57 @@ function Table({
 																/>
 															)}
 
-															{/* Delete Icon */}
+															{/* 🔹 Delete Icon */}
 															<a
 																onClick={(e) => {
 																	e.preventDefault();
-																	onDelete(row);
+																	onDelete?.(row);
+																}}
+																title="Delete"
+															>
+																<img src={deleteicon} alt="Delete" />
+															</a>
+														</>
+													) : onView ? (
+														<>
+															{/* Only View Icon */}
+															<a
+																onClick={(e) => {
+																	e.preventDefault();
+																	onView?.(row);
+																	handleViewClick(row); // For modal if needed
+																}}
+																title="View"
+															>
+																<img src={eyeicon} alt="View" style={{ cursor: 'pointer', width: '28px' }} />
+															</a>
+														</>
+													) : (
+														<>
+															{/* Default case: Edit + Delete */}
+															{row.status ? (
+																<a
+																	onClick={(e) => {
+																		e.preventDefault();
+																		onEdit?.(row);
+																	}}
+																	title="Edit"
+																>
+																	<img src={editicon} alt="Edit" style={{ cursor: 'pointer' }} />
+																</a>
+															) : (
+																<img
+																	src={editicon}
+																	alt="Edit Disabled"
+																	style={{ opacity: 0.5, cursor: 'not-allowed' }}
+																	title="Inactive roles cannot be edited"
+																/>
+															)}
+
+															<a
+																onClick={(e) => {
+																	e.preventDefault();
+																	onDelete?.(row);
 																}}
 																title="Delete"
 															>
@@ -149,6 +195,7 @@ function Table({
 															</a>
 														</>
 													)}
+
 												</span>
 											) : header.key === 'notification' ? (
 												row.notification?.split('\n')[0] || ''

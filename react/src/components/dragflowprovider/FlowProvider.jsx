@@ -5,32 +5,39 @@ import searchicon from '../../assets/icons/search1.svg'
 import foldericon from '../../assets/icons/folder.svg'
 const TemplateBuilderWrapper = ({
   master,
+  isEditMode,
   usedTemplateTypeIds,
-  searchQuery,
-  setSearchQuery,
   templateCode,
   setTemplateCode,
   templateName,
   setTemplateName,
   handleSave,
   templateNameRef,
-  ...flowProps
+  templateTypeName,
+  nodes,            // add these lines
+  setNodes,
+  edges,
+  setEdges, selectedNodeId,
+  setSelectedNodeId, templateDataMap, setTemplateDataMap,isViewMode, handleSaveNodeData,
+  // ...flowProps
 }) => {
   return (
     <div className="tb-responsive templatebuilder-body">
-      <div className="tb-container pt-3">
+      <div className=" pt-3">
         <nav className="breadcrumb-nav show-breadcrumb" aria-label="breadcrumb">
-          <h5>New Asset Class</h5>
+          <h5>{isEditMode ? `Update ${templateTypeName}` : `New ${templateTypeName || "Template"}`}</h5>
+
+
           <ol className="breadcrumb template-breadcrumb">
             <li className="breadcrumb-item">
-              <a href="#">Assets</a>
-            </li>
-            <li className="breadcrumb-item">
-              <a href="#">Asset Class</a>
+              <a href="#">Templates</a>
             </li>
             <li className="breadcrumb-item active" aria-current="page">
-              Create
+              {templateTypeName || "Template Type"}
             </li>
+            {/* <li className="breadcrumb-item active" aria-current="page">
+              Create
+            </li> */}
           </ol>
         </nav>
 
@@ -38,26 +45,9 @@ const TemplateBuilderWrapper = ({
           style={{ marginRight: 0, marginLeft: 0 }}
           className="row tb-header align-content-center"
         >
-          <div className="col-md-3" style={{ width: "300px" }}>
-            <div className="tb-search-div">
-              <img
-                src={searchicon}
-                className="tg-search-icon"
-                alt="search icon"
-              />
-              <input
-                className="tb-search-input"
-                placeholder="search"
-                style={{ padding: "8px 35px" }}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
           <div className="col text-center">
             <div className="d-flex justify-content-between align-content-center">
-              <h6 className="align-content-center">Asset Builder</h6>
+              <h6 className="align-content-center">Template Builder</h6>
               <div className="d-flex gap-3">
                 <div className="tb-search-div d-flex gap-3">
                   <img
@@ -67,7 +57,7 @@ const TemplateBuilderWrapper = ({
                   />
                   <input
                     className="tb-search-input"
-                    placeholder="Asset Code"
+                    placeholder="Template Code"
                     style={{ padding: "8px 35px", width: "350px" }}
                     value={templateCode}
                     onChange={(e) => setTemplateCode(e.target.value)}
@@ -81,15 +71,22 @@ const TemplateBuilderWrapper = ({
                   />
                   <input
                     className="tb-search-input"
-                    placeholder="Asset Name"
+                    placeholder="Template Name"
                     style={{ padding: "8px 35px", width: "350px" }}
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
                     ref={templateNameRef}
                   />
-                  <button onClick={handleSave} className="tb-save-btn">
-                    SAVE
-                  </button>
+                  {isViewMode ? (
+                    <button onClick={handleSaveNodeData} className="tb-save-btn">
+                      Update Node
+                    </button>
+                  ) : (
+                    <button onClick={handleSave} className="tb-save-btn">
+                      SAVE
+                    </button>
+                  )}
+
                 </div>
               </div>
             </div>
@@ -101,7 +98,14 @@ const TemplateBuilderWrapper = ({
             <DragDropFlow
               master={master}
               usedTemplateTypeIds={usedTemplateTypeIds}
-              {...flowProps}
+              nodes={nodes}
+              setNodes={setNodes}
+              edges={edges}
+              setEdges={setEdges}
+              selectedNodeId={selectedNodeId}
+              setSelectedNodeId={setSelectedNodeId}
+              templateDataMap={templateDataMap}
+              setTemplateDataMap={setTemplateDataMap}
             />
           </ReactFlowProvider>
         </div>
