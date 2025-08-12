@@ -14,6 +14,7 @@ import CustomNode from "./CustomNode";
 import axiosWrapper from "../../../services/AxiosWrapper";
 import Loader from "../general/LoaderAndSpinner/Loader";
 import Select, { components } from 'react-select'
+import Pagination from "../general/Pagination";
 const initialNodes = [];
 const initialEdges = [];
 
@@ -44,7 +45,31 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
   });
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes]);
-  const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), [setEdges]);
+  const onEdgesChange = useCallback(
+    (changes) => {
+      setEdges((eds) => {
+        const newEdges = applyEdgeChanges(changes, eds);
+        // If an edge is deleted, clear prevSelections for affected nodes
+        changes.forEach((change) => {
+          if (change.type === "remove") {
+            setTemplateDataMap((prev) => {
+              const newMap = { ...prev };
+              const targetNode = nodes.find((n) => n.id === change.id?.split("-")[1]);
+              if (targetNode) {
+                newMap[targetNode.data.label] = newMap[targetNode.data.label]?.map((row) => ({
+                  ...row,
+                  prevSelections: {},
+                }));
+              }
+              return newMap;
+            });
+          }
+        });
+        return newEdges;
+      });
+    },
+    [setEdges, nodes]
+  );
 
   const onConnect = useCallback(
     (params) => {
@@ -191,28 +216,23 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       setData(response?.data || []);
       setCurrentPage(resPage);
       setTotalItems(response?.data?.length);
-      setTotalPages(totalItems / pageSize);
+      setTotalPages(Math.ceil(totalItems / pageSize));
 
       const label = selectedNode?.data?.label;
       const existingTemplate = templateDataMap[label] || [];
-      const selectedIds = existingTemplate?.map((entry) => entry._id);
+      const selectedIds = existingTemplate.map((entry) => entry._id);
 
       const mappedData = dataRows.map((row) => {
         const found = existingTemplate.find((entry) => entry._id === row._id);
-        let newPrevSelections = {};
-
-        if (found?.prevSelections) {
-          Object.entries(found.prevSelections).forEach(([fieldKey, selections]) => {
-            newPrevSelections[fieldKey] = selections.map((selection) => selection.value || selection);
-          });
-        }
+        let prevSelections = found?.prevSelections || row.prevSelections || {};
 
         return {
           ...row,
-          prevSelections: newPrevSelections,
+          prevSelections,
         };
       });
 
+      console.log("Fetched Master Data:", mappedData); // Debug log
       setCheckedItems(selectedIds);
       setData(mappedData);
     } catch (error) {
@@ -247,40 +267,49 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     };
   }, [isModalOpen]);
   function getAllCombinations(dataMap, currentNodeLabel) {
-    const entries = Object.entries(dataMap).filter(([key]) => key !== 'document_code' && key !== currentNodeLabel);
+    const entries = Object.entries(dataMap).filter(
+      ([key]) => key !== "document_code" && key !== currentNodeLabel
+    );
     if (entries.length === 0) return [];
 
     const combinations = [];
     const currentNodeData = dataMap[currentNodeLabel] || [];
 
-    // If we're processing the current node, use its prevSelections to filter valid combinations
     if (currentNodeData.length > 0) {
       currentNodeData.forEach((row) => {
         const prevSelections = row.prevSelections || {};
-        const prevNodeLabel = Object.keys(prevSelections)[0]; // Assume single prev node for simplicity
-        const allowedIds = prevSelections[prevNodeLabel] || [];
-
-        // Find valid combinations from previous nodes that match allowedIds
-        const validCombos = getAllCombinations(
+        // Handle multiple previous nodes
+        const prevNodeLabels = Object.keys(prevSelections);
+        let validCombos = getAllCombinations(
           Object.fromEntries(
-            Object.entries(dataMap).filter(([key]) => key !== 'document_code' && key !== currentNodeLabel)
+            Object.entries(dataMap).filter(
+              ([key]) => key !== "document_code" && key !== currentNodeLabel
+            )
           )
-        ).filter((combo) => allowedIds.includes(getComboKey(combo)));
+        );
+
+        // Filter combinations based on all prevSelections
+        prevNodeLabels.forEach((prevNodeLabel) => {
+          const allowedIds = prevSelections[prevNodeLabel] || [];
+          validCombos = validCombos.filter((combo) => {
+            const comboKey = getComboKey(combo);
+            return allowedIds.length === 0 || allowedIds.includes(comboKey);
+          });
+        });
 
         validCombos.forEach((combo) => {
           combinations.push({
             ...combo,
-            [currentNodeLabel]: row[currentNodeLabel],
+            [currentNodeLabel]: row[currentNodeLabel] || row,
             _id: row._id,
           });
         });
       });
     } else {
-      // For previous nodes, generate combinations as before
       const [firstKey, firstValues] = entries[0];
       let tempCombinations = firstValues.map((val) => ({
-        [firstKey]: val[firstKey],
-        _id: val[firstKey]._id,
+        [firstKey]: val[firstKey] || val,
+        _id: val._id,
       }));
 
       for (let i = 1; i < entries.length; i++) {
@@ -289,7 +318,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
 
         tempCombinations.forEach((combo) => {
           values.forEach((val) => {
-            const currentItem = val[key];
+            const currentItem = val[key] || val;
             const prevSelections = currentItem?.prevSelections || {};
             const prevLabel = Object.keys(combo).find((k) => prevSelections[k]);
             const allowedIds = prevSelections[prevLabel] || [];
@@ -310,6 +339,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       return tempCombinations;
     }
 
+    console.log("Generated Combinations:", combinations); // Debug log
     return combinations;
   }
   function getDocumentCodePath(nodes, edges, comboMap, leafNodeId) {
@@ -347,10 +377,11 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         [label]: selectedRows.map((row) => ({
           [label]: row,
           _id: row._id,
-          prevSelections: row.prevSelections || {},
+          prevSelections: row.prevSelections || {}, // Ensure prevSelections is included
         })),
       };
 
+      // Generate document codes for all combinations
       const combinations = getAllCombinations(newMap, label);
       const allPaths = new Set();
       combinations.forEach((combo) => {
@@ -364,13 +395,23 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       };
     });
 
+    // Reset checkedItems and update data to reflect saved prevSelections
+    setData((prevData) =>
+      prevData.map((row) => ({
+        ...row,
+        prevSelections: row.prevSelections || {},
+      }))
+    );
+
     setIsModalOpen(false);
   };
 
   const getPreviousNode = (currentNodeId) => {
     const incomingEdge = edges.find((edge) => edge.target === currentNodeId);
     if (!incomingEdge) return null;
-    return nodes.find((node) => node.id === incomingEdge.source);
+    const sourceNode = nodes.find((node) => node.id === incomingEdge.source);
+    console.log("Previous Node:", sourceNode); // Debug log
+    return sourceNode;
   };
 
   const prevNode = selectedNode ? getPreviousNode(selectedNode.id) : null;
@@ -380,40 +421,57 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
   //   prevNodeLabel && templateDataMap[prevNodeLabel]
   //     ? templateDataMap[prevNodeLabel].map((entry) => entry[prevNodeLabel])
   //     : [];
-  const previousCombinations = getAllCombinations(
-    Object.fromEntries(
-      Object.entries(templateDataMap).filter(([key]) => key !== selectedNode?.data?.label && key !== 'document_code')
-    )
+  const previousCombinations = useMemo(
+    () =>
+      getAllCombinations(
+        Object.fromEntries(
+          Object.entries(templateDataMap).filter(
+            ([key]) => key !== selectedNode?.data?.label && key !== "document_code"
+          )
+        )
+      ),
+    [templateDataMap, selectedNode?.data?.label]
   );
-const CheckboxOption = (props) => {
-  const { data, innerRef, innerProps, selectProps } = props;
+  const uniqueComboKeys = new Set();
+  const deduplicatedCombinations = [];
 
-  const selectedValues = selectProps.value || [];
+  previousCombinations.forEach((combo) => {
+    const key = getComboKey(combo);
+    if (!uniqueComboKeys.has(key)) {
+      uniqueComboKeys.add(key);
+      deduplicatedCombinations.push(combo);
+    }
+  });
 
-  const isSelectAll = data.value === "__select_all__";
+  const CheckboxOption = (props) => {
+    const { data, innerRef, innerProps, selectProps } = props;
 
-  const allOptions = selectProps.options.filter((opt) => opt.value !== "__select_all__");
+    const selectedValues = selectProps.value || [];
 
-  const isAllSelected =
-    selectedValues.length === allOptions.length &&
-    allOptions.every((opt) => selectedValues.find((val) => val.value === opt.value));
+    const isSelectAll = data.value === "__select_all__";
 
-  const isChecked = isSelectAll
-    ? isAllSelected
-    : selectedValues.some((val) => val.value === data.value);
+    const allOptions = selectProps.options.filter((opt) => opt.value !== "__select_all__");
 
-  return (
-    <div ref={innerRef} {...innerProps} style={{ padding: "5px 10px" }}>
-      <input
-        type="checkbox"
-        style={{ width: "16px", height: "16px", marginRight: "8px" }}
-        checked={isChecked}
-        readOnly
-      />
-      {isSelectAll ? <strong>Select All</strong> : data.label}
-    </div>
-  );
-};
+    const isAllSelected =
+      selectedValues.length === allOptions.length &&
+      allOptions.every((opt) => selectedValues.find((val) => val.value === opt.value));
+
+    const isChecked = isSelectAll
+      ? isAllSelected
+      : selectedValues.some((val) => val.value === data.value);
+
+    return (
+      <div ref={innerRef} {...innerProps} style={{ padding: "5px 10px" }}>
+        <input
+          type="checkbox"
+          style={{ width: "16px", height: "16px", marginRight: "8px" }}
+          checked={isChecked}
+          readOnly
+        />
+        {isSelectAll ? <strong>Select All</strong> : data.label}
+      </div>
+    );
+  };
 
 
   const MultiValueLabel = (props) => (
@@ -429,12 +487,13 @@ const CheckboxOption = (props) => {
 
   const optionsWithSelectAll = [
     { value: "__select_all__", label: "Select All" },
-    ...previousCombinations.map((combo) => ({
+    ...deduplicatedCombinations.map((combo) => ({
       value: getComboKey(combo),
-      label: getDocumentCodePath(nodes, edges, combo, prevNode?.id),
+      label: getDocumentCodePath(nodes, edges, combo, prevNode?.id) || "Unnamed Combination",
       fullData: combo,
     })),
-  ];
+  ].filter((option) => option.label !== ""); // Filter out invalid labels
+
 
   return (
     <>
@@ -574,8 +633,8 @@ const CheckboxOption = (props) => {
         <div className="modal-overlay1" onClick={() => setIsModalOpen(false)}>
           <div
             className="addunit-card2"
-            onClick={(e) => e.stopPropagation()} 
-            >
+            onClick={(e) => e.stopPropagation()}
+          >
             {loading && (
               <div className="loader-overlay d-flex justify-content-center align-items-center">
                 <Loader /> {/* or replace with <div>Loading...</div> if Loader not available */}
@@ -606,8 +665,12 @@ const CheckboxOption = (props) => {
             <div className="">
               {loading ? (
                 <div>Loading...</div>
-              ) : (
-                <div className="table-responsive scrollable-table">
+              ) : (<>
+                <div className="table-responsive scrollable-table" style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "580px"
+                }} >
                   <table className="table bg-white align-middle table-text">
                     <thead className="table-head align-middle">
                       <tr>
@@ -672,137 +735,127 @@ const CheckboxOption = (props) => {
                                 value={
                                   (() => {
                                     const selectedIds = row.prevSelections?.[prevNodeLabel] || [];
-                                    const allIds = previousCombinations.map((c) => getComboKey(c));
-
-                                    const allSelected =
-                                      selectedIds.length > 0 &&
-                                      selectedIds.length === allIds.length &&
-                                      allIds.every((id) => selectedIds.includes(id));
-
-                                    const selectedOptions = selectedIds
+                                    return selectedIds
                                       .map((id) => {
-                                        const combo = previousCombinations.find((c) => getComboKey(c) === id);
+                                        const combo = deduplicatedCombinations.find((c) => getComboKey(c) === id);
                                         return combo
                                           ? {
                                             value: getComboKey(combo),
-                                            label: getDocumentCodePath(nodes, edges, combo, prevNode?.id),
+                                            label: getDocumentCodePath(nodes, edges, combo, prevNode?.id) || "Unnamed Combination",
                                             fullData: combo,
                                           }
                                           : null;
                                       })
                                       .filter(Boolean);
-
-                      
-
-                                    return selectedOptions;
                                   })()
                                 }
 
 
-                               onChange={(selectedOptions, { action, option }) => {
-  const isSelectAllOption = option?.value === "__select_all__";
+                                onChange={(selectedOptions, { action, option }) => {
+                                  const isSelectAllOption = option?.value === "__select_all__";
 
-  if (isSelectAllOption) {
-    const selectedIds = row.prevSelections?.[prevNodeLabel] || [];
-    const allIds = previousCombinations.map((combo) => getComboKey(combo));
-    const allSelected =
-      selectedIds.length === allIds.length &&
-      allIds.every((id) => selectedIds.includes(id));
+                                  console.log("Select onChange - Selected Options:", selectedOptions, "Action:", action); // Debug log
 
-    // Toggle behavior
-    if (allSelected) {
-      // DESELECT ALL
-      setData((prevData) =>
-        prevData.map((r) =>
-          r._id === row._id
-            ? {
-                ...r,
-                prevSelections: {
-                  ...(r.prevSelections || {}),
-                  [prevNodeLabel]: [],
-                },
-              }
-            : r
-        )
-      );
-    } else {
-      // SELECT ALL
-      setData((prevData) =>
-        prevData.map((r) =>
-          r._id === row._id
-            ? {
-                ...r,
-                prevSelections: {
-                  ...(r.prevSelections || {}),
-                  [prevNodeLabel]: allIds,
-                },
-              }
-            : r
-        )
-      );
-    }
+                                  if (isSelectAllOption) {
+                                    const selectedIds = row.prevSelections?.[prevNodeLabel] || [];
+                                    const allIds = previousCombinations.map((combo) => getComboKey(combo));
+                                    const allSelected =
+                                      selectedIds.length === allIds.length &&
+                                      allIds.every((id) => selectedIds.includes(id));
 
-    return;
-  }
+                                    // Toggle behavior
+                                    if (allSelected) {
+                                      // DESELECT ALL
+                                      setData((prevData) =>
+                                        prevData.map((r) =>
+                                          r._id === row._id
+                                            ? {
+                                              ...r,
+                                              prevSelections: {
+                                                ...(r.prevSelections || {}),
+                                                [prevNodeLabel]: [],
+                                              },
+                                            }
+                                            : r
+                                        )
+                                      );
+                                    } else {
+                                      // SELECT ALL
+                                      setData((prevData) =>
+                                        prevData.map((r) =>
+                                          r._id === row._id
+                                            ? {
+                                              ...r,
+                                              prevSelections: {
+                                                ...(r.prevSelections || {}),
+                                                [prevNodeLabel]: allIds,
+                                              },
+                                            }
+                                            : r
+                                        )
+                                      );
+                                    }
+                                    return;
+                                  }
 
-  // Regular selection change
-  const selectedIds = (selectedOptions || [])
-    .filter((opt) => opt.value !== "__select_all__")
-    .map((opt) => opt.value);
+                                  // Regular selection change
+                                  const selectedIds = (selectedOptions || [])
+                                    .filter((opt) => opt.value !== "__select_all__")
+                                    .map((opt) => opt.value);
 
-  setData((prevData) =>
-    prevData.map((r) =>
-      r._id === row._id
-        ? {
-            ...r,
-            prevSelections: {
-              ...(r.prevSelections || {}),
-              [prevNodeLabel]: selectedIds,
-            },
-          }
-        : r
-    )
-  );
-}}
+                                  setData((prevData) =>
+                                    prevData.map((r) =>
+                                      r._id === row._id
+                                        ? {
+                                          ...r,
+                                          prevSelections: {
+                                            ...(r.prevSelections || {}),
+                                            [prevNodeLabel]: selectedIds,
+                                          },
+                                        }
+                                        : r
+                                    )
+                                  );
+                                }}
 
                                 options={optionsWithSelectAll}
                                 placeholder="Select connection(s)"
-                              styles={{
-    control: (provided, state) => ({
-      ...provided,
-      backgroundColor: "white",
-      borderColor: state.isFocused ? "#007BFF" : "#CED4DA",
-      boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(0,123,255,.25)" : null,
-      "&:hover": { borderColor: "#007BFF" },
-      minHeight: "32px",
-    }),
-    option: (provided, state) => ({
-      ...provided,
-      padding: "4px 8px",
-      fontSize: "12px",
-      height: "30px",
-      backgroundColor: state.isSelected
-        ? "#ffffff"
-        : state.isFocused
-          ? "#E9ECEF"
-          : null,
-      color: "black",
-      "&:hover": { backgroundColor: "#E9ECEF" },
-    }),
-    menuPortal: (base) => ({ ...base, zIndex: 99999 }), // key fix
-    menu: (base) => ({ ...base, zIndex: 99999 }),        // optional
-    multiValue: (provided) => ({
-      ...provided,
-      backgroundColor: "#e0f0ff",
-      borderRadius: "12px",
-      padding: "0 4px",
-      fontSize: "12px",
-    }),
-    multiValueLabel: (provided) => ({
-      ...provided,
-      fontWeight: 500,
-    }),
-  }}
+                                styles={{
+                                  control: (provided, state) => ({
+                                    ...provided,
+                                    backgroundColor: "white",
+                                    borderColor: state.isFocused ? "#007BFF" : "#CED4DA",
+                                    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(0,123,255,.25)" : null,
+                                    "&:hover": { borderColor: "#007BFF" },
+                                    minHeight: "32px",
+                                  }),
+                                  option: (provided, state) => ({
+                                    ...provided,
+                                    padding: "4px 8px",
+                                    fontSize: "12px",
+                                    height: "30px",
+                                    backgroundColor: state.isSelected
+                                      ? "#ffffff"
+                                      : state.isFocused
+                                        ? "#E9ECEF"
+                                        : null,
+                                    color: "black",
+                                    "&:hover": { backgroundColor: "#E9ECEF" },
+                                  }),
+                                  menuPortal: (base) => ({ ...base, zIndex: 99999 }), // key fix
+                                  menu: (base) => ({ ...base, zIndex: 99999 }),        // optional
+                                  multiValue: (provided) => ({
+                                    ...provided,
+                                    backgroundColor: "#e0f0ff",
+                                    borderRadius: "12px",
+                                    padding: "0 4px",
+                                    fontSize: "12px",
+                                  }),
+                                  multiValueLabel: (provided) => ({
+                                    ...provided,
+                                    fontWeight: 500,
+                                  }),
+                                }}
                               />
 
                             </td>
@@ -813,9 +866,25 @@ const CheckboxOption = (props) => {
                       ))}
                     </tbody>
                   </table>
+
                 </div>
+                <div >  <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={totalItems}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                  }}
+                /></div>
+              </>
               )}
             </div>
+
+
+
             <div
               className="addunit-card-footer"
               style={{ position: "absolute", bottom: 0 }}

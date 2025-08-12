@@ -10,6 +10,7 @@ import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
 import InputField from "../../components/common/InputField";
 import Loader from "../../components/general/LoaderAndSpinner/Loader";
+import deleteicon from '../../../src/assets/icons/trash.svg';
 
 const Master = () => {
     const breadcrumbItems = [
@@ -22,7 +23,7 @@ const Master = () => {
         { label: "Master Name", key: "master_name", sortable: true },
         { label: "Display Name Singular", key: "display_name_singular", sortable: true },
         { label: "Display Name Plural", key: "display_name_plural", sortable: true },
-        { label: "Model Name", key: "model_name", sortable: true },
+        { label: "Table Name", key: "model_name", sortable: true },
         { label: "Status", key: "status", sortable: false },
         { label: "Action", key: "action", sortable: false },
     ];
@@ -47,15 +48,14 @@ const Master = () => {
     const [modalLoading, setModalLoading] = useState(false);
     const [statusFilter, setStatusFilter] = useState("");
     const [search, setSearch] = useState('');
-
+const [modelNameManuallyEdited, setModelNameManuallyEdited] = useState(false);
 
     const debounceTimeoutRef = useRef(null);
     const masterFields = [
         { label: "Master Name", name: "master_name", type: "text", required: true },
-        { label: "Slug", name: "slug", type: "text", required: true },
+         { label: "Table Name", name: "model_name", type: "text", required: true },
         { label: "Display Name (Singular)", name: "display_name_singular", type: "text", required: true },
         { label: "Display Name (Plural)", name: "display_name_plural", type: "text", required: true },
-        { label: "Model Name", name: "model_name", type: "text", required: true },
         { label: "Order", name: "order", type: "number", required: true },
         { label: "Parameter Type", name: "parameter_type_id", type: "dropdown", options: parameterTypeOptions, required: true, },
     ];
@@ -92,23 +92,45 @@ const Master = () => {
         setMasterFieldData((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleFieldChange = (e, index) => {
-        const { name, value } = e.target;
+ const handleFieldChange = (e, index) => {
+    const { name, value } = e.target;
 
-        setMasterFieldData((prev) =>
-            prev.map((field, i) =>
-                i === index
-                    ? {
-                        ...field,
-                        [name]:
-                            name === "required" || name === "default" || name === "is_unique"
-                                ? value === "true" || value === true
-                                : value,
-                    }
-                    : field
-            )
-        );
-    };
+    setMasterFieldData((prev) =>
+        prev.map((field, i) => {
+            if (i !== index) return field;
+
+            let updatedField = {
+                ...field,
+                [name]:
+                    name === "required" || name === "default" || name === "is_unique"
+                        ? value === "true" || value === true
+                        : value,
+            };
+
+            // ✅ Auto-generate field_name when display_name changes
+            if (name === "display_name") {
+                updatedField.field_name = value
+                    .trim()
+                    .replace(/\s+/g, "_")
+                    .toLowerCase();
+            }
+
+            if (name === "default") {
+                if (value === "true") {
+                    updatedField.required = true;
+                    updatedField.is_unique = true;
+                } else {
+                    updatedField.required = false;
+                    updatedField.is_unique = false;
+                }
+            }
+
+            return updatedField;
+        })
+    );
+};
+
+
 
 
     const fetchMasters = async (page = 1, limit = pageSize, sort = sortBy, sortOrder = order, silent = false, status = statusFilter,
@@ -135,7 +157,6 @@ const Master = () => {
                 _id: item._id,
                 index: (page - 1) * limit + index + 1,
                 master_name: item.master_name,
-                slug: item.slug,
                 display_name_singular: item.display_name_singular,
                 display_name_plural: item.display_name_plural,
                 model_name: item.model_name,
@@ -190,21 +211,60 @@ const Master = () => {
         setCurrentPage(1);
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormValues((prev) => ({ ...prev, [name]: value }));
-        setFormErrors((prev) => ({ ...prev, [name]: "" }));
+const sanitizeModelName = (str) => {
+  return str
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "")
+    .replace(/\s+/g, "_")         // replace spaces with underscore
+    .replace(/[^a-z0-9_]/g, ""); // remove all except a-z, 0-9, underscore
+    
+};
+
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
+
+  setFormValues((prev) => {
+    if (name === "master_name") {
+      const derivedModelName = sanitizeModelName(value);
+
+      return {
+        ...prev,
+        master_name: value, // keep original input as is
+        model_name: modelNameManuallyEdited ? prev.model_name : derivedModelName,
+      };
+    }
+
+    if (name === "model_name") {
+      // sanitize user input live to allow only valid chars
+      const sanitizedValue = sanitizeModelName(value);
+      setModelNameManuallyEdited(true);
+      return {
+        ...prev,
+        model_name: sanitizedValue,
+      };
+    }
+
+    // other fields
+    return {
+      ...prev,
+      [name]: value,
     };
+  });
+
+  setFormErrors((prev) => ({ ...prev, [name]: "" }));
+};
+
     const handleEditMaster = (row) => {
         const selectedMaster = rows.find((item) => item._id === row._id);
 
         if (!selectedMaster) return;
         setFormErrors({});
         setMasterFieldErrors({});
+        setModelNameManuallyEdited(false);
         // Populate form values
         setFormValues({
             master_name: selectedMaster.master_name,
-            slug: selectedMaster.slug,
             display_name_singular: selectedMaster.display_name_singular,
             display_name_plural: selectedMaster.display_name_plural,
             model_name: selectedMaster.model_name,
@@ -237,7 +297,6 @@ const Master = () => {
             const payload = {
                 masterData: {
                     master_name: formData.master_name,
-                    slug: formData.slug,
                     display_name_singular: formData.display_name_singular,
                     display_name_plural: formData.display_name_plural,
                     model_name: formData.model_name,
@@ -459,7 +518,7 @@ const Master = () => {
             </div>
 
             {isModalOpen && (
-                <div className="modal-overlay" onClick={() => setIsModalOpen(false)} >
+                <div className="modal-overlay2" onClick={() => setIsModalOpen(false)} >
                     <div className="addunit-card1 " onClick={(e) => e.stopPropagation()} style={{ position: "relative" }}>
                         {modalLoading && (
                             <div className="loader-overlay d-flex justify-content-center align-items-center">
@@ -486,6 +545,7 @@ const Master = () => {
                                         setMasterFieldErrors({});
                                         setIsEditMode(false);
                                         setEditingMasterId(null);
+                                        setModelNameManuallyEdited(false);
                                         setMasterFieldData([
                                             {
                                                 field_type: "",
@@ -502,7 +562,7 @@ const Master = () => {
                                 );
                             }}
                         >
-                            <div className="addunit-form p-4" >
+                            <div className="addunit-form p-4 mb-3" >
                                 <div className="row">
                                     {masterFields.map((field, index) => (
                                         <div className="col-md-6" key={index}>
@@ -521,6 +581,7 @@ const Master = () => {
                                                     label={field.label}
                                                     type={field.type}
                                                     name={field.name}
+                                                    isRequired ={true}
                                                     value={formValues[field.name] || ""}
                                                     onChange={handleInputChange}
                                                     placeholder={field.placeholder}
@@ -533,151 +594,167 @@ const Master = () => {
                                         </div>
                                     ))}
 
-                                    <h6 className="mt-3 mb-3">Master Fields</h6>
-                                    {masterFieldData.map((field, index) => (
-                                        <div key={index} className="master-field-box position-relative p-3">
-                                            <div className="d-flex justify-content-center align-items-center position-relative mb-3">
-                                                {masterFieldData.length > 1 && (<>
-                                                    <h7 className="m-0">Master Field {index + 1}</h7>
-
-                                                    <a
-                                                        type="button"
-                                                        onClick={() => handleRemoveField(index)}
-                                                        className=" position-absolute top-0 end-0 "
-                                                        aria-label="Close"
-                                                    >
-                                                        <img src="src/assets/icons/close.svg" width="28px" height="28px" alt="Close" />
-                                                    </a>
-                                                </>
-                                                )}
-                                            </div>
-                                            <div className="row">
-                                                <div className="col-md-6">
-                                                    <Dropdown
-                                                        label="Field Type"
-                                                        name="field_type"
-                                                        options={[
-                                                            { label: "String", value: "String" },
-                                                            { label: "Number", value: "Number" },
-                                                            { label: "Date", value: "Date" },
-                                                        ]}
-                                                        value={field.field_type || ""}
-                                                        onChange={(e) => handleFieldChange(e, index)}
-                                                        error={masterFieldErrors[index]?.field_type}
-                                                    />
-                                                </div>
-                                                <div className="col-md-6">
-                                                    <InputField
-                                                        label="Field Name"
-                                                        name="field_name"
-                                                        value={field.field_name || ""}
-                                                        onChange={(e) => handleFieldChange(e, index)}
-                                                        error={masterFieldErrors[index]?.field_name}
-                                                    />
-                                                </div>
-                                                <div className="col-md-6">
-                                                    <InputField
-                                                        label="Display Name"
-                                                        name="display_name"
-                                                        value={field.display_name || ""}
-                                                        onChange={(e) => handleFieldChange(e, index)}
-                                                        error={masterFieldErrors[index]?.display_name}
-                                                    />
-                                                </div>
-                                                <div className="col-md-6">
-                                                    <InputField
-                                                        label="Order"
-                                                        type="number"
-                                                        name="order"
-                                                        value={field.order !== undefined && field.order !== null ? field.order : ""}
-                                                        onChange={(e) => handleFieldChange(e, index)}
-                                                        error={masterFieldErrors[index]?.order}
-                                                        step="1"
-                                                        min="0"
-                                                    />
-                                                </div>
-                                                <div className="col-md-6 mb-3">
-                                                    <Dropdown
-                                                        label="Select Is Required"
-                                                        name="required"
-                                                        options={[
-                                                            { label: "Yes", value: "true" },
-                                                            { label: "No", value: "false" },
-                                                        ]}
-                                                        value={String(field.required)} // Convert true/false to "true"/"false"
-                                                        onChange={(e) =>
-                                                            handleFieldChange({
-                                                                target: {
-                                                                    name: "required",
-                                                                    value: e.target.value === "true", // Convert back to boolean
-                                                                },
-                                                            }, index)
-                                                        }
-                                                        error={masterFieldErrors[index]?.required}
-                                                    />
-
-                                                </div>
-                                                <div className="col-md-6 mb-3">
-                                                    <Dropdown
-                                                        label="Select Is Default"
-                                                        name="default"
-                                                        options={[
-                                                            { label: "Yes", value: "true" },
-                                                            { label: "No", value: "false" },
-                                                        ]}
-                                                        value={String(field.default)}
-                                                        onChange={(e) =>
-                                                            handleFieldChange({
-                                                                target: {
-                                                                    name: "default",
-                                                                    value: e.target.value === "true",
-                                                                },
-                                                            }, index)
-                                                        }
-                                                        error={masterFieldErrors[index]?.default}
-                                                    />
-
-                                                </div>
-                                                <div className="col-md-6 mb-3">
-                                                    <Dropdown
-                                                        label="Select Unique"
-                                                        name="is_unique"
-                                                        options={[
-                                                            { label: "Yes", value: "true" },
-                                                            { label: "No", value: "false" },
-                                                        ]}
-                                                        value={String(field.is_unique)}
-                                                        onChange={(e) =>
-                                                            handleFieldChange({
-                                                                target: {
-                                                                    name: "is_unique",
-                                                                    value: e.target.value === "true",
-                                                                },
-                                                            }, index)
-                                                        }
-                                                        error={masterFieldErrors[index]?.is_unique}
-                                                    />
-
-                                                </div>
-                                                <div className="col-md-6">
-                                                    <InputField
-                                                        label="Tooltip"
-                                                        name="tooltip"
-                                                        value={field.tooltip || ""}
-                                                        onChange={(e) => handleFieldChange(e, index)}
-                                                        error={masterFieldErrors[index]?.tooltip}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <div className="d-flex justify-content-end">
+                                    <div className=" d-flex justify-content-between align-items-center mb-3 mt-3">
+                                        <h6 className="m-0">Master Fields</h6>
                                         <Button
                                             name="+ Add Field"
                                             onClick={handleAddField}
                                             className="add-field-btn"
                                         />
                                     </div>
+
+                                    <div style={{ overflowX: "auto" }}>
+                                        <table className="table table-bordered table-striped align-middle table-text">
+                                            <thead className="table-head align-middle">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Field Type</th>
+                                                    <th>Display Name</th>
+                                                    <th>Field Name</th>
+                                                    <th>Order</th>
+                                                    <th>Default</th>
+                                                    <th>Required</th>
+                                                    <th>Unique</th>
+                                                    <th>Tooltip</th>
+                                                    {masterFieldData.length > 1 && (
+                                                        <th>Action</th>
+                                                    )}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {masterFieldData.map((field, index) => (
+                                                    <tr key={index}>
+                                                        <td >{index + 1}</td>
+
+                                                        <td className="pt-0 pb-4">
+                                                            <Dropdown
+                                                                name="field_type"
+                                                                options={[
+                                                                    { label: "String", value: "String" },
+                                                                    { label: "Number", value: "Number" },
+                                                                    { label: "Date", value: "Date" },
+                                                                ]}
+                                                                value={field.field_type || ""}
+                                                                onChange={(e) => handleFieldChange(e, index)}
+                                                                error={masterFieldErrors[index]?.field_type}
+                                                            />
+                                                        </td>
+
+                                                        <td>
+                                                            <InputField
+                                                                name="display_name"
+                                                                value={field.display_name || ""}
+                                                                onChange={(e) => handleFieldChange(e, index)}
+                                                                error={masterFieldErrors[index]?.display_name}
+                                                            />
+                                                        </td>
+                                                        <td>
+                                                            <InputField
+                                                                name="field_name"
+                                                                value={field.field_name || ""}
+                                                                onChange={(e) => handleFieldChange(e, index)}
+                                                                error={masterFieldErrors[index]?.field_name}
+                                                                 disabled
+                                                            />
+                                                        </td>
+
+
+                                                        <td>
+                                                            <InputField
+                                                                type="number"
+                                                                name="order"
+                                                                value={field.order !== undefined && field.order !== null ? field.order : ""}
+                                                                onChange={(e) => handleFieldChange(e, index)}
+                                                                error={masterFieldErrors[index]?.order}
+                                                                step="1"
+                                                                min="0"
+                                                            />
+                                                        </td>
+
+                                                        <td className="table-check ">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={String(field.default) === "true"}
+                                                                onChange={() => {
+                                                                    handleFieldChange(
+                                                                        {
+                                                                            target: {
+                                                                                name: "default",
+                                                                                value: String(!(field.default === true || field.default === "true")),
+                                                                            },
+                                                                        },
+                                                                        index
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </td>
+
+                                                        <td className="table-check ">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={String(field.required) === "true"}
+                                                                disabled={String(field.default) === "true"}
+                                                                onChange={() => {
+                                                                    handleFieldChange(
+                                                                        {
+                                                                            target: {
+                                                                                name: "required",
+                                                                                value: String(!(field.required === true || field.required === "true")),
+                                                                            },
+                                                                        },
+                                                                        index
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </td>
+
+                                                        <td className="table-check">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={String(field.is_unique) === "true"}
+                                                                disabled={String(field.default) === "true"}
+                                                                onChange={() => {
+                                                                    handleFieldChange(
+                                                                        {
+                                                                            target: {
+                                                                                name: "is_unique",
+                                                                                value: String(!(field.is_unique === true || field.is_unique === "true")),
+                                                                            },
+                                                                        },
+                                                                        index
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </td>
+
+
+                                                        <td>
+                                                            <InputField
+                                                                name="tooltip"
+                                                                value={field.tooltip || ""}
+                                                                onChange={(e) => handleFieldChange(e, index)}
+                                                                error={masterFieldErrors[index]?.tooltip}
+                                                            />
+                                                        </td>
+                                                        {masterFieldData.length > 1 && (
+                                                            <td>
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn mt-3 "
+                                                                    onClick={() => handleRemoveField(index)}
+                                                                >
+                                                                   <img src={deleteicon} alt="Delete" />
+                                                                </button>
+
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
 
 
                                 </div>
