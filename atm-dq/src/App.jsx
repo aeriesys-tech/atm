@@ -1,85 +1,49 @@
-// import React from "react";
-// import { HashRouter, Routes, Route } from "react-router-dom";
-
-// import PrivateRoute from "../routes/PrivateRoute";
-// import LoginPage from "./auth/LoginPage";
-// import PublicRoute from "../routes/PublicRoute";
-// import ProtectedRoute from "../routes/ProtectedRoute";
-
-// function App() {
-//   return (
-//     <HashRouter>
-//       <Routes>
-//         {/* Public */}
-//         {PublicRoute.map(({ path, element }, idx) => (
-//           <Route key={`pub-${idx}`} path={path} element={element} />
-//         ))}
-
-//         {/* Protected: wrap each element with PrivateRoute */}
-//         {ProtectedRoute.map(({ path, element }, idx) => (
-//           <Route
-//             key={`prot-${idx}`}
-//             path={path}
-//             element={<PrivateRoute element={element} />}
-//           />
-//         ))}
-
-//         {/* optional: catch-all redirect to login */}
-//         <Route path="/" element={<LoginPage />} />
-//       </Routes>
-//     </HashRouter>
-//   );
-// }
-
-// export default App;
-
-
-import React from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import PrivateRoute from "../routes/PrivateRoute";
-import LoginPage from "./auth/LoginPage";
-import PublicRoute from "../routes/PublicRoute";
-import ProtectedRoute from "../routes/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedLayout from "./components/ProtectedLayout";
+import LoginPage from "./pages/LoginPage";
+import TimeSeriesPage from "./pages/TimeSeriesPage";
+import StaticDataPage from "./pages/StaticDataPage";
+import DataSourcePage from "./pages/DataSourcePage";
 
 function App() {
-  return (
-    <HashRouter>
-      <Routes>
-        {/* Public */}
-        {PublicRoute.map(({ path, element }, idx) => (
-          <Route key={`pub-${idx}`} path={path} element={element} />
-        ))}
+	return (
+		<HashRouter>
+			<Routes>
+				{/* Public Routes */}
+				<Route path="/login" element={<LoginPage />} />
 
-        {/* Protected: wrap each element with PrivateRoute */}
-        {ProtectedRoute.map(({ path, element }, idx) => (
-          <Route
-            key={`prot-${idx}`}
-            path={path}
-            element={<PrivateRoute element={element} />}
-          />
-        ))}
-
-        {/* Optional: catch-all redirect to login */}
-        <Route path="/" element={<LoginPage />} />
-      </Routes>
-
-      {/* Toast container (global) */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
-    </HashRouter>
-  );
+				{/* Private Routes with Layout */}
+				<Route
+					path="/"
+					element={
+						<ProtectedRoute>
+							<ProtectedLayout />
+						</ProtectedRoute>
+					}
+				>
+					<Route index element={<TimeSeriesPage />} />
+					<Route path="dq-time-series" element={<TimeSeriesPage />} />
+					<Route path="dq-static" element={<StaticDataPage />} />
+					<Route path="data-source" element={<DataSourcePage />} />
+				</Route>
+			</Routes><ToastContainer
+				position="bottom-right"
+				autoClose={3000}
+				hideProgressBar={false}
+				newestOnTop
+				closeOnClick
+				pauseOnFocusLoss
+				draggable
+				pauseOnHover
+				theme="colored"
+			/>
+		</HashRouter>
+	);
 }
 
 export default App;
