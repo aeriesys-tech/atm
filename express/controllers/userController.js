@@ -1,7 +1,7 @@
-const User = require('../models/user');
+const User = require('../models/User');
 const bcrypt = require('bcrypt');
-const Role = require('../models/role');
-const Department = require('../models/department');
+const Role = require('../models/Role');
+const Department = require('../models/Department');
 const mongoose = require('mongoose');
 const { Op } = require("sequelize");
 const redisClient = require("../config/redisConfig");

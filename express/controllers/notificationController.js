@@ -3,7 +3,7 @@ const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");
 const redisClient = require("../config/redisConfig");
 const { createNotification } = require('../utils/notification');
-const NotificationUser = require('../models/notificationUser');
+const NotificationUser = require('../models/NotificationUser');
 
 const paginateNotifications = async (req, res) => {
     const {

@@ -1,9 +1,9 @@
 const { body, param } = require('express-validator');
 const mongoose = require('mongoose');
 const { Validate } = require('../middlewares/validationMiddleware');
-const Role = require('../models/role');
+const Role = require('../models/Role');
 const { validateId } = require('./commonValidation');
-const department = require('../models/department');
+const department = require('../models/Department');
 
 const add_user_validation = (req, res, next) => {
 	return Validate([
