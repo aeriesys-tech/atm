@@ -14,12 +14,12 @@ const masterSchema = new Schema({
         index: true,
         trim: true
     },
-    slug: {
-        type: String,
-        index: true,
-        default: null,
-        trim: true
-    },
+    // slug: {
+    //     type: String,
+    //     index: true,
+    //     default: null,
+    //     trim: true
+    // },
     display_name_singular: {
         type: String,
         required: [true, 'Display name is required'],

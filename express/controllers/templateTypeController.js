@@ -4,7 +4,7 @@ const ParameterType = require('../models/parameterType');
 const Master = require('../models/master');
 const MasterField = require('../models/masterField');
 const { logApiResponse } = require('../utils/responseService');
-const TemplateParameterType = require('../models/TemplateParameterType');
+const TemplateParameterType = require('../models/templateParameterType');
 
 // Create a new TemplateType
 const createTemplateType = async (req, res) => {

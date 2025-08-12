@@ -2,7 +2,7 @@ const { check, body } = require('express-validator');
 const mongoose = require('mongoose');
 const { Validate } = require('../middlewares/validationMiddleware');
 const Variable = require('../models/variable');
-const Batch = require("../models/Batch");
+const Batch = require("../models/batch");
 
 
 const editVariablesValidation = (req, res, next) => {

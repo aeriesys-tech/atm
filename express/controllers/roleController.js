@@ -1,5 +1,5 @@
 const Role = require('../models/role');
-const RoleGroup = require('../models/RoleGroup');
+const RoleGroup = require('../models/roleGroup');
 const mongoose = require('mongoose');
 const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");

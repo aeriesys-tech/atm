@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const SchemaDefinitionModel = require('../models/SchemaDefinition');
+const SchemaDefinitionModel = require('../models/schemaDefinition');
 const { mapSchemaDefinition } = require('./typeMapping');
 
 async function initializeDynamicModels() {

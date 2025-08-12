@@ -1,4 +1,4 @@
-const RoleGroup = require('../models/RoleGroup');
+const RoleGroup = require('../models/roleGroup');
 const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");
 const redisClient = require("../config/redisConfig");
