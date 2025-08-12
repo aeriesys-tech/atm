@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Dropdown({ options = [], label = "Select Option", name, value, onChange, error }) {
+function Dropdown({ options = [], label = "", name, value, onChange, error,disabled = false, }) {
     return (
         <div>
             {name && (
@@ -12,6 +12,7 @@ function Dropdown({ options = [], label = "Select Option", name, value, onChange
                 name={name}
                 value={value}
                 onChange={onChange}
+                disabled={disabled}
                className={`form-select btn-bg1 d-flex gap-btwn status ${error ? "is-invalid" : ""}`}
 
             >

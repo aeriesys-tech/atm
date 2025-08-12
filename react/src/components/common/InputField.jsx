@@ -42,12 +42,12 @@ function InputField({
         name={name}
         value={value}
         onChange={handleInputChange}
-        placeholder={placeholder || `Enter ${label}`}
+        placeholder={placeholder || (label ? `Enter ${label}` : 'Enter')}
         className={`signin-form-input ${error ? 'is-invalid' : ''} ${className}`}
         maxLength={maxLength}
-          onWheel={handleWheel} // ✅ disables scroll changes
+        onWheel={handleWheel} // ✅ disables scroll changes
         {...rest}
-        // required={isRequired}
+      // required={isRequired}
       />
       {suffix && <div className="suffix-icon">{suffix}</div>}
       {error && <div className="invalid-feedback d-block">{error}</div>}
