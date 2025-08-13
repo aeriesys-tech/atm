@@ -158,6 +158,7 @@ const updateDataSourceConfiguration = async (req, res) => {
             status,
             deleted_at
         } = req.body;
+
         const existingConfig = await DataSourceConfiguration.findById(id);
         if (!existingConfig) {
             const errors = { id: "Data Source Configuration not found" };
@@ -165,7 +166,7 @@ const updateDataSourceConfiguration = async (req, res) => {
             return res.status(404).json({ message: "Data Source Configuration not found", errors });
         }
 
-        // 2️⃣ Duplicate check (soft delete aware)
+        // Duplicate check
         const duplicateDataSource = await DataSourceConfiguration.findOne({
             data_source: data_source?.trim(),
             deleted_at: null,
@@ -175,10 +176,25 @@ const updateDataSourceConfiguration = async (req, res) => {
         const errors = {};
         if (duplicateDataSource) errors.data_source = "Data Source already exists";
 
+        // Conditional required validations
+        if (data_source?.toLowerCase() === "postgres") {
+            if (!port_no) errors.port_no = "Port number is required for Postgres";
+            if (!database_name) errors.database_name = "Database name is required for Postgres";
+            if (!table_name) errors.table_name = "Table name is required for Postgres";
+        } else if (data_source?.toLowerCase() === "influx") {
+            if (!username) errors.username = "Username is required for Influx";
+            if (!password) errors.password = "Password is required for Influx";
+            if (!token) errors.token = "Token is required for Influx";
+            if (!org) errors.org = "Org is required for Influx";
+            if (!bucket) errors.bucket = "Bucket is required for Influx";
+        }
+
         if (Object.keys(errors).length > 0) {
             await logApiResponse(req, "Validation Error", 400, errors);
             return res.status(400).json({ message: "Validation Error", errors });
         }
+
+        // Build update data
         const updateData = {
             data_source: data_source?.trim() ?? existingConfig.data_source,
             description: description?.trim() ?? existingConfig.description,
@@ -186,48 +202,36 @@ const updateDataSourceConfiguration = async (req, res) => {
             deleted_at: deleted_at ?? existingConfig.deleted_at,
             updated_at: Date.now()
         };
-        if (username !== undefined) {
-            updateData.username = username ? await bcrypt.hash(username, 10) : null;
-        }
-        if (password !== undefined) {
-            updateData.password = password ? await bcrypt.hash(password, 10) : null;
-        }
-        if (host !== undefined) {
-            updateData.host = host ? await bcrypt.hash(host, 10) : null;
-        }
-        if (port_no !== undefined) {
-            updateData.port_no = port_no ? await bcrypt.hash(port_no, 10) : null;
-        }
-        if (database_name !== undefined) {
-            updateData.database_name = database_name ? await bcrypt.hash(database_name, 10) : null;
-        }
-        if (table_name !== undefined) {
-            updateData.table_name = table_name ? await bcrypt.hash(table_name, 10) : null;
-        }
-        if (token !== undefined) {
-            updateData.token = token ? await bcrypt.hash(token, 10) : null;
-        }
-        if (org !== undefined) {
-            updateData.org = org ? await bcrypt.hash(org, 10) : null;
-        }
-        if (bucket !== undefined) {
-            updateData.bucket = bucket ? await bcrypt.hash(bucket, 10) : null;
-        }
+
+        // Encrypt sensitive fields if provided
+        if (username !== undefined) updateData.username = username ? encrypt(username) : null;
+        if (password !== undefined) updateData.password = password ? encrypt(password) : null;
+        if (host !== undefined) updateData.host = host ? encrypt(host) : null;
+        if (port_no !== undefined) updateData.port_no = port_no ? encrypt(port_no) : null;
+        if (database_name !== undefined) updateData.database_name = database_name ? encrypt(database_name) : null;
+        if (table_name !== undefined) updateData.table_name = table_name ? encrypt(table_name) : null;
+        if (token !== undefined) updateData.token = token ? encrypt(token) : null;
+        if (org !== undefined) updateData.org = org ? encrypt(org) : null;
+        if (bucket !== undefined) updateData.bucket = bucket ? encrypt(bucket) : null;
+
         await DataSourceConfiguration.findByIdAndUpdate(id, updateData);
 
         const updatedConfig = await DataSourceConfiguration.findById(id);
 
-        const message = `Data Source Configuration  updated successfully`;
         await logApiResponse(req, "Data Source Configuration updated successfully", 200, updatedConfig);
-
-        return res.status(200).json({ message: "Data Source Configuration updated successfully", data: updatedConfig });
+        return res.status(200).json({
+            message: "Data Source Configuration updated successfully",
+            data: updatedConfig
+        });
 
     } catch (error) {
         await logApiResponse(req, "Failed to update Data Source Configuration", 500, { error: error.message });
-        return res.status(500).json({ message: "Failed to update Data Source Configuration", error: error.message });
+        return res.status(500).json({
+            message: "Failed to update Data Source Configuration",
+            error: error.message
+        });
     }
 };
-
 
 const getDataSourceConfigurations = async (req, res) => {
     try {
