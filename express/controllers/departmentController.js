@@ -1,4 +1,4 @@
-const Department = require('../models/Department');
+const Department = require('../models/department');
 const { createNotification } = require('../utils/notification');
 const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");

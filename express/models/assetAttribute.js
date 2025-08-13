@@ -66,4 +66,4 @@ assetAttributeSchema.index(
     { field_type: 1 },
     { unique: true, partialFilterExpression: { deleted_at: null } }
 );
-module.exports = mongoose.model('AttributeAsset', assetAttributeSchema, 'attribute_assets');
+module.exports = mongoose.model('AssetAttribute', assetAttributeSchema, 'asset_attribute');

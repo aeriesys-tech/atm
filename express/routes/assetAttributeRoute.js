@@ -7,13 +7,13 @@ const { validateId, paginateValidation } = require('../validations/commonValidat
 // const { add_role_validation, update_role_validation } = require('../validations/roleValidation');
 const { Validate } = require('../middlewares/validationMiddleware');
 
-// POST route to create a new role group
-// router.post('/createRole', authMiddleware, add_role_validation, roleController.createRole);
-// router.post('/updateRole', authMiddleware, update_role_validation, roleController.updateRole);
+
+router.post('/updateAssetAttribute', authMiddleware, assetAttributeController.updateAssetAttribute);
+router.post('/createAssetAttribute', authMiddleware, assetAttributeController.createAssetAttribute);
 router.post('/paginateAssetAttributes', authMiddleware, paginateValidation(['field_name', 'display_name']), assetAttributeController.paginatedAssetAttributes);
-// router.post('/getRoles', authMiddleware, roleController.getRoles);
-// router.post('/getRole', authMiddleware, Validate([validateId('id', 'Role ID')]), roleController.getRole);
-// router.post('/deleteRole', authMiddleware, Validate([validateId('id', 'Role ID')]), roleController.deleteRole);
-// router.post('/destroyRole', authMiddleware, Validate([validateId('id', 'Role ID')]), roleController.destroyRole);
+router.post('/getAssetAttributes', authMiddleware, assetAttributeController.getAllAssetAttributes);
+router.post('/getAssetAttribute', authMiddleware, Validate([validateId('id', 'Asset Attribute ID')]), assetAttributeController.getAllAssetAttributes);
+router.post('/deleteAssetAttribute', authMiddleware, Validate([validateId('id', 'Asset Attribute ID')]), assetAttributeController.toggleSoftDeleteAssetAttribute);
+router.post('/destroyAssetAttribute', authMiddleware, Validate([validateId('id', 'Asset Attribute ID')]), assetAttributeController.destroyAssetAttribute);
 
 module.exports = router;

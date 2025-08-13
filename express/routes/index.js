@@ -15,7 +15,8 @@ const templateRoute = require('./templateRoute');
 const templateMasterRoute = require('./templateMasterRoute');
 const batchRoute = require('./batchRoute');
 const variableRoute = require('./variableRoute');
-const assetAttribute = require('./assetAttributeRoute')
+const assetAttribute = require('./assetAttributeRoute');
+const dataSourceConfigurationRoute = require('./dataSourceConfigurationRoute');
 
 
 router.use('/', authRoute);
@@ -32,6 +33,8 @@ router.use('/template-masters', templateMasterRoute);
 router.use('/batch', batchRoute);
 router.use('/variable', variableRoute);
 router.use('/asset-attributes', assetAttribute);
+router.use('/data-source-configurations', dataSourceConfigurationRoute);
+
 
 
 module.exports = router;

@@ -46,4 +46,4 @@ roleSchema.index(
 );
 
 // Explicitly specify collection name
-module.exports = mongoose.model('Role', roleSchema, 'roles');
+module.exports = mongoose.models.Role || mongoose.model('Role', roleSchema, 'roles');

@@ -41,6 +41,4 @@ departmentSchema.index(
     { department_code: 1 },
     { unique: true, partialFilterExpression: { deleted_at: null } }
 );
-
-// Explicitly specify collection name
-module.exports = mongoose.model('Department', departmentSchema, 'departments');
+module.exports = mongoose.models.Department || mongoose.model('Department', departmentSchema, 'departments');
