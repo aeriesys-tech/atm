@@ -29,12 +29,24 @@ function Modal({
         }
     }, []);
 
-    const formatDisplayValue = (value) => {
-        if (!value) return "-";
-        const date = new Date(value);
-        if (!isNaN(date)) return date.toLocaleString();
-        return value.toString();
-    };
+const formatDisplayValue = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (!isNaN(date)) return date.toLocaleString();
+
+    // Preserve line breaks in long text (like notification)
+    if (typeof value === "string" && value.includes("\n")) {
+        return value.split("\n").map((line, idx) => (
+            <div key={idx} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                {line}
+            </div>
+        ));
+    }
+
+    return value.toString();
+};
+
 
     return (
         <div className="modal-overlay" onClick={onClose}
@@ -83,7 +95,7 @@ function Modal({
                                 {displayOnly ? (
                                     <div>
                                         <label style={{ fontWeight: 'bold' }}>{field.label}:</label>
-                                        <div>{formatDisplayValue(values[field.name])}</div>
+                                        <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{formatDisplayValue(values[field.name])}</div>
                                     </div>
                                 ) : field.type === "dropdown" ? (
                                     <Dropdown

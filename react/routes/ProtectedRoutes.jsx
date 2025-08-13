@@ -1,5 +1,4 @@
 import Master from "../src/pages/configurations/Master";
-import AssetName from "../src/pages/AssetsGroup";
 import Dashboard from "../src/pages/Dashboard";
 import RoleGroup from "../src/pages/userSettings/RoleGroups";
 import Role from "../src/pages/userSettings/Roles";
@@ -10,7 +9,7 @@ import Notification from "../src/pages/utilities/Notification";
 import MasterDetail from "../src/pages/configurations/MasterDetails";
 import TemplateTypes from "../src/pages/templates/TemplateTypes";
 import TemplateBuilder from "../src/pages/templates/TemplateBuilder";
-
+import AssetName from "../src/pages/assets/Assets";
 const protectedRoutes = [
 	{
 		path: "/dashboard",
@@ -71,8 +70,7 @@ const protectedRoutes = [
 {
   path: "/template/:id/view/:templateId",
   element: <TemplateBuilder />
-}
-
+},
 
 ];
 

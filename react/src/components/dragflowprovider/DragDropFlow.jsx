@@ -15,6 +15,7 @@ import axiosWrapper from "../../../services/AxiosWrapper";
 import Loader from "../general/LoaderAndSpinner/Loader";
 import Select, { components } from 'react-select'
 import Pagination from "../general/Pagination";
+import { matchPath, useLocation } from "react-router";
 const initialNodes = [];
 const initialEdges = [];
 
@@ -38,6 +39,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
   const [statusFilter, setStatusFilter] = useState("true");
   const [checkedItems, setCheckedItems] = useState([]);
   const { MultiValue, Option } = components;
+  const location = useLocation();
   const [edgeContextMenu, setEdgeContextMenu] = useState({
     isOpen: false,
     position: { x: 0, y: 0 },
@@ -185,6 +187,15 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     return () => document.removeEventListener("click", handleClick);
   }, []);
   const handleNodeDoubleClick = useCallback((node) => {
+      const isViewRoute = matchPath(
+    { path: "/template/:id/view/:templateId" },
+    location.pathname
+  );
+
+  if (!isViewRoute) {
+    // Not in view mode → do nothing or handle differently
+    return;
+  }
     console.log("Double click node", node);
     const masterIdFromNode = node?.data?.template_master_code;
     if (!masterIdFromNode) return;
