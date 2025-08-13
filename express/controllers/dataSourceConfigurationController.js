@@ -4,6 +4,7 @@ const { Op } = require("sequelize");
 const redisClient = require("../config/redisConfig");
 const { createNotification } = require('../utils/notification');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 const paginatedDataSourceConfigurations = async (req, res) => {
     const {
@@ -66,6 +67,32 @@ const paginatedDataSourceConfigurations = async (req, res) => {
 };
 
 
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || '12345678901234567890123456789012'; // must be 32 bytes
+const IV_LENGTH = 16;
+
+function encrypt(text) {
+    if (!text) return null;
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+    let encrypted = cipher.update(text, 'utf8');
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text) {
+    if (!text) return null;
+    const [iv, encryptedText] = text.split(':');
+    const decipher = crypto.createDecipheriv(
+        'aes-256-cbc',
+        Buffer.from(ENCRYPTION_KEY),
+        Buffer.from(iv, 'hex')
+    );
+    let decrypted = decipher.update(Buffer.from(encryptedText, 'hex'));
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString();
+}
+
 const createDataSourceConfiguration = async (req, res) => {
     try {
         const { data_source, description, username, password, host, port_no, database_name, table_name, token, org, bucket, url } = req.body;
@@ -80,30 +107,20 @@ const createDataSourceConfiguration = async (req, res) => {
             await logApiResponse(req, "Duplicate Data Source Configuration", 400, errors);
             return res.status(400).json({ message: "Duplicate Data Source Configuration", errors });
         }
-        const hashedUsername = username ? await bcrypt.hash(username, 10) : null;
-        const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
-        const hashedHost = host ? await bcrypt.hash(host, 10) : null;
-        const hashedPortNo = port_no ? await bcrypt.hash(port_no, 10) : null;
-        const hashedDatabaseName = database_name ? await bcrypt.hash(database_name, 10) : null;
-        const hashedTableName = table_name ? await bcrypt.hash(table_name, 10) : null;
-        const hashedToken = token ? await bcrypt.hash(token, 10) : null;
-        const hashedOrg = org ? await bcrypt.hash(org, 10) : null;
-        const hashedBucket = bucket ? await bcrypt.hash(bucket, 10) : null;
-        const hashedUrl = url ? await bcrypt.hash(url, 10) : null;
 
         const newDataSourceConfiguration = await DataSourceConfiguration.create({
             data_source: data_source?.trim(),
             description: description?.trim(),
-            username: hashedUsername,
-            password: hashedPassword,
-            host: hashedHost,
-            port_no: hashedPortNo,
-            database_name: hashedDatabaseName,
-            table_name: hashedTableName,
-            token: hashedToken,
-            org: hashedOrg,
-            bucket: hashedBucket,
-            url: hashedUrl
+            username: encrypt(username),
+            password: encrypt(password),
+            host: encrypt(host),
+            port_no: encrypt(port_no),
+            database_name: encrypt(database_name),
+            table_name: encrypt(table_name),
+            token: encrypt(token),
+            org: encrypt(org),
+            bucket: encrypt(bucket),
+            url: encrypt(url)
         });
 
         await redisClient.del('data_source_configurations');
@@ -121,6 +138,7 @@ const createDataSourceConfiguration = async (req, res) => {
         return res.status(500).json({ message: "Failed to create Data Source Configuration", error: error.message });
     }
 };
+
 
 const updateDataSourceConfiguration = async (req, res) => {
     try {
@@ -226,18 +244,35 @@ const getDataSourceConfigurations = async (req, res) => {
 const getDataSourceConfiguration = async (req, res) => {
     const { id } = req.body;
     try {
-        const data_source_configuration = await DataSourceConfiguration.findById(id);
-        if (!data_source_configuration) {
+        const config = await DataSourceConfiguration.findById(id);
+        if (!config) {
             await logApiResponse(req, "Data Source Configuration not found", 404, {});
             return res.status(404).json({ message: "Data Source Configuration not found" });
         }
-        await logApiResponse(req, "Data Source Configuration retrieved successfully", 200, data_source_configuration);
-        res.status(200).json({ message: "Data Source Configuration retrieved successfully", data: data_source_configuration });
+
+        // Decrypt values
+        const decryptedConfig = {
+            ...config.toObject(),
+            username: decrypt(config.username),
+            password: decrypt(config.password),
+            host: decrypt(config.host),
+            port_no: decrypt(config.port_no),
+            database_name: decrypt(config.database_name),
+            table_name: decrypt(config.table_name),
+            token: decrypt(config.token),
+            org: decrypt(config.org),
+            bucket: decrypt(config.bucket),
+            url: decrypt(config.url)
+        };
+
+        await logApiResponse(req, "Data Source Configuration retrieved successfully", 200, decryptedConfig);
+        res.status(200).json({ message: "Data Source Configuration retrieved successfully", data: decryptedConfig });
     } catch (error) {
         await logApiResponse(req, "Failed to retrieve Data Source Configuration", 500, { error: error.message });
         res.status(500).json({ message: "Failed to retrieve Data Source Configuration", error: error.message });
     }
 };
+
 
 
 const deleteDataSourceConfiguration = async (req, res) => {
