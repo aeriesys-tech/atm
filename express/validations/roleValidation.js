@@ -2,7 +2,7 @@ const { body } = require('express-validator')
 const { Validate } = require('../middlewares/validationMiddleware')
 const mongoose = require('mongoose');
 const { validateId, paginateValidation } = require('./commonValidation');
-const RoleGroup = require('../models/RoleGroup')
+const RoleGroup = require('../models/roleGroup')
 
 
 const add_role_validation = (req, res, next) => {

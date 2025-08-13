@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 const Role = require('../models/Role');
 const RoleGroup = require('../models/RoleGroup');
+=======
+const Role = require('../models/role');
+const RoleGroup = require('../models/roleGroup');
+>>>>>>> 8a9f5f0d917147520438eb8e3d2edfebc7b7b268
 const mongoose = require('mongoose');
 const { logApiResponse } = require('../utils/responseService');
 const { Op } = require("sequelize");

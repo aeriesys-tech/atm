@@ -4,7 +4,7 @@ export default function LoginPage() {
 
 	const handleLogin = () => {
 		sessionStorage.setItem("auth_token", "dummy-token");
-		window.location.href = "/dq-time-series";
+		window.location.href = "/";
 	};
 
 	return (

@@ -17,7 +17,7 @@ const add_master_validation = (req, res, next) => {
         body("masterData.display_name_plural", "Display name plural is required")
             .isString().trim().escape().notEmpty(),
 
-        body("masterData.model_name", "Model name is required")
+        body("masterData.model_name", "Table name is required")
             .isString().trim().escape().notEmpty(),
 
         body("masterData.order", "Order is required and must be a number")
@@ -59,7 +59,7 @@ const update_master_validation = (req, res, next) => {
             .isString().trim().escape().notEmpty(),
         body("masterData.display_name_plural", "Display name plural is required")
             .isString().trim().escape().notEmpty(),
-        body("masterData.model_name", "Model name is required")
+        body("masterData.model_name", "Table name is required")
             .isString().trim().escape().notEmpty(),
         body("masterData.order", "Order is required and must be a number")
             .isNumeric().withMessage("Order must be a number"),

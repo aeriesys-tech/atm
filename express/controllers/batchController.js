@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const xlsx = require('xlsx');
 const mongoose = require('mongoose');
-const Batch = require('../models/Batch')
+const Batch = require('../models/batch');
 const Variable = require('../models/variable');
 const { responseService, logApiResponse } = require('../utils/responseService');
 

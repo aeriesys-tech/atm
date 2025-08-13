@@ -4,7 +4,7 @@ const Master = require('../models/master');
 const ParameterType = require('../models/parameterType');
 const TemplateType = require('../models/templateType');
 const MasterField = require('../models/masterField');
-const SchemaDefinitionModel = require('../models/SchemaDefinition')
+const SchemaDefinitionModel = require('../models/schemaDefinition')
 const ExcelJS = require('exceljs');
 
 const getDynamicModel = require('../utils/getDynamicModel');
@@ -182,7 +182,7 @@ const createMaster = async (req, res) => {
         delete masterData._id;
         masterFieldData.forEach(f => delete f._id);
 
-        // ✅ 1. Check for duplicate field names in request body
+
         const fieldNameSet = new Set();
         for (let i = 0; i < masterFieldData.length; i++) {
             const field = masterFieldData[i];
@@ -197,7 +197,7 @@ const createMaster = async (req, res) => {
             fieldNameSet.add(field.field_name);
         }
 
-        // ✅ 2. Pre-check for duplicate master_name in DB
+
         const existingMaster = await Master.findOne({ master_name: masterData.master_name });
         if (existingMaster) {
             return res.status(400).json({
@@ -208,10 +208,10 @@ const createMaster = async (req, res) => {
             });
         }
 
-        // ✅ 3. Save master entry
+
         const newMaster = await Master.create(masterData);
 
-        // ✅ 4. Link fields to master
+
         const fieldsWithMaster = masterFieldData.map(field => ({
             ...field,
             master_id: newMaster._id,
@@ -221,7 +221,7 @@ const createMaster = async (req, res) => {
 
         const modelName = masterData.model_name;
 
-        // ✅ 5. Construct dynamic schema
+
         const schemaDefinition = {};
         fieldsWithMaster.forEach(field => {
             schemaDefinition[field.field_name] = {
@@ -276,7 +276,7 @@ const createMaster = async (req, res) => {
             const duplicatedField = Object.keys(error.keyPattern)[0];
             const duplicatedValue = error.keyValue[duplicatedField];
 
-            // Check if it's from masterFieldData
+
             const fieldIndex = masterFieldData.findIndex(f => f[duplicatedField] === duplicatedValue);
             if (fieldIndex !== -1) {
                 return res.status(400).json({
@@ -317,10 +317,6 @@ const createMaster = async (req, res) => {
     }
 };
 
-
-
-
-
 async function updateDynamicSchema(collectionName, masterFieldData) {
     const schemaDefinition = masterFieldData.reduce((acc, field) => {
         const isDefaultTrue = field.default === true || field.default === 'true';
@@ -334,34 +330,106 @@ async function updateDynamicSchema(collectionName, masterFieldData) {
         };
         return acc;
     }, {
-        // Define the default fields with appropriate settings
         created_at: { type: Date, default: Date.now },  // Automatically set on creation
         updated_at: { type: Date, default: Date.now },  // Automatically set on creation and needs to be updated on save
         deleted_at: { type: Date, default: null },      // Null initially, set on "deletion"
         status: { type: Boolean, default: true }        // Active by default
     });
-
-    // Adding a hook to update `updated_at` on each save
     const dynamicSchema = new mongoose.Schema(schemaDefinition, { strict: false, collection: collectionName });
     dynamicSchema.pre('save', function (next) {
         this.updated_at = new Date();
         next();
     });
-
-    // Check if the model exists, delete and recreate with the new schema
     if (mongoose.models[collectionName]) {
         delete mongoose.connection.models[collectionName];
     }
 
     mongoose.model(collectionName, dynamicSchema);
-
-    // Update schema definition in the database
     await SchemaDefinitionModel.findOneAndUpdate(
         { collectionName: collectionName },
         { schemaDefinition: schemaDefinition },
         { upsert: true, new: true }
     );
 }
+
+// const updateMaster = async (req, res) => {
+//     const { id, masterData, masterFieldData } = req.body;
+
+//     try {
+//         let master = await Master.findById(id).lean();
+//         if (!master) {
+//             const notFoundError = { id: "Master with provided ID does not exist" };
+//             await logApiResponse(req, "Master not found", 404, notFoundError);
+//             return res.status(404).json({
+//                 message: "Master not found",
+//                 errors: notFoundError
+//             });
+//         }
+
+//         const existingMaster = await Master.findOne({
+//             master_name: masterData.master_name,
+//             _id: { $ne: id }
+//         });
+//         if (existingMaster) {
+//             const duplicateError = {
+//                 "masterData.master_name": `'${masterData.master_name}' already exists. master_name must be unique.`
+//             };
+//             await logApiResponse(req, "Duplicate Key Error", 409, duplicateError);
+//             return res.status(409).json({
+//                 message: "Duplicate Key Error",
+//                 errors: duplicateError
+//             });
+//         }
+//         const fieldNameSet = new Set();
+//         for (let i = 0; i < masterFieldData.length; i++) {
+//             const field = masterFieldData[i];
+//             if (fieldNameSet.has(field.field_name)) {
+//                 return res.status(400).json({
+//                     message: "The given data was invalid",
+//                     errors: {
+//                         [`masterFieldData[${i}].field_name`]: `Field name '${field.field_name}' already exists. Please use a unique name.`
+//                     }
+//                 });
+//             }
+//             fieldNameSet.add(field.field_name);
+//         }
+
+//         const before = { ...master }; // store before update
+//         await Master.findByIdAndUpdate(id, masterData, { new: true });
+//         const after = await Master.findById(id).lean(); // after update
+
+//         await MasterField.deleteMany({ master_id: id });
+//         const newMasterFields = masterFieldData.map(field => ({ ...field, master_id: id }));
+//         await MasterField.insertMany(newMasterFields);
+
+//         await updateDynamicSchema(after.model_name, masterFieldData);
+
+//         const successMessage = `Master "${after.master_name}" updated successfully.`;
+
+//         await createNotification(req, "Master", id, successMessage, "master", { before, after });
+//         await logApiResponse(req, successMessage, 200, {
+//             before,
+//             after,
+//             master: after,
+//             masterFields: newMasterFields
+//         });
+
+//         return res.status(200).json({
+//             message: successMessage,
+//             master: after,
+//             masterFields: newMasterFields
+//         });
+//     } catch (error) {
+//         console.error("Error updating master:", error);
+//         await logApiResponse(req, "Internal Server Error", 500, { message: "An unexpected error occurred" });
+//         return res.status(500).json({
+//             message: "Internal Server Error",
+//             errors: {
+//                 message: "An unexpected error occurred"
+//             }
+//         });
+//     }
+// };
 
 const updateMaster = async (req, res) => {
     const { id, masterData, masterFieldData } = req.body;
@@ -392,7 +460,6 @@ const updateMaster = async (req, res) => {
             });
         }
 
-        // 🔁 Check for duplicate field_name in masterFieldData
         const fieldNameSet = new Set();
         for (let i = 0; i < masterFieldData.length; i++) {
             const field = masterFieldData[i];
@@ -407,35 +474,36 @@ const updateMaster = async (req, res) => {
             fieldNameSet.add(field.field_name);
         }
 
-        const before = { ...master }; // store before update
+        // Store "before" state
+        const beforeUpdate = { ...master };
 
-        // 📝 Update master
+        // Update master
         await Master.findByIdAndUpdate(id, masterData, { new: true });
-        const after = await Master.findById(id).lean(); // after update
+        const afterUpdate = await Master.findById(id).lean();
 
-        // 🔄 Replace master fields
+        // Replace master fields
         await MasterField.deleteMany({ master_id: id });
         const newMasterFields = masterFieldData.map(field => ({ ...field, master_id: id }));
         await MasterField.insertMany(newMasterFields);
 
-        // 🔁 Update dynamic schema
-        await updateDynamicSchema(after.model_name, masterFieldData);
+        // Update dynamic schema
+        await updateDynamicSchema(afterUpdate.model_name, masterFieldData);
 
-        const successMessage = `Master "${after.master_name}" updated successfully.`;
+        // Prepare message like updateRole API
+        const message = `Master updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
 
-        await createNotification(req, "Master", id, successMessage, "master", { before, after });
-        await logApiResponse(req, successMessage, 200, {
-            before,
-            after,
-            master: after,
-            masterFields: newMasterFields
-        });
+        // Notification in the same style as updateRole
+        await createNotification(req, 'Master', id, message, 'master');
+
+        // Log API response
+        await logApiResponse(req, "Master updated successfully", 200, afterUpdate);
 
         return res.status(200).json({
-            message: successMessage,
-            master: after,
+            message: "Master updated successfully",
+            master: afterUpdate,
             masterFields: newMasterFields
         });
+
     } catch (error) {
         console.error("Error updating master:", error);
         await logApiResponse(req, "Internal Server Error", 500, { message: "An unexpected error occurred" });

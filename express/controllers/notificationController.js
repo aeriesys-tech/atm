@@ -159,7 +159,6 @@ const readAllNotifications = async (req, res) => {
                 { $setOnInsert: { user_id, notification_id: notification._id } },
                 { new: true, upsert: true }
             );
-            console.log("resulttttt", result);
             upserted.push(result);
         }
 
