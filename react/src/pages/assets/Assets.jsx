@@ -31,7 +31,7 @@ const AssetName = () => {
     const breadcrumbItems = [
         { label: "Assets", href: "#" },
         {
-            label:"Assets Attributes",
+            label:"Assets Class",
             href: "#",
         },
     ];
@@ -44,54 +44,53 @@ const AssetName = () => {
         { label: "Action", key: "action", sortable: false },
     ];
 
- const fetchAssetAttributes = async (
-    page = 1,
-    limit = pageSize,
-    sort = sortBy,
-    sortOrder = order,
-    status = statusFilter,
-    searchText = search
-) => {
-    try {
-        setLoading(true);
+    const fetchTemplateTypes = async (
+        page = 1,
+        limit = pageSize,
+        sort = sortBy,
+        sortOrder = order,
+        status = statusFilter,
+        searchText = search
+    ) => {
+        try {
+            setLoading(true);
+            const params = new URLSearchParams();
+            params.append("page", page);
+            params.append("limit", limit);
+            params.append("sortBy", sort);
+            params.append("order", sortOrder);
 
-        const body = {
-            page,
-            limit,
-            sortBy: sort,
-            order: sortOrder,
-        };
+            if (templateTypeId) {
+                params.append("template_type_id", templateTypeId);
+            }
+            if (searchText?.trim()) params.append("search", searchText.trim());
+            if (status === "active") params.append("status", "true");
+            else if (status === "inactive") params.append("status", "false");
 
-        if (searchText?.trim()) body.search = searchText.trim();
-        if (status === "active") body.status = "true";
-        else if (status === "inactive") body.status = "false";
+            const response = await axiosWrapper(
+                `api/v1/templates/paginatedTemplates?${params.toString()}`,
+                { method: "POST" }
+            );
 
-        const response = await axiosWrapper(
-            `api/v1/asset-attributes/paginateAssetAttributes`,
-            { method: "POST", data: body }
-        );
+            const mapped = response?.templates?.map((tpl, index) => ({
+                ...tpl,
+                index: index + 1 + (page - 1) * pageSize,
+            }));
+            setTemplateTypes(mapped);
+            setTotalPages(response.totalPages);
+            setCurrentPage(response.currentPage);
+            setTotalItems(response.totalItems);
+            setTemplateTypeDetails(response.templateType);
+        } catch (error) {
+            // console.error("Error fetching template types:", error.message || error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        const mapped = response?.assetAttributes?.map((asset, index) => ({
-            ...asset,
-            index: index + 1 + (page - 1) * pageSize,
-        }));
-
-        setTemplateTypes(mapped); // this is your table data
-        setTotalPages(response.totalPages);
-        setCurrentPage(response.currentPage);
-        setTotalItems(response.totalItems);
-    } catch (error) {
-        console.error("Error fetching asset attributes:", error);
-    } finally {
-        setLoading(false);
-    }
-};
-
-
-useEffect(() => {
-    fetchAssetAttributes(currentPage, pageSize, sortBy, order, statusFilter, search);
-}, [currentPage, pageSize, sortBy, order, statusFilter, search]);
-
+    useEffect(() => {
+        fetchTemplateTypes(currentPage, pageSize, sortBy, order, statusFilter, search);
+    }, [currentPage, pageSize, sortBy, order, statusFilter, , templateTypeId]);
 
     const handleSearchChange = (e) => {
         const val = e.target.value;
@@ -175,7 +174,7 @@ useEffect(() => {
                             }}
                         />
                         <Button
-                            name="Create Assets Attributes"
+                            name="Create Assets"
                             onClick={() =>
                                 navigate("/template_add", {
                                     state: {
@@ -188,25 +187,48 @@ useEffect(() => {
                     </div>
                 </div>
 
-               <Table
-    headers={headers}
-    rows={templateTypes}
-    sortBy={sortBy}
-    order={order}
-    onSortChange={handleSortChange}
-    paginationProps={{
-        currentPage,
-        totalPages,
-        pageSize,
-        totalItems,
-        onPageChange: setCurrentPage,
-        onPageSizeChange: (size) => {
-            setPageSize(size);
-            setCurrentPage(1);
-        },
-    }}
-/>
-
+                <Table
+                    headers={headers}
+                    rows={templateTypes}
+                    sortBy={sortBy}
+                    order={order}
+                    onSortChange={handleSortChange}
+                    onToggleStatus={handleToggleStatus}
+                    onEdit={(row) =>
+                        navigate(`/template/${templateTypeId}/edit/${row._id}`, {
+                            state: {
+                                templateCode: row.template_code,
+                                templateName: row.template_name,
+                                structure: row.structure,
+                                templateTypeId: templateTypeId,
+                                templateTypeName: templateTypeDetails?.template_type_name,
+                            },
+                        })
+                    }
+                    onViewTemplate ={(row) =>
+                        navigate(`/template/${templateTypeId}/view/${row._id}`, {
+                            state: {
+                                templateCode: row.template_code,
+                                templateName: row.template_name,
+                                structure: row.structure,
+                                templateTypeId: templateTypeId,
+                                templateTypeName: templateTypeDetails?.template_type_name,
+                            },
+                        })
+                    }
+                    onDelete={handleDelete}
+                    paginationProps={{
+                        currentPage,
+                        totalPages,
+                        pageSize,
+                        totalItems,
+                        onPageChange: setCurrentPage,
+                        onPageSizeChange: (size) => {
+                            setPageSize(size);
+                            setCurrentPage(1);
+                        },
+                    }}
+                />
             </div>
         </div>
     );

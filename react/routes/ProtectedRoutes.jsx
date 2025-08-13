@@ -10,6 +10,7 @@ import MasterDetail from "../src/pages/configurations/MasterDetails";
 import TemplateTypes from "../src/pages/templates/TemplateTypes";
 import TemplateBuilder from "../src/pages/templates/TemplateBuilder";
 import AssetName from "../src/pages/assets/Assets";
+import AssetAttribute from "../src/pages/assets/AssetsAttributes";
 const protectedRoutes = [
 	{
 		path: "/dashboard",
@@ -18,6 +19,10 @@ const protectedRoutes = [
 	{
 		path: "/assets",
 		element: <AssetName />
+	},
+	{
+		path: "/assets_attribute",
+		element: <AssetAttribute />
 	},
 	{
 		path: "/master",
