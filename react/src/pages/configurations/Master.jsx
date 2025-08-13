@@ -48,12 +48,12 @@ const Master = () => {
     const [modalLoading, setModalLoading] = useState(false);
     const [statusFilter, setStatusFilter] = useState("");
     const [search, setSearch] = useState('');
-const [modelNameManuallyEdited, setModelNameManuallyEdited] = useState(false);
+    const [modelNameManuallyEdited, setModelNameManuallyEdited] = useState(false);
 
     const debounceTimeoutRef = useRef(null);
     const masterFields = [
         { label: "Master Name", name: "master_name", type: "text", required: true },
-         { label: "Table Name", name: "model_name", type: "text", required: true },
+        { label: "Table Name", name: "model_name", type: "text", required: true },
         { label: "Display Name (Singular)", name: "display_name_singular", type: "text", required: true },
         { label: "Display Name (Plural)", name: "display_name_plural", type: "text", required: true },
         { label: "Order", name: "order", type: "number", required: true },
@@ -92,43 +92,43 @@ const [modelNameManuallyEdited, setModelNameManuallyEdited] = useState(false);
         setMasterFieldData((prev) => prev.filter((_, i) => i !== index));
     };
 
- const handleFieldChange = (e, index) => {
-    const { name, value } = e.target;
+    const handleFieldChange = (e, index) => {
+        const { name, value } = e.target;
 
-    setMasterFieldData((prev) =>
-        prev.map((field, i) => {
-            if (i !== index) return field;
+        setMasterFieldData((prev) =>
+            prev.map((field, i) => {
+                if (i !== index) return field;
 
-            let updatedField = {
-                ...field,
-                [name]:
-                    name === "required" || name === "default" || name === "is_unique"
-                        ? value === "true" || value === true
-                        : value,
-            };
+                let updatedField = {
+                    ...field,
+                    [name]:
+                        name === "required" || name === "default" || name === "is_unique"
+                            ? value === "true" || value === true
+                            : value,
+                };
 
-            // ✅ Auto-generate field_name when display_name changes
-            if (name === "display_name") {
-                updatedField.field_name = value
-                    .trim()
-                    .replace(/\s+/g, "_")
-                    .toLowerCase();
-            }
-
-            if (name === "default") {
-                if (value === "true") {
-                    updatedField.required = true;
-                    updatedField.is_unique = true;
-                } else {
-                    updatedField.required = false;
-                    updatedField.is_unique = false;
+                // ✅ Auto-generate field_name when display_name changes
+                if (name === "display_name") {
+                    updatedField.field_name = value
+                        .trim()
+                        .replace(/\s+/g, "_")
+                        .toLowerCase();
                 }
-            }
 
-            return updatedField;
-        })
-    );
-};
+                if (name === "default") {
+                    if (value === "true") {
+                        updatedField.required = true;
+                        updatedField.is_unique = true;
+                    } else {
+                        updatedField.required = false;
+                        updatedField.is_unique = false;
+                    }
+                }
+
+                return updatedField;
+            })
+        );
+    };
 
 
 
@@ -211,49 +211,49 @@ const [modelNameManuallyEdited, setModelNameManuallyEdited] = useState(false);
         setCurrentPage(1);
     };
 
-const sanitizeModelName = (str) => {
-  return str
-    .trim()
-    .toLowerCase()
-    .replace(/_/g, "")
-    .replace(/\s+/g, "_")         // replace spaces with underscore
-    .replace(/[^a-z0-9_]/g, ""); // remove all except a-z, 0-9, underscore
-    
-};
+    const sanitizeModelName = (str) => {
+        return str
+            .trim()
+            .toLowerCase()
+            .replace(/_/g, "")
+            .replace(/\s+/g, "_")         // replace spaces with underscore
+            .replace(/[^a-z0-9_]/g, ""); // remove all except a-z, 0-9, underscore
 
-const handleInputChange = (e) => {
-  const { name, value } = e.target;
-
-  setFormValues((prev) => {
-    if (name === "master_name") {
-      const derivedModelName = sanitizeModelName(value);
-
-      return {
-        ...prev,
-        master_name: value, // keep original input as is
-        model_name: modelNameManuallyEdited ? prev.model_name : derivedModelName,
-      };
-    }
-
-    if (name === "model_name") {
-      // sanitize user input live to allow only valid chars
-      const sanitizedValue = sanitizeModelName(value);
-      setModelNameManuallyEdited(true);
-      return {
-        ...prev,
-        model_name: sanitizedValue,
-      };
-    }
-
-    // other fields
-    return {
-      ...prev,
-      [name]: value,
     };
-  });
 
-  setFormErrors((prev) => ({ ...prev, [name]: "" }));
-};
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+
+        setFormValues((prev) => {
+            if (name === "master_name") {
+                const derivedModelName = sanitizeModelName(value);
+
+                return {
+                    ...prev,
+                    master_name: value, // keep original input as is
+                    model_name: modelNameManuallyEdited ? prev.model_name : derivedModelName,
+                };
+            }
+
+            if (name === "model_name") {
+                // sanitize user input live to allow only valid chars
+                const sanitizedValue = sanitizeModelName(value);
+                setModelNameManuallyEdited(true);
+                return {
+                    ...prev,
+                    model_name: sanitizedValue,
+                };
+            }
+
+            // other fields
+            return {
+                ...prev,
+                [name]: value,
+            };
+        });
+
+        setFormErrors((prev) => ({ ...prev, [name]: "" }));
+    };
 
     const handleEditMaster = (row) => {
         const selectedMaster = rows.find((item) => item._id === row._id);
@@ -564,35 +564,41 @@ const handleInputChange = (e) => {
                         >
                             <div className="addunit-form p-4 mb-3" >
                                 <div className="row">
-                                    {masterFields.map((field, index) => (
-                                        <div className="col-md-6" key={index}>
-                                            {field.type === "dropdown" ? (
-                                                <>
+                                    {masterFields.map((field, index) => {
+                                        if (isEditMode && field.name === "model_name") {
+                                            return null;
+                                        }
+
+                                        return (
+                                            <div className="col-md-6" key={index}>
+                                                {field.type === "dropdown" ? (
                                                     <Dropdown
                                                         label={field.label}
                                                         options={field.options || []}
                                                         name={field.name}
-                                                        value={formValues[field.name] || ""}
+                                                        value={formValues[field.name] ?? ""}
                                                         onChange={handleInputChange}
                                                         error={formErrors[field.name]}
-                                                    /></>
-                                            ) : (
-                                                <InputField
-                                                    label={field.label}
-                                                    type={field.type}
-                                                    name={field.name}
-                                                    isRequired ={true}
-                                                    value={formValues[field.name] || ""}
-                                                    onChange={handleInputChange}
-                                                    placeholder={field.placeholder}
-                                                    error={formErrors[field.name]}
-                                                    isNumeric={field.name === 'order'} // optional: for digit-only restriction
-                                                    step="1"
-                                                    min="0"
-                                                />
-                                            )}
-                                        </div>
-                                    ))}
+                                                    />
+                                                ) : (
+                                                    <InputField
+                                                        label={field.label}
+                                                        type={field.type}
+                                                        name={field.name}
+                                                        isRequired={true}
+                                                        value={formValues[field.name] ?? ""}
+                                                        onChange={handleInputChange}
+                                                        placeholder={field.placeholder}
+                                                        error={formErrors[field.name]}
+                                                        isNumeric={field.name === "order"}
+                                                        step="1"
+                                                        min="0"
+                                                    />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+
 
                                     <div className=" d-flex justify-content-between align-items-center mb-3 mt-3">
                                         <h6 className="m-0">Master Fields</h6>
@@ -654,7 +660,7 @@ const handleInputChange = (e) => {
                                                                 value={field.field_name || ""}
                                                                 onChange={(e) => handleFieldChange(e, index)}
                                                                 error={masterFieldErrors[index]?.field_name}
-                                                                 disabled
+                                                                disabled
                                                             />
                                                         </td>
 
@@ -744,7 +750,7 @@ const handleInputChange = (e) => {
                                                                     className="btn mt-3 "
                                                                     onClick={() => handleRemoveField(index)}
                                                                 >
-                                                                   <img src={deleteicon} alt="Delete" />
+                                                                    <img src={deleteicon} alt="Delete" />
                                                                 </button>
 
                                                             </td>

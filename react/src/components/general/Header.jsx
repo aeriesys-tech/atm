@@ -503,7 +503,7 @@ function Header() {
 
 
 
-                                <li className="nav-item dropdown" ref={assetsRef}>
+                                <li className={`nav-item dropdown position-relative ${openMenu === "templates" ? "show" : ""}`} ref={assetsRef}>
                                     <a
                                         type="button"
                                         className="nav-link d-flex align-items-center gap-2"
@@ -515,16 +515,16 @@ function Header() {
                                     </a>
 
                                     {openMenu === "assets" && (
-                                        <ul className="dropdown-menu show">
+                                        <ul className="dropdown-menu show menu-list">
                                             {/* ✅ Use Link here */}
-                                            <li className="menu-item">
+                                            <li >
                                                 <Link
                                                     to="/assets"
                                                     className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
                                                     style={{ textDecoration: "none", color: "inherit" }}
                                                 >
                                                     <img src={package1} alt="Asset" />
-                                                    <p className="m-0">Asset</p>
+                                                    <p className="m-0">Asset Attributes </p>
                                                 </Link>
                                             </li>
 

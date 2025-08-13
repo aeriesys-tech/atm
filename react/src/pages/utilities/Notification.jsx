@@ -23,7 +23,7 @@ const Notification = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(10);
     const [sortBy, setSortBy] = useState("notification_code");
     const [order, setOrder] = useState("desc");
     const [totalItems, setTotalItems] = useState(0);
