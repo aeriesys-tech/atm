@@ -185,17 +185,17 @@ function Header() {
             window.removeEventListener("scroll", handleScroll);
         };
     }, []);
-    const handleDQClick = () => { 
+    const handleDQClick = () => {
 
-    const token = sessionStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
 
-    const params = new URLSearchParams({
-        token: token || ''
-    });
-    const dqUrl = `http://192.168.0.147:5173/?${params.toString()}`;
-    console.log("Opening URL:", dqUrl);
-    window.open(dqUrl, '_blank');
-};
+        const params = new URLSearchParams({
+            token: token || ''
+        });
+        const dqUrl = `http://192.168.0.147:5173/?${params.toString()}`;
+        console.log("Opening URL:", dqUrl);
+        window.open(dqUrl, '_blank');
+    };
 
     return (
         <>
@@ -235,7 +235,7 @@ function Header() {
                         <button
                             onClick={() => handleDQClick()}
                             className="bell-icon me-3"
-                            title="DQ Action"   style={{ border: "1px solid #ccc", backgroundColor: "#F8F9FA", padding: "1px 2px", borderRadius: "12px",fontSize: "22px" }}
+                            title="DQ Action" style={{ border: "1px solid #ccc", backgroundColor: "#F8F9FA", padding: "1px 2px", borderRadius: "12px", fontSize: "22px" }}
                         >
                             DQ
                         </button>
@@ -519,24 +519,25 @@ function Header() {
                                             {/* ✅ Use Link here */}
                                             <li >
                                                 <Link
-                                                    to="/assets"
+                                                    to="/assets_attribute"
                                                     className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
                                                     style={{ textDecoration: "none", color: "inherit" }}
                                                 >
                                                     <img src={package1} alt="Asset" />
-                                                    <p className="m-0">Asset Attributes </p>
+                                                    <p className="m-0">Asset Attributes</p>
                                                 </Link>
                                             </li>
 
                                             {/* Rest unchanged buttons */}
-                                            <li className="menu-item">
-                                                <button
+                                            <li >
+                                                <Link
+                                                    to="/assets"
                                                     className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
-                                                    onClick={() => (window.location.href = "assetclass.html")}
+                                                    style={{ textDecoration: "none", color: "inherit" }}
                                                 >
                                                     <img src={agenda1} alt="Asset Class" />
                                                     <p className="m-0">Asset Class</p>
-                                                </button>
+                                                </Link>
                                             </li>
                                             <li className="menu-item">
                                                 <button

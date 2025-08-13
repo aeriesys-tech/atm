@@ -29,23 +29,23 @@ function Modal({
         }
     }, []);
 
-const formatDisplayValue = (value) => {
-    if (!value) return "-";
+    const formatDisplayValue = (value) => {
+        if (!value) return "-";
 
-    const date = new Date(value);
-    if (!isNaN(date)) return date.toLocaleString();
+        const date = new Date(value);
+        if (!isNaN(date)) return date.toLocaleString();
 
-    // Preserve line breaks in long text (like notification)
-    if (typeof value === "string" && value.includes("\n")) {
-        return value.split("\n").map((line, idx) => (
-            <div key={idx} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                {line}
-            </div>
-        ));
-    }
+        // Preserve line breaks in long text (like notification)
+        if (typeof value === "string" && value.includes("\n")) {
+            return value.split("\n").map((line, idx) => (
+                <div key={idx} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                    {line}
+                </div>
+            ));
+        }
 
-    return value.toString();
-};
+        return value.toString();
+    };
 
 
     return (
@@ -89,43 +89,58 @@ const formatDisplayValue = (value) => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="addunit-form">
-                        {fields.map((field, index) => (
-                            <div key={index} className="mb-3">
-                                {displayOnly ? (
-                                    <div>
-                                        <label style={{ fontWeight: 'bold' }}>{field.label}:</label>
-                                        <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{formatDisplayValue(values[field.name])}</div>
+                    <div
+                        className="addunit-form"
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: displayOnly ? "1fr" : (fields.length > 3 ? "1fr 1fr" : "1fr"),
+                            gap: "12px"
+                        }}
+                    >
+                        {displayOnly ? (
+                            fields.map((field, idx) => (
+                                <div key={idx} className="mb-3">
+                                    <label style={{ fontWeight: 'bold' }}>{field.label}:</label>
+                                    <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                                        {formatDisplayValue(values[field.name])}
                                     </div>
-                                ) : field.type === "dropdown" ? (
-                                    <Dropdown
-                                        label={field.label}
-                                        options={field.options || []}
-                                        value={values[field.name] || ''}
-                                        name={field.name}
-                                        onChange={onChange}
-                                        error={errors[field.name]}
-                                    />
-                                ) : (
-                                    <InputField
-                                        label={field.label}
-                                        type={field.type}
-                                        name={field.name}
-                                        id={field.name}
-                                        placeholder={field.placeholder}
-                                        value={values[field.name] || ''}
-                                        onChange={onChange}
-                                        isRequired={field.required}
-                                        isNumeric={field.isNumeric}
-                                        maxLength={field.maxLength}
-                                        error={errors[field.name]}
-                                    />
-                                )}
-                            </div>
-                        ))}
+                                </div>
+                            ))
+                        ) : (
+                            fields.map((field, idx) => (
+                                <div key={idx} className="">
+                                    {field.type === "dropdown" ? (
+                                        <Dropdown
+                                            label={field.label}
+                                            options={field.options || []}
+                                            value={values[field.name] || ''}
+                                            name={field.name}
+                                            onChange={onChange}
+                                            error={errors[field.name]}
+                                        />
+                                    ) : (
+                                        <InputField
+                                            label={field.label}
+                                            type={field.type}
+                                            name={field.name}
+                                            id={field.name}
+                                            placeholder={field.placeholder}
+                                            value={values[field.name] || ''}
+                                            onChange={onChange}
+                                            isRequired={field.required}
+                                            isNumeric={field.isNumeric}
+                                            maxLength={field.maxLength}
+                                            error={errors[field.name]}
+                                           disabled={displayOnly || field.disabled}
+                                        />
+                                    )}
+                                </div>
+                            ))
+                        )}
                     </div>
 
-                    <div className="addunit-card-footer d-flex gap-2">
+
+                    <div className="addunit-card-footer mt-2 d-flex gap-2">
                         <Button
                             name={displayOnly ? "CLOSE" : "DISCARD"}
                             className="discard-btn"
