@@ -197,10 +197,11 @@ export default function DataSourceConfig() {
 
 			// Call fetchBatches from DataSourceTable to refresh table
 			// triggers fetchBatches in table
-		} catch (err) {
-			setError(err.response?.data.errors);
-			console.log("errorrr", error);
-		} finally {
+		} catch (error) {
+//     setError(err.response?.data?.errors || {});
+//     console.error("API error:", err.response?.data || err.message);
+}
+ finally {
 			setLoading(false);
 		}
 	};
