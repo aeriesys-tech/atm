@@ -22,8 +22,8 @@ function DataSourceTable({ onEdit, setRefreshTable }) {
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("data_source"); // default sort field
-  const [order, setOrder] = useState("asc"); // default sort order
+  const [sortBy, setSortBy] = useState("data_source"); 
+  const [order, setOrder] = useState("asc"); 
   const debouncedSearch = UseDebounce(search, 1300);
 
   // Fetch batches whenever these values change
