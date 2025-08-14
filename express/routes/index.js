@@ -17,6 +17,7 @@ const batchRoute = require('./batchRoute');
 const variableRoute = require('./variableRoute');
 const assetAttribute = require('./assetAttributeRoute');
 const dataSourceConfigurationRoute = require('./dataSourceConfigurationRoute');
+const assetRoute = require('./assetRoute');
 
 
 router.use('/', authRoute);
@@ -34,7 +35,6 @@ router.use('/batch', batchRoute);
 router.use('/variable', variableRoute);
 router.use('/asset-attributes', assetAttribute);
 router.use('/data-source-configurations', dataSourceConfigurationRoute);
-
-
+router.use('/assets', assetRoute);
 
 module.exports = router;

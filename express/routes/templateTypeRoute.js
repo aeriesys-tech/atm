@@ -14,6 +14,6 @@ router.post('/deleteTemplateType', authMiddleware, templateTypeController.delete
 router.post('/getAllTemplateTypes', authMiddleware, templateTypeController.getAllTemplateTypes);
 router.post('/templateTypeMaster', authMiddleware, templateTypeController.getTemplateTypeMaster);
 // router.post('/template-type-master/:template_type_id', authMiddleware, templateTypeController.getTemplateTypeMaster);
-// router.post('/template-by-type/', authMiddleware, templateTypeController.getAllTemplatesByTypes);
+router.post('/template-by-type', authMiddleware, templateTypeController.getAllTemplatesByTypes);
 
 module.exports = router;

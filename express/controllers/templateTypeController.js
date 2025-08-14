@@ -5,6 +5,7 @@ const Master = require('../models/master');
 const MasterField = require('../models/masterField');
 const { logApiResponse } = require('../utils/responseService');
 const TemplateParameterType = require('../models/templateParameterType');
+const template = require('../models/template');
 
 // Create a new TemplateType
 const createTemplateType = async (req, res) => {
@@ -347,6 +348,59 @@ const getAllTemplateTypes = async (req, res) => {
     }
 };
 
+const getAllTemplatesByTypes = async (req, res) => {
+    try {
+        const templates = await template.aggregate([
+            {
+                $group: {
+                    _id: "$template_type_id",
+                    templates: { $push: "$$ROOT" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "template_type",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "templateType"
+                }
+            },
+            {
+                $unwind: "$templateType"
+            },
+            {
+                $addFields: {
+                    sortPriority: {
+                        $cond: { if: { $eq: ["$templateType.template_type_name", "Lineage Template"] }, then: 1, else: 2 }
+                    }
+                }
+            },
+            {
+                $sort: { "templateType.order": 1, sortPriority: 1 } // Sorting by templateType order first, then by sortPriority
+            },
+            {
+                $project: {
+                    _id: 0,
+                    templateType: "$templateType",
+                    templates: 1
+                }
+            }
+        ]);
+
+        if (!templates || templates.length === 0) {
+            await logApiResponse(req, 'No templates found', 404, { message: 'No templates found' });
+            return res.status(404).json({ message: 'No templates found' });
+        }
+
+        await logApiResponse(req, 'Templates fetched successfully', 200, templates);
+        res.status(200).json(templates);
+    } catch (error) {
+        console.error('Error fetching templates:', error);
+        await logApiResponse(req, 'Server error', 500, { message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
 module.exports = {
     createTemplateType,
     updateTemplateType,
@@ -355,5 +409,6 @@ module.exports = {
     deleteTemplateType,
     paginatedTemplateTypes,
     getTemplateTypeMaster,
-    getAllTemplateTypes
+    getAllTemplateTypes,
+    getAllTemplatesByTypes
 }

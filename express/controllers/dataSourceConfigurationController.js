@@ -96,17 +96,16 @@ function decrypt(text) {
 const createDataSourceConfiguration = async (req, res) => {
     try {
         const { data_source, description, username, password, host, port_no, database_name, table_name, token, org, bucket, url } = req.body;
+        // const existingConfig = await DataSourceConfiguration.findOne({
+        //     data_source: data_source?.trim(),
+        //     deleted_at: null
+        // });
 
-        const existingConfig = await DataSourceConfiguration.findOne({
-            data_source: data_source?.trim(),
-            deleted_at: null
-        });
-
-        if (existingConfig) {
-            let errors = { data_source: "Data Source already exists" };
-            await logApiResponse(req, "Duplicate Data Source Configuration", 400, errors);
-            return res.status(400).json({ message: "Duplicate Data Source Configuration", errors });
-        }
+        // if (existingConfig) {
+        //     let errors = { data_source: "Data Source already exists" };
+        //     await logApiResponse(req, "Duplicate Data Source Configuration", 400, errors);
+        //     return res.status(400).json({ message: "Duplicate Data Source Configuration", errors });
+        // }
 
         const newDataSourceConfiguration = await DataSourceConfiguration.create({
             data_source: data_source?.trim(),
@@ -120,7 +119,8 @@ const createDataSourceConfiguration = async (req, res) => {
             token: encrypt(token),
             org: encrypt(org),
             bucket: encrypt(bucket),
-            url: encrypt(url)
+            url: encrypt(url),
+            user_id: "6870f12f8f0cb7fa8e74a472"
         });
 
         await redisClient.del('data_source_configurations');
@@ -167,14 +167,14 @@ const updateDataSourceConfiguration = async (req, res) => {
         }
 
         // Duplicate check
-        const duplicateDataSource = await DataSourceConfiguration.findOne({
-            data_source: data_source?.trim(),
-            deleted_at: null,
-            _id: { $ne: id }
-        });
+        // const duplicateDataSource = await DataSourceConfiguration.findOne({
+        //     data_source: data_source?.trim(),
+        //     deleted_at: null,
+        //     _id: { $ne: id }
+        // });
 
         const errors = {};
-        if (duplicateDataSource) errors.data_source = "Data Source already exists";
+        // if (duplicateDataSource) errors.data_source = "Data Source already exists";
 
         // Conditional required validations
         if (data_source?.toLowerCase() === "postgres") {
@@ -200,7 +200,8 @@ const updateDataSourceConfiguration = async (req, res) => {
             description: description?.trim() ?? existingConfig.description,
             status: typeof status === "boolean" ? status : existingConfig.status,
             deleted_at: deleted_at ?? existingConfig.deleted_at,
-            updated_at: Date.now()
+            updated_at: Date.now(),
+            user_id: "6870f12f8f0cb7fa8e74a472"
         };
 
         // Encrypt sensitive fields if provided

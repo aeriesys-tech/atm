@@ -74,6 +74,10 @@ const dataSourceConfigurationSchema = new Schema({
         trim: true,
         index: true
     },
+    user_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
     deleted_at: {
         type: Date,
         default: null
