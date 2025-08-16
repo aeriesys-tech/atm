@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { FiUpload, FiDownload } from "react-icons/fi";
 import BatchesTable from "../components/BatchesTable";
@@ -6,6 +6,7 @@ import api from "../services/api";
 import Loader from "../components/LoaderAndSpinner/Loader";
 
 export default function TagConfiguration() {
+	const fileInputRef = useRef(null);
 	const [batchType, setBatchType] = useState("ATM");
 	const [file, setFile] = useState(null);
 	const [fileError, setFileError] = useState(null);
@@ -57,6 +58,11 @@ export default function TagConfiguration() {
 			setIsUploading(false);
 		});
 	};
+	const handleUploadComplete = () => {
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+};
 
 	return (
 		<>
@@ -79,6 +85,7 @@ export default function TagConfiguration() {
 							<div className="flex flex-col">
 								<input
 									type="file"
+									 ref={fileInputRef}
 									id="tag_name"
 									className={`border ${fileError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2`}
 									onChange={handleFileChange}
@@ -92,7 +99,11 @@ export default function TagConfiguration() {
 									? 'bg-gray-400 cursor-not-allowed'
 									: 'bg-blue-500 hover:bg-blue-600 cursor-pointer'
 									} text-white`}
-								onClick={handleUpload}
+								onClick={() => {
+  handleUpload();
+  handleUploadComplete();
+}}
+
 								disabled={isUploading}
 							>
 								<FiUpload className="h-4 w-4 mr-2" /> Upload

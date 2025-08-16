@@ -3,6 +3,7 @@ import { FiSearch, FiChevronUp, FiChevronDown, FiEdit, FiTrash, FiEye } from "re
 import api from "../services/api";
 import Pagination from "./common/Pagination";
 import { toast } from "react-toastify";
+import UseDebounce from "./hook/UseDebounce";
 
 export default function BatchesTable() {
 	const [batches, setBatches] = useState([]);
@@ -24,6 +25,7 @@ export default function BatchesTable() {
 	const [variablesTotalItems, setVariablesTotalItems] = useState(0);
 	const [variablesSearch, setVariablesSearch] = useState("");
 	const [editingVariable, setEditingVariable] = useState(null);
+	   const debouncedSearch = UseDebounce(search, 1300);
 
 	// Fetch batches data
 	const fetchBatches = async () => {
@@ -32,7 +34,7 @@ export default function BatchesTable() {
 			const response = await api.post("/batch/paginateBatches", {
 				page,
 				limit,
-				search,
+				search:debouncedSearch,
 				sortBy: sortField,
 				order: sortDirection
 			});
@@ -51,7 +53,7 @@ export default function BatchesTable() {
 	// Fetch data when dependencies change
 	useEffect(() => {
 		fetchBatches();
-	}, [page, limit, search, sortField, sortDirection]);
+	}, [page, limit, debouncedSearch, sortField, sortDirection]);
 
 	// Handle search with debounce
 	useEffect(() => {
