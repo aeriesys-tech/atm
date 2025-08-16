@@ -48,20 +48,40 @@ const CustomNode = ({ data, id, onDoubleClick }) => {
       ref={nodeRef}
       className="resizable-node"
       onContextMenu={handleContextMenu}
-       onDoubleClick={() => onDoubleClick && onDoubleClick({ id, data })}
+      onDoubleClick={() => onDoubleClick && onDoubleClick({ id, data })}
     >
       {/* Handles */}
       {/* <Handle type="target" position={Position.Top} id="t" /> */}
-      <Handle type="target" position={Position.Right} id="r" />
+      {/* <Handle type="target" position={Position.Right} id="r" /> */}
       {/* <Handle type="target" position={Position.Bottom} id="b" /> */}
-      <Handle type="target" position={Position.Left} id="l" />
+      {/* <Handle type="target" position={Position.Left} id="l" /> */}
 
       <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: isSelected ? 'red' : 'black' }}>{data.label}</div>
 
-      {/* <Handle type="source" position={Position.Top} id="st" /> */}
-      <Handle type="source" position={Position.Right} id="sr" />
-      {/* <Handle type="source" position={Position.Bottom} id="sb" /> */}
-      <Handle type="source" position={Position.Left} id="sl" />
+    {data.label === "Asset Class" ? (
+  <>
+    {/* Targets */}
+    <Handle type="target" position={Position.Top} id="target-top" />
+    <Handle type="target" position={Position.Right} id="target-right" />
+    <Handle type="target" position={Position.Bottom} id="target-bottom" />
+    <Handle type="target" position={Position.Left} id="target-left" />
+
+    {/* Sources */}
+    <Handle type="source" position={Position.Top} id="source-top" />
+    <Handle type="source" position={Position.Right} id="source-right" />
+    <Handle type="source" position={Position.Bottom} id="source-bottom" />
+    <Handle type="source" position={Position.Left} id="source-left" />
+  </>
+) : (
+  <>
+    <Handle type="target" position={Position.Right} id="r" />
+    <Handle type="target" position={Position.Left} id="l" />
+    <Handle type="source" position={Position.Right} id="sr" />
+    <Handle type="source" position={Position.Left} id="sl" />
+  </>
+)}
+
+
 
       {/* Context Menu */}
       {showMenu && (

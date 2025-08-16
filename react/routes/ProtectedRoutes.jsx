@@ -11,6 +11,7 @@ import TemplateTypes from "../src/pages/templates/TemplateTypes";
 import TemplateBuilder from "../src/pages/templates/TemplateBuilder";
 import AssetName from "../src/pages/assets/Assets";
 import AssetAttribute from "../src/pages/assets/AssetsAttributes";
+import AssetBuilder from "../src/pages/assets/AssetsBuilder";
 const protectedRoutes = [
 	{
 		path: "/dashboard",
@@ -23,6 +24,18 @@ const protectedRoutes = [
 	{
 		path: "/assets_attribute",
 		element: <AssetAttribute />
+	},
+	{
+		path: "/asset_add",
+		element: <AssetBuilder />
+	},
+	{
+		path: "/asset/edit/:assetId",
+		element: <AssetBuilder />
+	},
+	{
+		path: "/asset/view/:assetId",
+		element: <AssetBuilder />
 	},
 	{
 		path: "/master",
@@ -60,22 +73,22 @@ const protectedRoutes = [
 		path: "/users/edit/:id",
 		element: <UserForm mode="edit" />,
 	},
-  {
-  path: "/template/:id",
-  element: <TemplateTypes  />
-  },
-  {
-  path: "/template_add",
-  element: <TemplateBuilder />
-},
-{
-  path: "/template/:id/edit/:templateId",
-  element: <TemplateBuilder />
-},
-{
-  path: "/template/:id/view/:templateId",
-  element: <TemplateBuilder />
-},
+	{
+		path: "/template/:id",
+		element: <TemplateTypes />
+	},
+	{
+		path: "/template_add",
+		element: <TemplateBuilder />
+	},
+	{
+		path: "/template/:id/edit/:templateId",
+		element: <TemplateBuilder />
+	},
+	{
+		path: "/template/:id/view/:templateId",
+		element: <TemplateBuilder />
+	},
 
 ];
 

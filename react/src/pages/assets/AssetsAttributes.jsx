@@ -142,7 +142,7 @@ const AssetAttribute = () => {
             options: [
                 { label: "String", value: "string" },
                 { label: "Number", value: "number" },
-                { label: "Select", value: "select" },
+                // { label: "Select", value: "select" },
                 { label: "Date", value: "date" },
                 { label: "Textarea", value: "textarea" },
             ],
