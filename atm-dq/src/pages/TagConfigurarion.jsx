@@ -10,6 +10,7 @@ export default function TagConfiguration() {
 	const [batchType, setBatchType] = useState("ATM");
 	const [file, setFile] = useState(null);
 	const [fileError, setFileError] = useState(null);
+	const [error, setError] = useState({});
 	const [isUploading, setIsUploading] = useState(false);
 	const [refreshKey, setRefreshKey] = useState(0);
 
@@ -52,17 +53,23 @@ export default function TagConfiguration() {
 			setFileError(null);
 			setRefreshKey(prev => prev + 1); // Trigger table refresh
 		}).catch((error) => {
-			console.error("Error uploading file:", error);
-			toast.error(error.response.data.message || "Failed to upload file. Please try again.");
+
+			const serverMessage =
+				error?.response?.data?.errors?.message || // case 2
+				error?.response?.data?.message || // case 1
+				"Failed to upload file. Please try again."; // default
+			toast.error(serverMessage);
+			setError(serverMessage);
+
 		}).finally(() => {
 			setIsUploading(false);
 		});
 	};
 	const handleUploadComplete = () => {
-    if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-    }
-};
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
 
 	return (
 		<>
@@ -85,11 +92,19 @@ export default function TagConfiguration() {
 							<div className="flex flex-col">
 								<input
 									type="file"
-									 ref={fileInputRef}
+									ref={fileInputRef}
 									id="tag_name"
 									className={`border ${fileError ? 'border-red-500' : 'border-gray-300'} rounded-md p-2`}
 									onChange={handleFileChange}
 								/>
+
+								{typeof error === "string" && (
+									<small className="text-red-500 block">
+										{error}
+									</small>
+								)}
+
+
 								{fileError && (
 									<p className="text-red-500 text-xs">{fileError}</p>
 								)}
@@ -100,9 +115,9 @@ export default function TagConfiguration() {
 									: 'bg-blue-500 hover:bg-blue-600 cursor-pointer'
 									} text-white`}
 								onClick={() => {
-  handleUpload();
-  handleUploadComplete();
-}}
+									handleUpload();
+									handleUploadComplete();
+								}}
 
 								disabled={isUploading}
 							>

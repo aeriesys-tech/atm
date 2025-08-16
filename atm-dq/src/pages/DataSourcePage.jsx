@@ -198,10 +198,10 @@ export default function DataSourceConfig() {
 			// Call fetchBatches from DataSourceTable to refresh table
 			// triggers fetchBatches in table
 		} catch (error) {
-//     setError(err.response?.data?.errors || {});
-//     console.error("API error:", err.response?.data || err.message);
-}
- finally {
+			//     setError(err.response?.data?.errors || {});
+			//     console.error("API error:", err.response?.data || err.message);
+		}
+		finally {
 			setLoading(false);
 		}
 	};
@@ -279,11 +279,11 @@ export default function DataSourceConfig() {
 						</div>
 
 						{/* Database Type */}
-						<div className="mb-4">
+						<div className="mb-4 relative text-sm">
 							<label className="block text-sm font-medium mb-1">
 								Data Sources <span className="text-red-500">*</span>
 							</label>
-							<select
+							{/* <select
 								name="data_source"
 								value={formData.data_source}
 								onChange={(e) => {
@@ -300,7 +300,7 @@ export default function DataSourceConfig() {
 									}
 
 								}}
-								className={`w-full border rounded-lg px-3 py-1  focus:outline ${error?.data_source
+								className={`pl-8 pr-3 py-2 border border-gray-300 rounded-lg w-64 focus:outline ${error?.data_source
 									? "border-red-500 focus:border-red-500"
 									: "border-gray-300 focus:border-gray-400"
 									}`}
@@ -310,7 +310,33 @@ export default function DataSourceConfig() {
 								<option value="postgres">PostgreSQL</option>
 								<option value="influxdb">InfluxDB</option>
 								<option value="mongodb">MongoDB</option>
+							</select> */}
+							<select
+								name="data_source"
+								value={formData.data_source}
+								onChange={(e) => {
+									setDbType(e.target.value);
+									handleChange(e);
+									if (error?.data_source || error?.description) {
+										setError((prev) => ({
+											...prev,
+											data_source: null,
+											description: null
+										}));
+									}
+								}}
+								className={`w-full border rounded-lg pl-8 pr-3 py-2 focus:outline ${error?.data_source
+										? "border-red-500 focus:border-red-500"
+										: "border-gray-300 focus:border-gray-300"
+									}`}
+							>
+								<option value="">-- Select Database --</option>
+								<option value="mysql">MySQL</option>
+								<option value="postgres">PostgreSQL</option>
+								<option value="influxdb">InfluxDB</option>
+								<option value="mongodb">MongoDB</option>
 							</select>
+
 							{error?.data_source && (
 								<small className="text-red-500 block ">
 									{error.data_source}
@@ -321,16 +347,16 @@ export default function DataSourceConfig() {
 						{/* MySQL Fields */}
 						{dbType === "mysql" && (
 							<div className="grid grid-cols-2 gap-4">
-				
 
-								<div className="mb-0">
+
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">Username<span className="text-red-500"> *</span></label>
 									<input
 										type="text"
 										name="username"
 										value={formData.username}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline  ${error?.username
+										className={`w-full border rounded-lg px-3 py-2 focus:outline  ${error?.username
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -340,7 +366,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Password */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Password <span className="text-red-500"> *</span>
 									</label>
@@ -349,7 +375,7 @@ export default function DataSourceConfig() {
 										name="password"
 										value={formData.password}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.password
+										className={`w-full border rounded-lg px-2 py-2 focus:outline ${error?.password
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -363,7 +389,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Hostname */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Hostname <span className="text-red-500"> *</span>
 									</label>
@@ -373,7 +399,7 @@ export default function DataSourceConfig() {
 										value={formData.host}
 										onChange={handleChange}
 										//     className="w-full border rounded-lg px-3 py-1"
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.host
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.host
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -385,7 +411,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Port No */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Port No <span className="text-red-500"> *</span>
 									</label>
@@ -394,7 +420,7 @@ export default function DataSourceConfig() {
 										name="port_no"
 										value={formData.port_no}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.port_no
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.port_no
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -408,7 +434,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Database Name */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Database Name <span className="text-red-500"> *</span>
 									</label>
@@ -417,7 +443,7 @@ export default function DataSourceConfig() {
 										name="database_name"
 										value={formData.database_name}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.database_name
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.database_name
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -431,7 +457,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Table Name */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Table Name  <span className="text-red-500"> *</span>
 									</label>
@@ -440,7 +466,7 @@ export default function DataSourceConfig() {
 										name="table_name"
 										value={formData.table_name}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.table_name
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.table_name
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -458,7 +484,7 @@ export default function DataSourceConfig() {
 						{dbType === "postgres" && (
 							<div className="grid grid-cols-2 gap-4">
 								{/* Username */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Username  <span className="text-red-500"> *</span>
 									</label>
@@ -467,7 +493,7 @@ export default function DataSourceConfig() {
 										name="username"
 										value={formData.username}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.username
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.username
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -481,7 +507,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Password */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Password  <span className="text-red-500"> *</span>
 									</label>
@@ -490,7 +516,7 @@ export default function DataSourceConfig() {
 										name="password"
 										value={formData.password}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.password
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.password
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -504,7 +530,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Hostname */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Hostname <span className="text-red-500"> *</span>
 									</label>
@@ -513,7 +539,7 @@ export default function DataSourceConfig() {
 										name="host"
 										value={formData.host}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.host
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.host
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -525,16 +551,16 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Port No */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
-										Port No
+										Port No   <span className="text-red-500"> *</span>
 									</label>
 									<input
 										type="text"
 										name="port_no"
 										value={formData.port_no}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.port_no
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.port_no
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -548,7 +574,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Database Name */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Database Name  <span className="text-red-500"> *</span>
 									</label>
@@ -557,7 +583,7 @@ export default function DataSourceConfig() {
 										name="database_name"
 										value={formData.database_name}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.database_name
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.database_name
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -571,16 +597,16 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Table Name */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
-										Table Name
+										Table Name  <span className="text-red-500"> *</span>
 									</label>
 									<input
 										type="text"
 										name="table_name"
 										value={formData.table_name}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.table_name
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.table_name
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -595,12 +621,12 @@ export default function DataSourceConfig() {
 							</div>
 						)}
 
-			
+
 
 						{dbType === "influxdb" && (
 							<div className="grid grid-cols-2 gap-4">
 								{/* Username */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Username <span className="text-red-500"> *</span>
 									</label>
@@ -609,7 +635,7 @@ export default function DataSourceConfig() {
 										name="username"
 										value={formData.username}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.username
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.username
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -623,7 +649,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Password */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Password <span className="text-red-500"> *</span>
 									</label>
@@ -632,7 +658,7 @@ export default function DataSourceConfig() {
 										name="password"
 										value={formData.password}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.password
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.password
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -646,7 +672,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Token */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Token  <span className="text-red-500"> *</span>
 									</label>
@@ -655,7 +681,7 @@ export default function DataSourceConfig() {
 										name="token"
 										value={formData.token}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.token
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.token
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -669,14 +695,14 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Org */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">Org <span className="text-red-500"> *</span></label>
 									<input
 										type="text"
 										name="org"
 										value={formData.org}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.org
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.org
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -690,7 +716,7 @@ export default function DataSourceConfig() {
 								</div>
 
 								{/* Bucket */}
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1">
 										Bucket <span className="text-red-500"> *</span>
 									</label>
@@ -699,7 +725,7 @@ export default function DataSourceConfig() {
 										name="bucket"
 										value={formData.bucket}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.bucket
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.bucket
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -718,14 +744,14 @@ export default function DataSourceConfig() {
 
 						{dbType === "mongodb" && (
 							<>
-								<div className="mb-0">
+								<div className="mb-0 relative text-sm">
 									<label className="block text-sm font-medium mb-1"> Url <span className="text-red-500"> *</span></label>
 									<input
 										type="text"
 										name="url"
 										value={formData.url}
 										onChange={handleChange}
-										className={`w-full border rounded-lg px-3 py-1 focus:outline ${error?.url
+										className={`w-full border rounded-lg px-3 py-2 focus:outline ${error?.url
 											? "border-red-500 focus:border-red-500"
 											: "border-gray-300 focus:border-gray-400"
 											}`}
@@ -740,7 +766,7 @@ export default function DataSourceConfig() {
 							</>
 						)}
 						{/* Description */}
-						<div className="mb-3 mt-4">
+						<div className="mb-3 mt-4 relative text-sm">
 							<label className="block text-sm font-medium mb-1">Description <span className="text-red-500"> *</span></label>
 							<textarea
 								// <input
@@ -749,7 +775,7 @@ export default function DataSourceConfig() {
 								value={formData.description}
 								onChange={handleChange}
 
-								className={` block w-full border rounded-lg px-3 py-1 mb-0  focus:outline ${error?.description
+								className={` block w-full border rounded-lg px-3 py-2 mb-0  focus:outline ${error?.description
 									? "border-red-500 focus:border-red-500"
 									: "border-gray-300 focus:border-gray-400"
 									}`}

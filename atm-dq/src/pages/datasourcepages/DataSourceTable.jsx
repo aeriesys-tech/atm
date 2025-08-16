@@ -143,7 +143,7 @@ function DataSourceTable({ onEdit, setRefreshTable }) {
             <input
               type="text"
               placeholder="Search Data Sources..."
-              className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg w-64"
+              className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg w-72"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

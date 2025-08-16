@@ -250,7 +250,7 @@ export default function BatchesTable() {
 					<input
 						type="text"
 						placeholder="Search batches..."
-						className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg w-64"
+						className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg w-72"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 					/>
@@ -429,7 +429,7 @@ export default function BatchesTable() {
 											<input
 												type="text"
 												placeholder="Search variables..."
-												className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg w-64"
+												className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg w-72"
 												value={variablesSearch}
 												onChange={(e) => handleVariablesSearch(e.target.value)}
 											/>
