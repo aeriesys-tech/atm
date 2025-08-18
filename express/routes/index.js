@@ -18,6 +18,7 @@ const variableRoute = require('./variableRoute');
 const assetAttributeRoute = require('./assetAttributeRoute');
 const dataSourceConfigurationRoute = require('./dataSourceConfigurationRoute');
 const assetRoute = require('./assetRoute');
+const specificationRoute = require('./specificationRoute');
 
 
 router.use('/', authRoute);
@@ -36,5 +37,6 @@ router.use('/variable', variableRoute);
 router.use('/asset-attributes', assetAttributeRoute);
 router.use('/data-source-configurations', dataSourceConfigurationRoute);
 router.use('/assets', assetRoute);
+router.use('/specifications', specificationRoute);
 
 module.exports = router;

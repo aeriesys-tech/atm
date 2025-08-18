@@ -42,7 +42,6 @@ const createTemplateMaster = async (req, res) => {
                     if (adi) continue;
                 }
             }
-
             // Skip if required matches not found
             if (!master || !adi || (clusters.length && !cluster)) {
                 console.warn(`Skipping invalid document_code: ${document_code}`, {
@@ -76,13 +75,10 @@ const createTemplateMaster = async (req, res) => {
             count: recordsToInsert.length,
             data: recordsToInsert
         });
-
     } catch (error) {
         console.error('Error in createTemplateMaster:', error);
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
-
-
 
 module.exports = { createTemplateMaster };
