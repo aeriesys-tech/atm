@@ -14,18 +14,7 @@ const specificationSchema = new Schema({
         index: true,
         required: [true, 'Template ID is required']
     },
-    master_id: {
-        type: Schema.Types.ObjectId,
-        ref: 'Master',
-        index: true,
-        required: false
-    },
-    parameter_type_id: {
-        type: Schema.Types.ObjectId,
-        ref: 'ParameterType',
-        index: true,
-        required: false
-    },
+
     field_name: {
         type: String,
         index: true,
@@ -50,6 +39,11 @@ const specificationSchema = new Schema({
         index: true,
         required: [true, 'Required field must be specified']
     },
+    is_unique: {
+        type: Boolean,
+        required: [true, 'Field unique is required'],
+        index: true,
+    },
     created_at: {
         type: Date,
         index: true,
@@ -59,7 +53,18 @@ const specificationSchema = new Schema({
         type: Date,
         index: true,
         default: Date.now
-    }
+    },
+    status: {
+        type: Boolean,
+        required: true,
+        default: true,
+    },
+
+
+
+
+
+
 }, {
     versionKey: false
 });

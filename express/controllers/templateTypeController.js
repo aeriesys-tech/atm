@@ -11,8 +11,6 @@ const template = require('../models/template');
 const createTemplateType = async (req, res) => {
     try {
         const { parameter_type_ids, template_type_code, template_type_name, order, status, deleted_at } = req.body;
-
-        // Validate parameter_type_ids
         const parameterTypes = await ParameterType.find({
             '_id': { $in: parameter_type_ids }
         });
@@ -365,23 +363,57 @@ const getAllTemplatesByTypes = async (req, res) => {
                     as: "templateType"
                 }
             },
+            { $unwind: "$templateType" },
+
+            // 🔹 Step 1: Get all template_parameter_type entries for this templateType
             {
-                $unwind: "$templateType"
+                $lookup: {
+                    from: "template_parameter_type",
+                    localField: "templateType._id",
+                    foreignField: "template_type_id",
+                    as: "templateType.template_parameter_types"
+                }
             },
+
+            // 🔹 Step 2: Get parameter_type details for each template_parameter_type
+            {
+                $lookup: {
+                    from: "parameter_type",
+                    localField: "templateType.template_parameter_types.parameter_type_id",
+                    foreignField: "_id",
+                    as: "templateType.parameter_types"
+                }
+            },
+
+            // Sorting logic
             {
                 $addFields: {
                     sortPriority: {
-                        $cond: { if: { $eq: ["$templateType.template_type_name", "Lineage Template"] }, then: 1, else: 2 }
+                        $cond: {
+                            if: { $eq: ["$templateType.template_type_name", "Lineage Template"] },
+                            then: 1,
+                            else: 2
+                        }
                     }
                 }
             },
-            {
-                $sort: { "templateType.order": 1, sortPriority: 1 } // Sorting by templateType order first, then by sortPriority
-            },
+            { $sort: { "templateType.order": 1, sortPriority: 1 } },
+
             {
                 $project: {
                     _id: 0,
-                    templateType: "$templateType",
+                    templateType: {
+                        _id: 1,
+                        template_type_code: 1,
+                        template_type_name: 1,
+                        deleted_at: 1,
+                        status: 1,
+                        created_at: 1,
+                        updated_at: 1,
+                        icon: 1,
+                        order: 1,
+                        parameter_types: 1 // ✅ include expanded parameter types
+                    },
                     templates: 1
                 }
             }
@@ -400,6 +432,7 @@ const getAllTemplatesByTypes = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
 
 module.exports = {
     createTemplateType,

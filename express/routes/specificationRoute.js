@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const specificationController = require('../controllers/specificationController');
+const { paginateValidation, validateId } = require('../validations/commonValidation');
+const { Validate } = require('../middlewares/validationMiddleware');
+const { add_specification_validation, update_specification_validation } = require('../validations/specificationValidation')
 // const { checkPermission } = require("../middlewares/permissionsMiddleware");
 
 // POST route to create a new specification group

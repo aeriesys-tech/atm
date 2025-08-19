@@ -3,7 +3,7 @@ const { logApiResponse } = require('../utils/responseService');
 const specification = require('../models/specification');
 
 const createSpecification = async (req, res) => {
-    const { asset_id, template_id, field_name, field_type, field_value, display_name, master_id, parameter_type_id, required } = req.body;
+    const { asset_id, template_id, field_name, field_type, field_value, display_name, required, is_unique } = req.body;
 
     let validationErrors = {};
 
@@ -16,15 +16,6 @@ const createSpecification = async (req, res) => {
     if (!template_id || !mongoose.Types.ObjectId.isValid(template_id)) {
         validationErrors.template_id = "Template ID is required and must be a valid ObjectId";
     }
-    // // Validate master_id
-    // if (!master_id || !mongoose.Types.ObjectId.isValid(master_id)) {
-    //     validationErrors.master_id = "Master ID is required and must be a valid ObjectId";
-    // }
-
-    // // Validate parameter_type_id
-    // if (!parameter_type_id || !mongoose.Types.ObjectId.isValid(parameter_type_id)) {
-    //     validationErrors.parameter_type_id = "Paramenter Type ID is required and must be a valid ObjectId";
-    // }
 
     // Validate field_name
     if (!field_name) {
@@ -37,7 +28,7 @@ const createSpecification = async (req, res) => {
     }
 
     // Validate field_value based on field_type
-    if (field_type === 'select' && (field_value === undefined || field_value === '')) {
+    if (field_type === "select" && (field_value === undefined || field_value === "")) {
         validationErrors.field_value = "Field value is required for 'select' type";
     }
 
@@ -51,9 +42,9 @@ const createSpecification = async (req, res) => {
         validationErrors.required = "Required status must be specified";
     }
 
-    // If there are basic validation errors, return them before hitting the database
+    // If there are basic validation errors, return them before DB check
     if (Object.keys(validationErrors).length > 0) {
-        await logApiResponse(req, "Validation Error", 400, validationErrors); // Log the validation errors
+        await logApiResponse(req, "Validation Error", 400, validationErrors);
         return res.status(400).json({
             message: "Validation Error",
             errors: validationErrors
@@ -61,9 +52,23 @@ const createSpecification = async (req, res) => {
     }
 
     try {
-        // Further checks like ensuring references exist could be added here
+        if (is_unique === true) {
+            const existingUnique = await specification.findOne({
+                asset_id,
+                template_id,
+                field_name
+            });
 
-        // Create and save the new TemplateAttribute
+            if (existingUnique) {
+                return res.status(400).json({
+                    message: "The given data was invalid",
+                    errors: {
+                        field_name: `Field name '${field_name}' already exists for this template and asset.`
+                    }
+                });
+            }
+        }
+
         const newSpecification = new specification({
             asset_id,
             template_id,
@@ -72,42 +77,83 @@ const createSpecification = async (req, res) => {
             field_value,
             display_name,
             required,
-            master_id: master_id ? master_id : null,
-            parameter_type_id: parameter_type_id ? parameter_type_id : null
+            is_unique: is_unique === true,
+            // master_id: master_id || null
         });
-        const savedSpecification = await specification.save();
 
-        await logApiResponse(req, "Specification created successfully", 201, savedSpecification); // Log the success response
-        // Send a successful response back
-        res.status(201).send(savedSpecification);
+        const savedSpecification = await newSpecification.save();
+
+        await logApiResponse(req, "Specification created successfully", 201, savedSpecification);
+        return res.status(201).send(savedSpecification);
+
     } catch (error) {
         console.error("Failed to create Specification:", error);
-
-        // Catch and structure mongoose validation errors
-        if (error.name === 'ValidationError') {
+        if (error.name === "ValidationError") {
             Object.keys(error.errors).forEach(key => {
                 validationErrors[key] = error.errors[key].message;
             });
         }
-
-        // Handle duplicate key errors
         if (error.code === 11000) {
             Object.keys(error.keyPattern).forEach(key => {
-                validationErrors[key] = `Specification with this ${key} already exists`;
+                validationErrors[key] = `'${error.keyValue[key]}' already exists. ${key} must be unique.`;
             });
         }
 
         await logApiResponse(req, "Error creating Specification", 400, validationErrors);
-        res.status(400).json({
+        return res.status(400).json({
             message: "Error creating Specification",
             errors: validationErrors
         });
     }
 };
 
+
 const updateSpecification = async (req, res) => {
-    const { id } = req.body;
+    const { id, asset_id, template_id, field_name, is_unique, default: isDefault } = req.body;
+    let validationErrors = {};
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+            message: "Validation Error",
+            errors: { id: "Specification ID is required and must be a valid ObjectId" }
+        });
+    }
+
     try {
+        if (is_unique === true) {
+            const existingUnique = await specification.findOne({
+                asset_id,
+                template_id,
+                field_name,
+                _id: { $ne: id }
+            });
+
+            if (existingUnique) {
+                return res.status(400).json({
+                    message: "The given data was invalid",
+                    errors: {
+                        field_name: `Field name '${field_name}' already exists for this template and asset.`
+                    }
+                });
+            }
+        }
+        if (isDefault === true || isDefault === "true") {
+            const existingDefault = await specification.findOne({
+                asset_id,
+                template_id,
+                field_name,
+                default: true,
+                _id: { $ne: id }
+            });
+
+            if (existingDefault) {
+                return res.status(400).json({
+                    message: "The given data was invalid",
+                    errors: {
+                        [`${field_name}`]: `Another record already has '${field_name}' set as default (true).`
+                    }
+                });
+            }
+        }
         const updatedSpecification = await specification.findByIdAndUpdate(
             id,
             req.body,
@@ -115,17 +161,34 @@ const updateSpecification = async (req, res) => {
         );
 
         if (!updatedSpecification) {
-            await logApiResponse(req, "Specification not found", 404, {}); // Log the not found response
-            return res.status(404).send({ message: 'Specification not found' });
+            await logApiResponse(req, "Specification not found", 404, {});
+            return res.status(404).json({ message: "Specification not found" });
         }
 
-        await logApiResponse(req, "Specification updated successfully", 200, updatedSpecification); // Log the success response
-        res.status(200).send(updatedSpecification);
+        await logApiResponse(req, "Specification updated successfully", 200, updatedSpecification);
+        return res.status(200).json(updatedSpecification);
+
     } catch (error) {
-        await logApiResponse(req, "Error updating TemplateAttribute", 400, error); // Log the error response
-        res.status(400).send(error);
+        console.error("Failed to update Specification:", error);
+        if (error.name === "ValidationError") {
+            Object.keys(error.errors).forEach(key => {
+                validationErrors[key] = error.errors[key].message;
+            });
+        }
+        if (error.code === 11000) {
+            Object.keys(error.keyPattern).forEach(key => {
+                validationErrors[key] = `'${error.keyValue[key]}' already exists. ${key} must be unique.`;
+            });
+        }
+
+        await logApiResponse(req, "Error updating Specification", 400, validationErrors);
+        return res.status(400).json({
+            message: "Error updating Specification",
+            errors: validationErrors
+        });
     }
 };
+
 
 const getSpecifications = async (req, res) => {
     try {
@@ -193,50 +256,78 @@ const deleteSpecification = async (req, res) => {
 };
 
 const paginatedSpecifications = async (req, res) => {
-    const { page = 1, limit = 10, sortBy = 'created_at', order = 'desc', search = '', field_type } = req.query;
-    const sort = { [sortBy]: order === 'desc' ? -1 : 1 };
+    const {
+        page = 1,
+        limit = 10,
+        sortBy = 'created_at',
+        order = 'desc',
+        search = '',
+        field_type,
+        asset_id,
+        template_id,
+        status
+    } = req.query;
 
-    // Implementing search functionality
+    // ✅ Allow only safe sort fields
+    const allowedSortFields = ['_id', 'field_name', 'display_name', 'created_at'];
+    const cleanSortBy = String(sortBy).trim();
+    const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
+
+    const sort = {
+        [safeSortBy]: order === 'desc' ? -1 : 1
+    };
+
+    // ✅ Build search & filter query
     const searchQuery = {
         $and: [
-            search ? {
-                $or: [
-                    { field_name: new RegExp(search, 'i') },
-                    { display_name: new RegExp(search, 'i') }
-                ]
-            } : {},
-            field_type ? { field_type: field_type } : {}
+            search
+                ? {
+                    $or: [
+                        { field_name: new RegExp(search, 'i') },
+                        { display_name: new RegExp(search, 'i') }
+                    ]
+                }
+                : {},
+            field_type ? { field_type } : {},
+            asset_id ? { asset_id } : {},
+            template_id ? { template_id } : {},
+            (status === 'true' || status === 'false') ? { status: status === 'true' } : {}
         ]
     };
 
     try {
         const specifications = await specification.find(searchQuery)
-            // .sort(sort)
+            .sort(sort)
             .skip((page - 1) * limit)
-            .limit(limit);
+            .limit(Number(limit));
+
         const count = await specification.countDocuments(searchQuery);
 
-        await logApiResponse(req, "Paginated template attributes retrieved successfully", 200, {
+        await logApiResponse(req, "Paginated specifications retrieved successfully", 200, {
             totalPages: Math.ceil(count / limit),
             currentPage: Number(page),
             specifications,
             totalItems: count,
         });
 
-        res.json({
+        res.status(200).json({
             totalPages: Math.ceil(count / limit),
             currentPage: Number(page),
-            specification,
+            specifications,
             totalItems: count,
         });
     } catch (error) {
-        console.error("Error retrieving paginated specification:", error);
+        console.error("Error retrieving paginated specifications:", error);
 
-        await logApiResponse(req, "Error retrieving paginated specification", 500, { error: error.message });
+        await logApiResponse(req, "Error retrieving paginated specifications", 500, { error: error.message });
 
-        res.status(500).json({ message: "Error retrieving paginated specification", error: error.message });
+        res.status(500).json({
+            message: "Error retrieving paginated specifications",
+            error: error.message
+        });
     }
 };
+
 
 module.exports = {
     createSpecification, updateSpecification, getSpecifications, getSpecification, getAssetSpecification, deleteSpecification, paginatedSpecifications

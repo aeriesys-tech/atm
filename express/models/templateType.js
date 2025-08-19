@@ -9,6 +9,11 @@ const templateTypeSchema = new Schema({
         index: true,
         trim: true
     },
+    parameter_type_id: {
+        type: Schema.Types.ObjectId,
+        ref: 'ParameterType',
+        required: [true, 'Parameter type ID is required']
+    },
     template_type_name: {
         type: String,
         required: true,
