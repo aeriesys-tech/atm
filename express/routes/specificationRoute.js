@@ -14,5 +14,6 @@ router.post('/paginateSpecifications', authMiddleware, paginateValidation(['fiel
 router.post('/getSpecifications', authMiddleware, specificationController.getSpecifications);
 router.post('/getSpecification', authMiddleware, Validate([validateId('id', 'Specification ID')]), specificationController.getSpecification);
 router.post('/deleteSpecification', authMiddleware, Validate([validateId('id', 'Specification ID')]), specificationController.deleteSpecification);
+router.post('/destroySpecification', authMiddleware, Validate([validateId('id', 'Specification ID')]), specificationController.destroySpecification);
 
 module.exports = router;

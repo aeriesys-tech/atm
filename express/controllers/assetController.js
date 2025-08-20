@@ -101,35 +101,27 @@ const addAsset = async (req, res) => {
     }
 };
 
-
 const updateAsset = async (req, res) => {
-    const { id } = req.body; // Asset ID
     const { asset_id, asset_code, asset_name, structure, status, deleted_at } = req.body;
 
     try {
         let validationErrors = {};
         let combinedErrorMessage = [];
 
-        // Validate asset ID
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            validationErrors.id = "Invalid asset ID";
+        // ✅ Validate asset_id (now the main identifier)
+        if (!asset_id || !mongoose.Types.ObjectId.isValid(asset_id)) {
+            validationErrors.asset_id = "Invalid asset ID";
             combinedErrorMessage.push("Invalid asset ID");
         }
 
-        // Validate related asset_id
-        if (asset_id && !mongoose.Types.ObjectId.isValid(asset_id)) {
-            validationErrors.asset_id = "Invalid related asset ID";
-            combinedErrorMessage.push("Invalid related asset ID");
-        }
-
-        // Validate asset_code uniqueness
+        // ✅ Validate asset_code uniqueness
         if (!asset_code) {
             validationErrors.asset_code = "Asset code is required";
             combinedErrorMessage.push("Asset code is required");
         } else {
             const existingAssetCode = await Asset.findOne({
                 asset_code,
-                _id: { $ne: id } // Exclude current asset from duplicate check
+                _id: { $ne: asset_id } // exclude the same asset
             });
             if (existingAssetCode) {
                 validationErrors.asset_code = "Asset code already exists";
@@ -137,14 +129,14 @@ const updateAsset = async (req, res) => {
             }
         }
 
-        // Validate asset_name uniqueness
+        // ✅ Validate asset_name uniqueness
         if (!asset_name) {
             validationErrors.asset_name = "Asset name is required";
             combinedErrorMessage.push("Asset name is required");
         } else {
             const existingAssetName = await Asset.findOne({
                 asset_name,
-                _id: { $ne: id }
+                _id: { $ne: asset_id }
             });
             if (existingAssetName) {
                 validationErrors.asset_name = "Asset name already exists";
@@ -152,7 +144,7 @@ const updateAsset = async (req, res) => {
             }
         }
 
-        // If validation errors found
+        // ✅ Return validation errors if any
         if (Object.keys(validationErrors).length > 0) {
             const errorMessage = {
                 message: combinedErrorMessage.join(", "),
@@ -162,24 +154,33 @@ const updateAsset = async (req, res) => {
             return res.status(400).json(errorMessage);
         }
 
-        // Parse structure to get template IDs
+        // ✅ Parse structure (optional check)
         const newTemplateIds = [];
         if (structure) {
-            const parsedStructure = JSON.parse(structure);
-            parsedStructure.forEach((item) => {
-                if (item.nodes) {
-                    item.nodes.forEach((node) => {
-                        if (node.id) newTemplateIds.push(node.id);
-                    });
-                }
-            });
+            try {
+                const parsedStructure = JSON.parse(structure);
+                parsedStructure.forEach((item) => {
+                    if (item.nodes) {
+                        item.nodes.forEach((node) => {
+                            if (node.id) newTemplateIds.push(node.id);
+                        });
+                    }
+                });
+            } catch (err) {
+                validationErrors.structure = "Invalid structure JSON";
+                const errorMessage = {
+                    message: "Invalid structure JSON",
+                    errors: validationErrors
+                };
+                await logApiResponse(req, "Validation Error", 400, errorMessage);
+                return res.status(400).json(errorMessage);
+            }
         }
 
-        // Update the asset
-        const updatedAsset = await Asset.findByIdAndUpdate(
-            id,
+        // ✅ Update the asset using asset_id
+        const updatedAsset = await Asset.findOneAndUpdate(
+            { _id: asset_id }, // find by asset_id
             {
-                asset_id,
                 asset_code,
                 asset_name,
                 structure,
@@ -193,39 +194,14 @@ const updateAsset = async (req, res) => {
         if (!updatedAsset) {
             const errorMessage = {
                 message: "Asset not found",
-                errors: { id: "Asset not found" }
+                errors: { asset_id: "Asset not found" }
             };
             await logApiResponse(req, errorMessage.message, 404, errorMessage);
             return res.status(404).json(errorMessage);
         }
 
-        // Remove templates not in the new structure from equipment
-        // const equipments = await Equipment.find({ asset_id: id });
-        // const bulkOperations = equipments
-        //     .map((equipment) => {
-        //         const unsetFields = {};
-        //         Object.keys(equipment.templates).forEach((templateId) => {
-        //             if (!newTemplateIds.includes(templateId)) {
-        //                 unsetFields[`templates.${templateId}`] = "";
-        //             }
-        //         });
-        //         return Object.keys(unsetFields).length > 0
-        //             ? {
-        //                 updateOne: {
-        //                     filter: { _id: equipment._id },
-        //                     update: { $unset: unsetFields }
-        //                 }
-        //             }
-        //             : null;
-        //     })
-        //     .filter(Boolean);
-
-        // if (bulkOperations.length > 0) {
-        //     await Equipment.bulkWrite(bulkOperations);
-        // }
-
         await logApiResponse(req, "Asset updated successfully", 200, updatedAsset);
-        res.status(200).json({
+        return res.status(200).json({
             message: "Asset updated successfully",
             data: updatedAsset
         });
@@ -234,6 +210,7 @@ const updateAsset = async (req, res) => {
         console.error("Error updating asset:", error);
         let errors = {};
 
+        // ✅ Handle Mongoose validation errors
         if (error.name === "ValidationError") {
             Object.keys(error.errors).forEach((key) => {
                 errors[key] = error.errors[key].message;
@@ -246,7 +223,8 @@ const updateAsset = async (req, res) => {
             return res.status(400).json(errorMessage);
         }
 
-        if (error.code === 11000) { // Duplicate key error
+        // ✅ Handle duplicate key errors
+        if (error.code === 11000) {
             if (error.keyPattern?.asset_code) {
                 errors.asset_code = "Asset code must be unique";
             }
@@ -261,6 +239,7 @@ const updateAsset = async (req, res) => {
             return res.status(400).json(errorMessage);
         }
 
+        // ✅ Handle unexpected errors
         const internalError = {
             message: "Internal Server Error",
             errors: { message: "An unexpected error occurred" }
@@ -269,6 +248,176 @@ const updateAsset = async (req, res) => {
         return res.status(500).json(internalError);
     }
 };
+
+
+
+// const updateAsset = async (req, res) => {
+//     const { id } = req.body; // Asset ID
+//     const { asset_id, asset_code, asset_name, structure, status, deleted_at } = req.body;
+
+//     try {
+//         let validationErrors = {};
+//         let combinedErrorMessage = [];
+
+//         // Validate asset ID
+//         if (!mongoose.Types.ObjectId.isValid(id)) {
+//             validationErrors.id = "Invalid asset ID";
+//             combinedErrorMessage.push("Invalid asset ID");
+//         }
+
+//         // Validate related asset_id
+//         if (asset_id && !mongoose.Types.ObjectId.isValid(asset_id)) {
+//             validationErrors.asset_id = "Invalid related asset ID";
+//             combinedErrorMessage.push("Invalid related asset ID");
+//         }
+
+//         // Validate asset_code uniqueness
+//         if (!asset_code) {
+//             validationErrors.asset_code = "Asset code is required";
+//             combinedErrorMessage.push("Asset code is required");
+//         } else {
+//             const existingAssetCode = await Asset.findOne({
+//                 asset_code,
+//                 _id: { $ne: id } // Exclude current asset from duplicate check
+//             });
+//             if (existingAssetCode) {
+//                 validationErrors.asset_code = "Asset code already exists";
+//                 combinedErrorMessage.push("Asset code already exists");
+//             }
+//         }
+
+//         // Validate asset_name uniqueness
+//         if (!asset_name) {
+//             validationErrors.asset_name = "Asset name is required";
+//             combinedErrorMessage.push("Asset name is required");
+//         } else {
+//             const existingAssetName = await Asset.findOne({
+//                 asset_name,
+//                 _id: { $ne: id }
+//             });
+//             if (existingAssetName) {
+//                 validationErrors.asset_name = "Asset name already exists";
+//                 combinedErrorMessage.push("Asset name already exists");
+//             }
+//         }
+
+//         // If validation errors found
+//         if (Object.keys(validationErrors).length > 0) {
+//             const errorMessage = {
+//                 message: combinedErrorMessage.join(", "),
+//                 errors: validationErrors
+//             };
+//             await logApiResponse(req, "Validation Error", 400, errorMessage);
+//             return res.status(400).json(errorMessage);
+//         }
+
+//         // Parse structure to get template IDs
+//         const newTemplateIds = [];
+//         if (structure) {
+//             const parsedStructure = JSON.parse(structure);
+//             parsedStructure.forEach((item) => {
+//                 if (item.nodes) {
+//                     item.nodes.forEach((node) => {
+//                         if (node.id) newTemplateIds.push(node.id);
+//                     });
+//                 }
+//             });
+//         }
+
+//         // Update the asset
+//         const updatedAsset = await Asset.findByIdAndUpdate(
+//             id,
+//             {
+//                 asset_id,
+//                 asset_code,
+//                 asset_name,
+//                 structure,
+//                 status,
+//                 deleted_at,
+//                 updated_at: Date.now()
+//             },
+//             { new: true, runValidators: true }
+//         );
+
+//         if (!updatedAsset) {
+//             const errorMessage = {
+//                 message: "Asset not found",
+//                 errors: { id: "Asset not found" }
+//             };
+//             await logApiResponse(req, errorMessage.message, 404, errorMessage);
+//             return res.status(404).json(errorMessage);
+//         }
+
+//         // Remove templates not in the new structure from equipment
+//         // const equipments = await Equipment.find({ asset_id: id });
+//         // const bulkOperations = equipments
+//         //     .map((equipment) => {
+//         //         const unsetFields = {};
+//         //         Object.keys(equipment.templates).forEach((templateId) => {
+//         //             if (!newTemplateIds.includes(templateId)) {
+//         //                 unsetFields[`templates.${templateId}`] = "";
+//         //             }
+//         //         });
+//         //         return Object.keys(unsetFields).length > 0
+//         //             ? {
+//         //                 updateOne: {
+//         //                     filter: { _id: equipment._id },
+//         //                     update: { $unset: unsetFields }
+//         //                 }
+//         //             }
+//         //             : null;
+//         //     })
+//         //     .filter(Boolean);
+
+//         // if (bulkOperations.length > 0) {
+//         //     await Equipment.bulkWrite(bulkOperations);
+//         // }
+
+//         await logApiResponse(req, "Asset updated successfully", 200, updatedAsset);
+//         res.status(200).json({
+//             message: "Asset updated successfully",
+//             data: updatedAsset
+//         });
+
+//     } catch (error) {
+//         console.error("Error updating asset:", error);
+//         let errors = {};
+
+//         if (error.name === "ValidationError") {
+//             Object.keys(error.errors).forEach((key) => {
+//                 errors[key] = error.errors[key].message;
+//             });
+//             const errorMessage = {
+//                 message: Object.values(errors).join(", "),
+//                 errors
+//             };
+//             await logApiResponse(req, "Validation Error", 400, errorMessage);
+//             return res.status(400).json(errorMessage);
+//         }
+
+//         if (error.code === 11000) { // Duplicate key error
+//             if (error.keyPattern?.asset_code) {
+//                 errors.asset_code = "Asset code must be unique";
+//             }
+//             if (error.keyPattern?.asset_name) {
+//                 errors.asset_name = "Asset name must be unique";
+//             }
+//             const errorMessage = {
+//                 message: Object.values(errors).join(", "),
+//                 errors
+//             };
+//             await logApiResponse(req, "Duplicate Key Error", 400, errorMessage);
+//             return res.status(400).json(errorMessage);
+//         }
+
+//         const internalError = {
+//             message: "Internal Server Error",
+//             errors: { message: "An unexpected error occurred" }
+//         };
+//         await logApiResponse(req, internalError.message, 500, internalError);
+//         return res.status(500).json(internalError);
+//     }
+// };
 
 
 // const updateAsset = async (req, res) => {
@@ -390,6 +539,10 @@ const updateAsset = async (req, res) => {
 //         res.status(500).send({ message: 'Failed to delete asset', error: error.message });
 //     }
 // };
+
+
+
+
 const deleteAsset = async (req, res) => {
     try {
         const { id, ids } = req.body;
