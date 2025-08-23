@@ -124,6 +124,7 @@ const TemplateBuilderWrapper = ({
                 setTemplateDataMap={setTemplateDataMap}
                 usedHeaders={usedHeaders}
                 setUsedHeaders={setUsedHeaders}
+                isEditMode={isEditMode}
               />
             ) : (
               <DragDropFlow

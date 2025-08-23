@@ -539,7 +539,7 @@ function Header() {
                                                     <p className="m-0">Asset Class</p>
                                                 </Link>
                                             </li>
-                                            <li className="menu-item">
+                                            {/* <li className="menu-item">
                                                 <button
                                                     className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
                                                     onClick={() => (window.location.href = "assetgroup.html")}
@@ -547,7 +547,7 @@ function Header() {
                                                     <img src={package1} alt="Asset Modal" />
                                                     <p className="m-0">Asset Modal</p>
                                                 </button>
-                                            </li>
+                                            </li> */}
                                         </ul>
                                     )}
 

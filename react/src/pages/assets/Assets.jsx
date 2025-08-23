@@ -29,7 +29,7 @@ const AssetName = () => {
     const navigate = useNavigate();
 
     const breadcrumbItems = [
-        { label: "Assets", href: "#" },
+        { label: "Assets ", href: "#" },
         {
             label:"Assets Class",
             href: "#",
@@ -150,7 +150,7 @@ const AssetName = () => {
             )}
             <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 <Breadcrumb
-                    title={ "Assets"}
+                    title={ "Assets Class"}
                     items={breadcrumbItems}
                 />
                 <div className="navbar-3 mt-0 d-flex justify-content-between">

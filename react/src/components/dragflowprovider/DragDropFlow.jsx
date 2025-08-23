@@ -51,7 +51,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     (changes) => {
       setEdges((eds) => {
         const newEdges = applyEdgeChanges(changes, eds);
-        // If an edge is deleted, clear prevSelections for affected nodes
         changes.forEach((change) => {
           if (change.type === "remove") {
             setTemplateDataMap((prev) => {
@@ -82,7 +81,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         addEdge(
           {
             ...params,
-            // label: `${sourceNode?.data?.label || params.source} ➝ ${targetNode?.data?.label || params.target}`,
             markerEnd: {
               type: MarkerType.ArrowClosed,
             },
@@ -93,7 +91,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     },
     [nodes, setEdges]
   );
-
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -138,10 +135,8 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
               const filtered = prevNodes.filter((node) => node.id !== nodeData.id);
               const nextSelectedId = filtered.length > 0 ? filtered[0].id : null;
 
-              // Set selected node
               setSelectedNodeId(nextSelectedId);
 
-              // Update nodes with new selection
               return filtered.map((node) => ({
                 ...node,
                 data: {
@@ -161,13 +156,13 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         },
       };
       setNodes((nds) => nds.concat(newNode));
-      // Safe way to set selectedNodeId outside render/update phase
       if (nodes.length === 0) {
         setSelectedNodeId(id);
       }
     },
     [reactFlowInstance, setNodes, selectedNodeId]
   );
+
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
@@ -179,6 +174,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       }))
     );
   }, [selectedNodeId, setNodes]);
+
   useEffect(() => {
     const handleClick = () => {
       setEdgeContextMenu({ isOpen: false, position: {}, edgeId: null });
@@ -186,16 +182,16 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
-  const handleNodeDoubleClick = useCallback((node) => {
-      const isViewRoute = matchPath(
-    { path: "/template/:id/view/:templateId" },
-    location.pathname
-  );
 
-  if (!isViewRoute) {
-    // Not in view mode → do nothing or handle differently
-    return;
-  }
+  const handleNodeDoubleClick = useCallback((node) => {
+    const isViewRoute = matchPath(
+      { path: "/template/:id/view/:templateId" },
+      location.pathname
+    );
+
+    if (!isViewRoute) {
+      return;
+    }
     console.log("Double click node", node);
     const masterIdFromNode = node?.data?.template_master_code;
     if (!masterIdFromNode) return;
@@ -204,6 +200,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     setMasterId(masterIdFromNode);
     setIsModalOpen(true);
   }, []);
+
   const fetchMasterData = async (searchVal = search, statusVal = statusFilter) => {
     try {
       setLoading(true);
@@ -243,7 +240,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         };
       });
 
-      console.log("Fetched Master Data:", mappedData); // Debug log
+      console.log("Fetched Master Data:", mappedData);
       setCheckedItems(selectedIds);
       setData(mappedData);
     } catch (error) {
@@ -258,6 +255,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       fetchMasterData(search, statusFilter);
     }
   }, [masterId, isModalOpen, currentPage, pageSize, sortBy, order, statusFilter]);
+
   const nodeTypes = useMemo(() => ({
     custom: (nodeProps) => (
       <CustomNode
@@ -266,9 +264,10 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       />
     )
   }), [handleNodeDoubleClick]);
+
   useEffect(() => {
     if (isModalOpen) {
-      document.body.style.overflow = 'hidden'; // prevent background scroll
+      document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
@@ -277,6 +276,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       document.body.style.overflow = 'auto';
     };
   }, [isModalOpen]);
+
   function getAllCombinations(dataMap, currentNodeLabel) {
     const entries = Object.entries(dataMap).filter(
       ([key]) => key !== "document_code" && key !== currentNodeLabel
@@ -289,7 +289,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     if (currentNodeData.length > 0) {
       currentNodeData.forEach((row) => {
         const prevSelections = row.prevSelections || {};
-        // Handle multiple previous nodes
         const prevNodeLabels = Object.keys(prevSelections);
         let validCombos = getAllCombinations(
           Object.fromEntries(
@@ -299,12 +298,11 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
           )
         );
 
-        // Filter combinations based on all prevSelections
         prevNodeLabels.forEach((prevNodeLabel) => {
           const allowedIds = prevSelections[prevNodeLabel] || [];
           validCombos = validCombos.filter((combo) => {
             const comboKey = getComboKey(combo);
-            return allowedIds.length === 0 || allowedIds.includes(comboKey);
+            return allowedIds.length === 0 || allowedIds.some((sel) => sel.id === comboKey);
           });
         });
 
@@ -330,11 +328,11 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         tempCombinations.forEach((combo) => {
           values.forEach((val) => {
             const currentItem = val[key] || val;
-            const prevSelections = currentItem?.prevSelections || {};
+            const prevSelections = val?.prevSelections || {};
             const prevLabel = Object.keys(combo).find((k) => prevSelections[k]);
             const allowedIds = prevSelections[prevLabel] || [];
 
-            if (!prevLabel || allowedIds.includes(combo._id)) {
+            if (!prevLabel || allowedIds.length === 0 || allowedIds.some((sel) => sel.id === getComboKey(combo))) {
               newCombinations.push({
                 ...combo,
                 [key]: currentItem,
@@ -350,9 +348,10 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       return tempCombinations;
     }
 
-    console.log("Generated Combinations:", combinations); // Debug log
+    console.log("Generated Combinations:", combinations);
     return combinations;
   }
+
   function getDocumentCodePath(nodes, edges, comboMap, leafNodeId) {
     const path = [];
     let currentId = leafNodeId;
@@ -370,12 +369,12 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         path.unshift(label);
       }
 
-
       const incomingEdge = edges.find((e) => e.target === currentId);
       currentId = incomingEdge?.source;
     }
     return path.join("-");
   }
+
   const handleSaveNodeData = () => {
     const selectedRows = data.filter((row) => checkedItems.includes(row._id));
     const label = selectedNode?.data?.label;
@@ -388,11 +387,10 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         [label]: selectedRows.map((row) => ({
           [label]: row,
           _id: row._id,
-          prevSelections: row.prevSelections || {}, // Ensure prevSelections is included
+          prevSelections: row.prevSelections || {},
         })),
       };
 
-      // Generate document codes for all combinations
       const combinations = getAllCombinations(newMap, label);
       const allPaths = new Set();
       combinations.forEach((combo) => {
@@ -406,7 +404,24 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       };
     });
 
-    // Reset checkedItems and update data to reflect saved prevSelections
+    setNodes((prevNodes) =>
+      prevNodes.map((node) =>
+        node.data.label === label
+          ? {
+            ...node,
+            data: {
+              ...node.data,
+              selectedData: selectedRows.map((row) => ({
+                [label]: row,
+                _id: row._id,
+                prevSelections: row.prevSelections || {},
+              })),
+            },
+          }
+          : node
+      )
+    );
+
     setData((prevData) =>
       prevData.map((row) => ({
         ...row,
@@ -421,17 +436,13 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     const incomingEdge = edges.find((edge) => edge.target === currentNodeId);
     if (!incomingEdge) return null;
     const sourceNode = nodes.find((node) => node.id === incomingEdge.source);
-    console.log("Previous Node:", sourceNode); // Debug log
+    console.log("Previous Node:", sourceNode);
     return sourceNode;
   };
 
   const prevNode = selectedNode ? getPreviousNode(selectedNode.id) : null;
   const prevNodeLabel = prevNode?.data?.label;
 
-  // const prevNodeSelectedData =
-  //   prevNodeLabel && templateDataMap[prevNodeLabel]
-  //     ? templateDataMap[prevNodeLabel].map((entry) => entry[prevNodeLabel])
-  //     : [];
   const previousCombinations = useMemo(
     () =>
       getAllCombinations(
@@ -443,6 +454,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       ),
     [templateDataMap, selectedNode?.data?.label]
   );
+
   const uniqueComboKeys = new Set();
   const deduplicatedCombinations = [];
 
@@ -484,14 +496,13 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     );
   };
 
-
   const MultiValueLabel = (props) => (
     <components.MultiValue {...props}>
       <span>{props.data.label}</span>
     </components.MultiValue>
   );
+
   function getComboKey(combo, currentLabel) {
-    // Build a string using all node keys except `_id`, sorted
     const keys = Object.keys(combo).filter((k) => k !== '_id').sort();
     return keys.map((k) => combo[k]?._id || combo[k]).join("::");
   }
@@ -503,8 +514,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       label: getDocumentCodePath(nodes, edges, combo, prevNode?.id) || "Unnamed Combination",
       fullData: combo,
     })),
-  ].filter((option) => option.label !== ""); // Filter out invalid labels
-
+  ].filter((option) => option.label !== "");
 
   return (
     <>
@@ -552,18 +562,13 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
               type: 'smoothstep',
               markerEnd: { type: MarkerType.ArrowClosed },
               style: { pointerEvents: 'auto' },
-              labelStyle: { pointerEvents: 'none' }, // label shouldn't block clicks
+              labelStyle: { pointerEvents: 'none' },
             }}
-
             proOptions={{ hideAttribution: true }}
           >
             <Controls />
-            {/* <Controls showInteractive={false} position="top-right" /> */}
-
             <Background gap={12} color="#eee" variant={BackgroundVariant.Lines} />
           </ReactFlow>
-
-
 
           {edgeContextMenu.isOpen && (
             <div
@@ -636,9 +641,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
               </button>
             </div>
           )}
-
         </div>
-
       </div>
       {isModalOpen && (
         <div className="modal-overlay1" onClick={() => setIsModalOpen(false)}>
@@ -648,7 +651,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
           >
             {loading && (
               <div className="loader-overlay d-flex justify-content-center align-items-center">
-                <Loader /> {/* or replace with <div>Loading...</div> if Loader not available */}
+                <Loader />
               </div>
             )}
             <div className="addunit-header d-flex justify-content-between align-items-center p-3">
@@ -667,235 +670,228 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
                 type="text"
                 placeholder="Search..."
                 className="form-control"
-              // value={searchQuery}
-              // onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            {/* Modal Content */}
             <div className="">
               {loading ? (
                 <div>Loading...</div>
-              ) : (<>
-                <div className="table-responsive scrollable-table" style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "580px"
-                }} >
-                  <table className="table bg-white align-middle table-text">
-                    <thead className="table-head align-middle">
-                      <tr>
-                        <th className="table-check">
-                          <input
-                            type="checkbox"
-                            checked={data.length > 0 && checkedItems.length === data.length}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              const allIds = isChecked ? data.map((item) => item._id) : [];
-                              setCheckedItems(allIds);
-                            }}
-                          />
-                        </th>
-                        <th className="col">#</th>
-                        {data.length > 0 &&
-                          masterData?.master?.masterFields?.map((field) => (
-                            <th className="col text-uppercase" key={field._id}>{field.display_name}</th>
-                          ))}
-                        {prevNodeLabel && (
-                          <th className="col text-uppercase">Select {prevNodeLabel}</th>
-                        )}
-                        {/* <th>Action</th> */}
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {data.map((row, idx) => (
-                        <tr key={row._id} className={row.status ? "" : "text-muted"}>
-                          <td className="table-check">
+              ) : (
+                <>
+                  <div className="table-responsive scrollable-table" style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "580px"
+                  }}>
+                    <table className="table bg-white align-middle table-text">
+                      <thead className="table-head align-middle">
+                        <tr>
+                          <th className="table-check">
                             <input
                               type="checkbox"
-                              checked={checkedItems.includes(row._id)}
-                              onChange={() => {
-                                if (checkedItems.includes(row._id)) {
-                                  setCheckedItems((prev) => prev.filter((id) => id !== row._id));
-                                } else {
-                                  setCheckedItems((prev) => [...prev, row._id]);
-                                }
+                              checked={data.length > 0 && checkedItems.length === data.length}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                const allIds = isChecked ? data.map((item) => item._id) : [];
+                                setCheckedItems(allIds);
                               }}
                             />
-                          </td>
-                          <td className="col">{idx + 1}</td>
-
-                          {masterData?.master?.masterFields?.map((field) => (
-                            <td key={field._id}>
-                              {field.field_name in row
-                                ? row[field.field_name]
-                                : row.attributes?.[field.field_name] ?? "-"}
-                            </td>
-                          ))}
+                          </th>
+                          <th className="col">#</th>
+                          {data.length > 0 &&
+                            masterData?.master?.masterFields?.map((field) => (
+                              <th className="col text-uppercase" key={field._id}>{field.display_name}</th>
+                            ))}
                           {prevNodeLabel && (
-                            <td className="custom-select-container">
-                              <Select
-                                isMulti
-                                closeMenuOnSelect={false}
-                                hideSelectedOptions={false}
-                                components={{
-                                  Option: CheckboxOption,
-                                  MultiValue: MultiValueLabel,
-                                }}
-                                value={
-                                  (() => {
-                                    const selectedIds = row.prevSelections?.[prevNodeLabel] || [];
-                                    return selectedIds
-                                      .map((id) => {
-                                        const combo = deduplicatedCombinations.find((c) => getComboKey(c) === id);
-                                        return combo
-                                          ? {
-                                            value: getComboKey(combo),
-                                            label: getDocumentCodePath(nodes, edges, combo, prevNode?.id) || "Unnamed Combination",
-                                            fullData: combo,
-                                          }
-                                          : null;
-                                      })
-                                      .filter(Boolean);
-                                  })()
-                                }
+                            <th className="col text-uppercase">Select {prevNodeLabel}</th>
+                          )}
+                        </tr>
+                      </thead>
 
-
-                                onChange={(selectedOptions, { action, option }) => {
-                                  const isSelectAllOption = option?.value === "__select_all__";
-
-                                  console.log("Select onChange - Selected Options:", selectedOptions, "Action:", action); // Debug log
-
-                                  if (isSelectAllOption) {
-                                    const selectedIds = row.prevSelections?.[prevNodeLabel] || [];
-                                    const allIds = previousCombinations.map((combo) => getComboKey(combo));
-                                    const allSelected =
-                                      selectedIds.length === allIds.length &&
-                                      allIds.every((id) => selectedIds.includes(id));
-
-                                    // Toggle behavior
-                                    if (allSelected) {
-                                      // DESELECT ALL
-                                      setData((prevData) =>
-                                        prevData.map((r) =>
-                                          r._id === row._id
-                                            ? {
-                                              ...r,
-                                              prevSelections: {
-                                                ...(r.prevSelections || {}),
-                                                [prevNodeLabel]: [],
-                                              },
-                                            }
-                                            : r
-                                        )
-                                      );
-                                    } else {
-                                      // SELECT ALL
-                                      setData((prevData) =>
-                                        prevData.map((r) =>
-                                          r._id === row._id
-                                            ? {
-                                              ...r,
-                                              prevSelections: {
-                                                ...(r.prevSelections || {}),
-                                                [prevNodeLabel]: allIds,
-                                              },
-                                            }
-                                            : r
-                                        )
-                                      );
-                                    }
-                                    return;
+                      <tbody>
+                        {data.map((row, idx) => (
+                          <tr key={row._id} className={row.status ? "" : "text-muted"}>
+                            <td className="table-check">
+                              <input
+                                type="checkbox"
+                                checked={checkedItems.includes(row._id)}
+                                onChange={() => {
+                                  if (checkedItems.includes(row._id)) {
+                                    setCheckedItems((prev) => prev.filter((id) => id !== row._id));
+                                  } else {
+                                    setCheckedItems((prev) => [...prev, row._id]);
                                   }
-
-                                  // Regular selection change
-                                  const selectedIds = (selectedOptions || [])
-                                    .filter((opt) => opt.value !== "__select_all__")
-                                    .map((opt) => opt.value);
-
-                                  setData((prevData) =>
-                                    prevData.map((r) =>
-                                      r._id === row._id
-                                        ? {
-                                          ...r,
-                                          prevSelections: {
-                                            ...(r.prevSelections || {}),
-                                            [prevNodeLabel]: selectedIds,
-                                          },
-                                        }
-                                        : r
-                                    )
-                                  );
-                                }}
-
-                                options={optionsWithSelectAll}
-                                placeholder="Select connection(s)"
-                                styles={{
-                                  control: (provided, state) => ({
-                                    ...provided,
-                                    backgroundColor: "white",
-                                    borderColor: state.isFocused ? "#007BFF" : "#CED4DA",
-                                    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(0,123,255,.25)" : null,
-                                    "&:hover": { borderColor: "#007BFF" },
-                                    minHeight: "32px",
-                                  }),
-                                  option: (provided, state) => ({
-                                    ...provided,
-                                    padding: "4px 8px",
-                                    fontSize: "12px",
-                                    height: "30px",
-                                    backgroundColor: state.isSelected
-                                      ? "#ffffff"
-                                      : state.isFocused
-                                        ? "#E9ECEF"
-                                        : null,
-                                    color: "black",
-                                    "&:hover": { backgroundColor: "#E9ECEF" },
-                                  }),
-                                  menuPortal: (base) => ({ ...base, zIndex: 99999 }), // key fix
-                                  menu: (base) => ({ ...base, zIndex: 99999 }),        // optional
-                                  multiValue: (provided) => ({
-                                    ...provided,
-                                    backgroundColor: "#e0f0ff",
-                                    borderRadius: "12px",
-                                    padding: "0 4px",
-                                    fontSize: "12px",
-                                  }),
-                                  multiValueLabel: (provided) => ({
-                                    ...provided,
-                                    fontWeight: 500,
-                                  }),
                                 }}
                               />
-
                             </td>
-                          )}
+                            <td className="col">{idx + 1}</td>
 
+                            {masterData?.master?.masterFields?.map((field) => (
+                              <td key={field._id}>
+                                {field.field_name in row
+                                  ? row[field.field_name]
+                                  : row.attributes?.[field.field_name] ?? "-"}
+                              </td>
+                            ))}
+                            {prevNodeLabel && (
+                              <td className="custom-select-container">
+                                <Select
+                                  isMulti
+                                  closeMenuOnSelect={false}
+                                  hideSelectedOptions={false}
+                                  components={{
+                                    Option: CheckboxOption,
+                                    MultiValue: MultiValueLabel,
+                                  }}
+                                  value={
+                                    (() => {
+                                      const selectedItems = row.prevSelections?.[prevNodeLabel] || [];
+                                      return selectedItems
+                                        .map((item) => {
+                                          const combo = deduplicatedCombinations.find((c) => getComboKey(c) === item.id);
+                                          return combo
+                                            ? {
+                                              value: item.id,
+                                              label: item.documentcode,
+                                              fullData: combo,
+                                            }
+                                            : null;
+                                        })
+                                        .filter(Boolean);
+                                    })()
+                                  }
+                                  onChange={(selectedOptions, { action, option }) => {
+                                    const isSelectAllOption = option?.value === "__select_all__";
 
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                                    console.log("Select onChange - Selected Options:", selectedOptions, "Action:", action);
 
-                </div>
-                <div >  <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  pageSize={pageSize}
-                  totalItems={totalItems}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setCurrentPage(1);
-                  }}
-                /></div>
-              </>
+                                    if (isSelectAllOption) {
+                                      const selectedItems = row.prevSelections?.[prevNodeLabel] || [];
+                                      const allOptions = optionsWithSelectAll.filter((opt) => opt.value !== "__select_all__");
+                                      const allSelected =
+                                        selectedItems.length === allOptions.length &&
+                                        allOptions.every((opt) => selectedItems.some((sel) => sel.id === opt.value));
+
+                                      if (allSelected) {
+                                        setData((prevData) =>
+                                          prevData.map((r) =>
+                                            r._id === row._id
+                                              ? {
+                                                ...r,
+                                                prevSelections: {
+                                                  ...(r.prevSelections || {}),
+                                                  [prevNodeLabel]: [],
+                                                },
+                                              }
+                                              : r
+                                          )
+                                        );
+                                      } else {
+                                        setData((prevData) =>
+                                          prevData.map((r) =>
+                                            r._id === row._id
+                                              ? {
+                                                ...r,
+                                                prevSelections: {
+                                                  ...(r.prevSelections || {}),
+                                                  [prevNodeLabel]: allOptions.map((opt) => ({
+                                                    id: opt.value,
+                                                    label: getDocumentCodePath(nodes, edges, opt.fullData, prevNode?.id) || "Unnamed Combination",
+                                                    documentcode: opt.label,
+                                                  })),
+                                                },
+                                              }
+                                              : r
+                                          )
+                                        );
+                                      }
+                                      return;
+                                    }
+
+                                    const selectedItems = (selectedOptions || [])
+                                      .filter((opt) => opt.value !== "__select_all__")
+                                      .map((opt) => ({
+                                        id: opt.value,
+                                        label: getDocumentCodePath(nodes, edges, opt.fullData, prevNode?.id) || "Unnamed Combination",
+                                        documentcode: opt.label,
+                                      }));
+
+                                    setData((prevData) =>
+                                      prevData.map((r) =>
+                                        r._id === row._id
+                                          ? {
+                                            ...r,
+                                            prevSelections: {
+                                              ...(r.prevSelections || {}),
+                                              [prevNodeLabel]: selectedItems,
+                                            },
+                                          }
+                                          : r
+                                      )
+                                    );
+                                  }}
+                                  options={optionsWithSelectAll}
+                                  placeholder="Select connection(s)"
+                                  styles={{
+                                    control: (provided, state) => ({
+                                      ...provided,
+                                      backgroundColor: "white",
+                                      borderColor: state.isFocused ? "#007BFF" : "#CED4DA",
+                                      boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(0,123,255,.25)" : null,
+                                      "&:hover": { borderColor: "#007BFF" },
+                                      minHeight: "32px",
+                                    }),
+                                    option: (provided, state) => ({
+                                      ...provided,
+                                      padding: "4px 8px",
+                                      fontSize: "12px",
+                                      height: "30px",
+                                      backgroundColor: state.isSelected
+                                        ? "#ffffff"
+                                        : state.isFocused
+                                          ? "#E9ECEF"
+                                          : null,
+                                      color: "black",
+                                      "&:hover": { backgroundColor: "#E9ECEF" },
+                                    }),
+                                    menuPortal: (base) => ({ ...base, zIndex: 99999 }),
+                                    menu: (base) => ({ ...base, zIndex: 99999 }),
+                                    multiValue: (provided) => ({
+                                      ...provided,
+                                      backgroundColor: "#e0f0ff",
+                                      borderRadius: "12px",
+                                      padding: "0 4px",
+                                      fontSize: "12px",
+                                    }),
+                                    multiValueLabel: (provided) => ({
+                                      ...provided,
+                                      fontWeight: 500,
+                                    }),
+                                  }}
+                                />
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div>
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      pageSize={pageSize}
+                      totalItems={totalItems}
+                      onPageChange={setCurrentPage}
+                      onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setCurrentPage(1);
+                      }}
+                    />
+                  </div>
+                </>
               )}
             </div>
-
-
-
             <div
               className="addunit-card-footer"
               style={{ position: "absolute", bottom: 0 }}
@@ -903,7 +899,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
               <button
                 type="button"
                 className="discard-btn"
-              // onClick={closeModal}
               >
                 Close
               </button>
@@ -911,8 +906,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
                 onClick={handleSaveNodeData}
                 className="update-btn"
               >
-                {" "}
-                Save Changes{" "}
+                Save Changes
               </button>
             </div>
           </div>

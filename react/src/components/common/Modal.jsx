@@ -9,25 +9,25 @@ function Modal({
     fields = [],
     onChange,
     values = {},
-    setValues = () => { },
+    setValues = () => {},
     errors = {},
-    setErrors = () => { },
+    setErrors = () => {},
     title,
     submitButtonLabel = "SUBMIT",
-    onSuccess = () => { },
-    displayOnly = false // ✅ NEW PROP
+    onSuccess = () => {},
+    displayOnly = false
 }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(values, setErrors, onSuccess);
     };
 
-    useEffect(() => {
-        if (!values?.id) {
-            setValues({});
-            setErrors({});
-        }
-    }, []);
+ useEffect(() => {
+    if (Object.keys(values || {}).length === 0) {
+        setValues({});
+        setErrors({});
+    }
+}, [values]);
 
     const formatDisplayValue = (value) => {
         if (!value) return "-";
@@ -35,7 +35,6 @@ function Modal({
         const date = new Date(value);
         if (!isNaN(date)) return date.toLocaleString();
 
-        // Preserve line breaks in long text (like notification)
         if (typeof value === "string" && value.includes("\n")) {
             return value.split("\n").map((line, idx) => (
                 <div key={idx} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
@@ -47,9 +46,10 @@ function Modal({
         return value.toString();
     };
 
-
     return (
-        <div className="modal-overlay" onClick={onClose}
+        <div
+            className="modal-overlay"
+            onClick={onClose}
             style={{
                 position: "fixed",
                 top: 0,
@@ -131,14 +131,13 @@ function Modal({
                                             isNumeric={field.isNumeric}
                                             maxLength={field.maxLength}
                                             error={errors[field.name]}
-                                           disabled={displayOnly || field.disabled}
+                                            disabled={displayOnly || field.disabled}
                                         />
                                     )}
                                 </div>
                             ))
                         )}
                     </div>
-
 
                     <div className="addunit-card-footer mt-2 d-flex gap-2">
                         <Button
