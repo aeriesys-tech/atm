@@ -87,8 +87,43 @@ const createTemplateMaster = async (req, res) => {
     }
 };
 
+const getTemplatesByTemplateIDLeaf = async (req, res) => {
+    try {
+        const { template_id } = req.body;
+        const templates = await TemplateMaster.find({
+            template_id,
+            leaf_node: true
+        });
+        if (!templates.length) {
+            await logApiResponse(req, 'No templates found for the provided template ID', 404, {});
+            return res.status(404).send({ message: 'No templates found for the provided template ID' });
+        }
+        const groups = templates.reduce((acc, template) => {
+            const key = template.heading_name ? template.heading_name : template.master_name;
+            if (!acc[key]) {
+                acc[key] = {
+                    master_name: key,
+                    templates: []
+                };
+            }
+            acc[key].templates.push(template);
+            return acc;
+        }, {});
+        const groupsArray = Object.values(groups);
 
+        await logApiResponse(req, 'Templates retrieved successfully', 200, groupsArray);
+        res.status(200).send({
+            message: 'Templates retrieved successfully',
+            groups: groupsArray
+        });
+    } catch (error) {
+        console.error('Failed to retrieve templates:', error);
+        await logApiResponse(req, 'Failed to retrieve templates', 500, { message: 'Failed to retrieve templates', error: error.toString() });
+        res.status(500).send({
+            message: 'Failed to retrieve templates',
+            error: error.toString()
+        });
+    }
+};
 
-
-
-module.exports = { createTemplateMaster };
+module.exports = { createTemplateMaster, getTemplatesByTemplateIDLeaf };

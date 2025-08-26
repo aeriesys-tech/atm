@@ -5,5 +5,6 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { add_template_master_validation } = require('../validations/templateMasterValidation');
 
 router.post('/createTemplateMaster', authMiddleware, add_template_master_validation, templateMasterController.createTemplateMaster);
+router.post("/templateMasters/leaf", authMiddleware, templateMasterController.getTemplatesByTemplateIDLeaf);
 
 module.exports = router;
