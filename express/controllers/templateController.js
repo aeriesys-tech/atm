@@ -69,10 +69,8 @@ const createTemplate = async (req, res) => {
                 });
                 return res.status(400).json({ message: 'Invalid structure format' });
             }
-
             const nodesItem = parsedStructure.find(item => Array.isArray(item.nodes));
             const edgesItem = parsedStructure.find(item => Array.isArray(item.edges));
-
             const nodes = nodesItem?.nodes || [];
             const edges = edgesItem?.edges || [];
 
@@ -133,13 +131,10 @@ const createTemplate = async (req, res) => {
 
             console.log(" Dynamic collections created for all leaf nodes.");
         }
-
         const savedTemplate = await newTemplate.save();
-
         const message = `Template "${newTemplate.template_name}" created successfully`;
         await createNotification(req, 'Template', newTemplate._id, message, 'template');
         await logApiResponse(req, 'Template created successfully', 201, savedTemplate);
-
         res.status(201).json(savedTemplate);
 
     } catch (error) {
@@ -298,7 +293,6 @@ const createTemplate = async (req, res) => {
 //     }
 // };
 
-
 const updateTemplate = async (req, res) => {
     try {
         const {
@@ -419,25 +413,19 @@ const updateTemplate = async (req, res) => {
                     await mongoose.connection.db.dropCollection(coll.name);
                 }
             }
-
             const sanitizeCollectionName = name => name.replace(/[^\w]/g, '_').toLowerCase();
-
             for (const leaf of leafNodes) {
                 const visited = new Set();
                 const allAncestors = getAncestors(leaf.id, visited);
                 allAncestors.reverse();
-
                 const sanitizedName = sanitizeCollectionName(`${template_name}_${leaf.data?.label || 'unnamed'}`);
-
                 const dynamicSchema = new mongoose.Schema({}, { strict: false });
-
                 let DynamicModel;
                 try {
                     DynamicModel = mongoose.model(sanitizedName);
                 } catch (err) {
                     DynamicModel = mongoose.model(sanitizedName, dynamicSchema);
                 }
-
                 const dataToInsert = [
                     Object.assign(
                         Object.fromEntries(
@@ -453,7 +441,6 @@ const updateTemplate = async (req, res) => {
                         }
                     )
                 ];
-
                 await DynamicModel.insertMany(dataToInsert);
             }
         }
@@ -521,25 +508,27 @@ const updateTemplate = async (req, res) => {
 // };
 
 
-// const getTemplateById = async (req, res) => {
-//     try {
-//         const { id } = req.params;
+const getTemplateById = async (req, res) => {
+    try {
+        const { id } = req.body;
 
-//         // Find the Template by ID and populate the template_type_id field
-//         const template = await Template.findById(id).populate('template_type_id');
+        const template = await Template.findById(id)
+            .populate('template_type_id')
+            .populate('template_data')
+            .populate('template_master');
 
-//         if (!template) {
-//             await logApiResponse(req, "Template not found", 404, { message: 'Template not found' }); // Log the not found response
-//             return res.status(404).json({ message: 'Template not found' });
-//         }
+        if (!template) {
+            await logApiResponse(req, "Template not found", 404, { message: 'Template not found' });
+            return res.status(404).json({ message: 'Template not found' });
+        }
+        await logApiResponse(req, "Template retrieved successfully", 200, template);
+        res.status(200).json(template);
+    } catch (error) {
+        await logApiResponse(req, "Server error", 500, { error: error.message });
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
 
-//         await logApiResponse(req, "Template retrieved successfully", 200, template); // Log the success response
-//         res.status(200).json(template);
-//     } catch (error) {
-//         await logApiResponse(req, "Server error", 500, { error: error.message }); // Log the server error response
-//         res.status(500).json({ message: 'Server error', error });
-//     }
-// };
 
 // const deleteTemplateById = async (req, res) => {
 //     try {
@@ -1042,7 +1031,7 @@ module.exports = {
     createTemplate,
     updateTemplate,
     // getAllTemplates,
-    // getTemplateById,
+    getTemplateById,
     destroyTemplate,
     deleteTemplate,
     paginatedTemplates

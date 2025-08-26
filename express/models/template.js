@@ -10,7 +10,6 @@ const templateSchema = new Schema({
     template_code: {
         type: String,
         required: true,
-        unique: true,
         index: true,
         trim: true
     },
@@ -48,5 +47,24 @@ const templateSchema = new Schema({
     versionKey: false,
     collection: 'template'
 });
+
+templateSchema.virtual('template_data', {
+    ref: 'TemplateData',
+    localField: '_id',
+    foreignField: 'template_id',
+    justOne: false
+});
+
+templateSchema.virtual('template_master', {
+    ref: 'TemplateMaster',
+    localField: '_id',
+    foreignField: 'template_id',
+    justOne: false
+});
+
+
+// Include virtuals when converting to JSON
+templateSchema.set('toObject', { virtuals: true });
+templateSchema.set('toJSON', { virtuals: true });
 
 module.exports = mongoose.model('Template', templateSchema);

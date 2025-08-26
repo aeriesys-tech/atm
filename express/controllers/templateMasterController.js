@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
-const TemplateMaster = require('../models/templateMaster'); // Your model
+const TemplateMaster = require('../models/templateMaster');
+const TemplateData = require('../models/templateData')
 
 const createTemplateMaster = async (req, res) => {
     try {
-        const { id: template_id, templateNodeData } = req.body;
+        const { id: template_id, templateNodeData, structure } = req.body;
 
         if (!template_id || !mongoose.Types.ObjectId.isValid(template_id)) {
             return res.status(400).json({ message: 'Invalid or missing template_id' });
@@ -42,7 +43,6 @@ const createTemplateMaster = async (req, res) => {
                     if (adi) continue;
                 }
             }
-            // Skip if required matches not found
             if (!master || !adi || (clusters.length && !cluster)) {
                 console.warn(`Skipping invalid document_code: ${document_code}`, {
                     masterFound: !!master,
@@ -70,6 +70,12 @@ const createTemplateMaster = async (req, res) => {
 
         await TemplateMaster.insertMany(recordsToInsert);
 
+        await TemplateData.findOneAndUpdate(
+            { template_id },
+            { $set: { structure, updated_at: new Date() } },
+            { upsert: true, new: true }
+        );
+
         return res.status(201).json({
             message: 'Records created successfully',
             count: recordsToInsert.length,
@@ -80,5 +86,9 @@ const createTemplateMaster = async (req, res) => {
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
+
+
+
+
 
 module.exports = { createTemplateMaster };

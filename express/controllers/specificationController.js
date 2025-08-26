@@ -7,14 +7,27 @@ const { createNotification } = require('../utils/notification');
 const createSpecification = async (req, res) => {
     const { asset_id, template_id, field_name, field_type, field_value, display_name, required, is_unique } = req.body;
     try {
+        const existingUnique = await specification.findOne({
+            asset_id,
+            template_id,
+            field_name,
+            is_unique: true
+        });
+        if (existingUnique) {
+            return res.status(400).json({
+                message: "The given data was invalid",
+                errors: {
+                    field_name: `Field name '${field_name}' is already marked unique for this template and asset. Cannot create duplicate.`
+                }
+            });
+        }
         if (is_unique === true) {
-            const existingUnique = await specification.findOne({
+            const duplicate = await specification.findOne({
                 asset_id,
                 template_id,
                 field_name
             });
-
-            if (existingUnique) {
+            if (duplicate) {
                 return res.status(400).json({
                     message: "The given data was invalid",
                     errors: {
@@ -31,18 +44,14 @@ const createSpecification = async (req, res) => {
             field_value,
             display_name,
             required,
-            is_unique: is_unique === true
+            is_unique: !!is_unique
         });
-
         const savedSpecification = await newSpecification.save();
-
         await logApiResponse(req, "Specification created successfully", 201, savedSpecification);
         return res.status(201).send(savedSpecification);
-
     } catch (error) {
         console.error("Failed to create Specification:", error);
         let validationErrors = {};
-
         if (error.name === "ValidationError") {
             Object.keys(error.errors).forEach(key => {
                 validationErrors[key] = error.errors[key].message;
@@ -53,7 +62,6 @@ const createSpecification = async (req, res) => {
                 validationErrors[key] = `'${error.keyValue[key]}' already exists. ${key} must be unique.`;
             });
         }
-
         await logApiResponse(req, "Error creating Specification", 400, validationErrors);
         return res.status(400).json({
             message: "Error creating Specification",
@@ -66,6 +74,7 @@ const createSpecification = async (req, res) => {
 const updateSpecification = async (req, res) => {
     const { _id, asset_id, template_id, field_name, is_unique, default: isDefault } = req.body;
     let validationErrors = {};
+
     if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
         return res.status(400).json({
             message: "Validation Error",
@@ -74,15 +83,31 @@ const updateSpecification = async (req, res) => {
     }
 
     try {
+        const existingUnique = await specification.findOne({
+            asset_id,
+            template_id,
+            field_name,
+            is_unique: true,
+            _id: { $ne: _id }
+        });
+
+        if (existingUnique) {
+            return res.status(400).json({
+                message: "The given data was invalid",
+                errors: {
+                    field_name: `Field name '${field_name}' is already marked unique for this template and asset. Cannot update to duplicate.`
+                }
+            });
+        }
         if (is_unique === true) {
-            const existingUnique = await specification.findOne({
+            const duplicate = await specification.findOne({
                 asset_id,
                 template_id,
                 field_name,
                 _id: { $ne: _id }
             });
 
-            if (existingUnique) {
+            if (duplicate) {
                 return res.status(400).json({
                     message: "The given data was invalid",
                     errors: {
@@ -109,6 +134,7 @@ const updateSpecification = async (req, res) => {
                 });
             }
         }
+
         const updatedSpecification = await specification.findByIdAndUpdate(
             _id,
             req.body,
@@ -125,6 +151,7 @@ const updateSpecification = async (req, res) => {
 
     } catch (error) {
         console.error("Failed to update Specification:", error);
+
         if (error.name === "ValidationError") {
             Object.keys(error.errors).forEach(key => {
                 validationErrors[key] = error.errors[key].message;
@@ -135,6 +162,7 @@ const updateSpecification = async (req, res) => {
                 validationErrors[key] = `'${error.keyValue[key]}' already exists. ${key} must be unique.`;
             });
         }
+
         await logApiResponse(req, "Error updating Specification", 400, validationErrors);
         return res.status(400).json({
             message: "Error updating Specification",
@@ -142,6 +170,7 @@ const updateSpecification = async (req, res) => {
         });
     }
 };
+
 
 
 const getSpecifications = async (req, res) => {
