@@ -77,17 +77,20 @@ const TemplateBuilder = () => {
     const fetchTemplate = async () => {
       console.log("fetchTemplate called with templateId:", templateId, "location.state:", location.state);
 
-      if (structure) {
-        console.log("Using location.state structure");
-        const { nodes, edges } = parseStructure(structure);
-        setNodes(nodes);
-        setEdges(edges);
-        if (nodes.length > 0) {
-          setSelectedNodeId(nodes[0].id);
-        }
+      if (location.pathname.includes("/edit") && structure) {
+           console.log("Edit mode → binding structure from location.state");
+           const { nodes, edges } = parseStructure(structure);
+           setNodes(nodes);
+           setEdges(edges);
+           if (nodes.length > 0) {
+               setSelectedNodeId(nodes[0].id);
+             }
+           setTemplateName(templateName || templateNameState);
+           setTemplateCode(templateCode || templateCodeState);
+           return; // 🚀 stop here, don’t call API
       }
 
-      if (templateId) {
+      if (location.pathname.includes("/view") && templateId) {
         try {
           setLoading(true);
           const response = await axiosWrapper("api/v1/templates/getTemplate", {
@@ -110,10 +113,19 @@ const TemplateBuilder = () => {
             setTemplateCode(tpl.template_code || templateCodeState);
             setTemplateData(tplData.template_data || []);
             setTemplateDataMap(initializeTemplateDataMap(tpl.template_data || []));
+      //       if (location.pathname.includes("/edit")) {
+      // setTemplateDataMap({});
+      // setNodes((prevNodes) =>
+      //   prevNodes.map((node) => ({
+      //     ...node,
+      //     data: { ...node.data, selectedData: [] },
+      //   }))
+      // );}
           } else {
             console.warn("No structure in API response");
           }
-        } catch (err) {
+        } 
+       catch (err) {
           console.error("Error fetching template:", err);
         } finally {
           setLoading(false);

@@ -12,6 +12,9 @@ import TemplateBuilder from "../src/pages/templates/TemplateBuilder";
 import AssetName from "../src/pages/assets/Assets";
 import AssetAttribute from "../src/pages/assets/AssetsAttributes";
 import AssetBuilder from "../src/pages/assets/AssetsBuilder";
+import AllAssets from "../src/pages/assets/AllAssets";
+import AddEquipment from "../src/pages/assets/AddEquipment";
+import ProfileSettings from "../src/pages/ProfileSetting";
 const protectedRoutes = [
 	{
 		path: "/dashboard",
@@ -89,6 +92,18 @@ const protectedRoutes = [
 		path: "/template/:id/view/:templateId",
 		element: <TemplateBuilder />
 	},
+	{
+		path: "/all_assets",
+		element: <AllAssets />
+	},
+	{
+		path: "/add_equipment",
+		element: <AddEquipment />
+	},
+	{
+		path: "profile_setting",
+		element: <ProfileSettings />
+	}
 
 ];
 

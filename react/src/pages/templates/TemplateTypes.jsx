@@ -195,7 +195,7 @@ const TemplateTypes = () => {
               state: {
                 templateCode: row.template_code,
                 templateName: row.template_name,
-                structure: row.structure, // Included for edit mode
+                structure: row.structure, 
                 templateTypeId: templateTypeId,
                 templateTypeName: templateTypeDetails?.template_type_name,
               },

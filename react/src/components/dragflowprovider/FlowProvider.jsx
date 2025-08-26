@@ -64,7 +64,13 @@ const TemplateBuilderWrapper = ({
                 {templateTypeName || "Template"} Builder
               </h6>
               <div className="d-flex gap-3">
+               
                 <div className="tb-search-div d-flex gap-3">
+                   {isEditMode ? (
+                    <button onClick={handleSaveNodeData} className="tb-save-btn">
+                      Update Node
+                    </button>
+                  ):(<></>) }
                   <img
                     src={foldericon}
                     className="tg-search-icon"
