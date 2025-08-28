@@ -1,9 +1,9 @@
 const { query } = require('express');
 const AssetMaster = require('../models/assetMaster');
 const Asset = require('../models/asset');
-const Equipment = require('../models/equipment');
+// const Equipment = require('../models/equipment');
 const Template = require('../models/template');
-const TemplateAttribute = require('../models/templateAttribute');
+// const TemplateAttribute = require('../models/templateAttribute');
 const AssetConfiguration = require('../models/assetConfiguration');
 const { logApiResponse } = require('../utils/responseService');
 

@@ -13,7 +13,7 @@ const app = express();
 
 // Environment variables
 const PORT = process.env.PORT || 8080;
-const URL = process.env.APP_URL || 'http://localhost';
+const URL = process.env.APP_URL || 'http://192.168.0.217';
 
 // CORS configuration 
 const corsOptions = {
