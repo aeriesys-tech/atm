@@ -19,7 +19,8 @@ import { matchPath, useLocation } from "react-router";
 const initialNodes = [];
 const initialEdges = [];
 
-const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId, setSelectedNodeId, templateDataMap, setTemplateDataMap }) => {
+
+const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId, setSelectedNodeId, templateDataMap, setTemplateDataMap, isEditMode, isViewMode }) => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -28,7 +29,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
   const [data, setData] = useState([]);
   const [masterData, setMasterData] = useState({});
   const [masterId, setMasterId] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -38,20 +38,19 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("true");
   const [checkedItems, setCheckedItems] = useState([]);
-  const { MultiValue, Option } = components;
-  const location = useLocation();
   const [edgeContextMenu, setEdgeContextMenu] = useState({
     isOpen: false,
     position: { x: 0, y: 0 },
     edgeId: null,
   });
 
+  const { MultiValue, Option } = components;
+
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes]);
   const onEdgesChange = useCallback(
     (changes) => {
       setEdges((eds) => {
         const newEdges = applyEdgeChanges(changes, eds);
-        // If an edge is deleted, clear prevSelections for affected nodes
         changes.forEach((change) => {
           if (change.type === "remove") {
             setTemplateDataMap((prev) => {
@@ -77,15 +76,11 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     (params) => {
       const sourceNode = nodes.find((n) => n.id === params.source);
       const targetNode = nodes.find((n) => n.id === params.target);
-
       setEdges((eds) =>
         addEdge(
           {
             ...params,
-            // label: `${sourceNode?.data?.label || params.source} ➝ ${targetNode?.data?.label || params.target}`,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-            },
+            markerEnd: { type: MarkerType.ArrowClosed },
           },
           eds
         )
@@ -93,7 +88,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     },
     [nodes, setEdges]
   );
-
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -121,7 +115,7 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         data: {
           label: masterData.master_name,
           selected: false,
-          onEdit: (nodeData) => {
+          onEdit: isViewMode ? null : (nodeData) => {
             const newLabel = prompt("Edit label:", nodeData.label);
             if (newLabel !== null) {
               setNodes((nds) =>
@@ -133,24 +127,16 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
               );
             }
           },
-          onDelete: (nodeData) => {
+          onDelete: isViewMode ? null : (nodeData) => {
             setNodes((prevNodes) => {
               const filtered = prevNodes.filter((node) => node.id !== nodeData.id);
               const nextSelectedId = filtered.length > 0 ? filtered[0].id : null;
-
-              // Set selected node
               setSelectedNodeId(nextSelectedId);
-
-              // Update nodes with new selection
               return filtered.map((node) => ({
                 ...node,
-                data: {
-                  ...node.data,
-                  selectedNodeId: nextSelectedId,
-                },
+                data: { ...node.data, selectedNodeId: nextSelectedId },
               }));
             });
-
             setEdges((prevEdges) =>
               prevEdges.filter(
                 (edge) => edge.source !== nodeData.id && edge.target !== nodeData.id
@@ -161,24 +147,22 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         },
       };
       setNodes((nds) => nds.concat(newNode));
-      // Safe way to set selectedNodeId outside render/update phase
       if (nodes.length === 0) {
         setSelectedNodeId(id);
       }
     },
-    [reactFlowInstance, setNodes, selectedNodeId]
+    [reactFlowInstance, setNodes, setSelectedNodeId, isViewMode]
   );
+
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
-        data: {
-          ...node.data,
-          selectedNodeId,
-        },
+        data: { ...node.data, selectedNodeId },
       }))
     );
   }, [selectedNodeId, setNodes]);
+
   useEffect(() => {
     const handleClick = () => {
       setEdgeContextMenu({ isOpen: false, position: {}, edgeId: null });
@@ -186,28 +170,18 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
-  const handleNodeDoubleClick = useCallback((node) => {
-      const isViewRoute = matchPath(
-    { path: "/template/:id/view/:templateId" },
-    location.pathname
-  );
 
-  if (!isViewRoute) {
-    // Not in view mode → do nothing or handle differently
-    return;
-  }
-    console.log("Double click node", node);
+  const handleNodeDoubleClick = useCallback((node) => {
     const masterIdFromNode = node?.data?.template_master_code;
     if (!masterIdFromNode) return;
-
     setSelectedNode(node);
     setMasterId(masterIdFromNode);
     setIsModalOpen(true);
   }, []);
+
   const fetchMasterData = async (searchVal = search, statusVal = statusFilter) => {
     try {
       setLoading(true);
-
       const response = await axiosWrapper(
         `api/v1/masters/dynamic-data/paginate?page=${currentPage}&limit=${pageSize}&sortBy=${sortBy}&order=${order}`,
         {
@@ -224,9 +198,9 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       const dataRows = response?.data;
 
       setMasterData(response);
-      setData(response?.data || []);
+      setData(dataRows || []);
       setCurrentPage(resPage);
-      setTotalItems(response?.data?.length);
+      setTotalItems(dataRows?.length || 0);
       setTotalPages(Math.ceil(totalItems / pageSize));
 
       const label = selectedNode?.data?.label;
@@ -236,14 +210,9 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       const mappedData = dataRows.map((row) => {
         const found = existingTemplate.find((entry) => entry._id === row._id);
         let prevSelections = found?.prevSelections || row.prevSelections || {};
-
-        return {
-          ...row,
-          prevSelections,
-        };
+        return { ...row, prevSelections };
       });
 
-      console.log("Fetched Master Data:", mappedData); // Debug log
       setCheckedItems(selectedIds);
       setData(mappedData);
     } catch (error) {
@@ -255,28 +224,38 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
 
   useEffect(() => {
     if (isModalOpen && masterId) {
-      fetchMasterData(search, statusFilter);
+      if (isViewMode) {
+        const label = selectedNode?.data?.label;
+        const existingTemplate = templateDataMap[label] || [];
+        const selectedData = existingTemplate.map((item) => ({
+          ...item[label],
+          prevSelections: item.prevSelections || {},
+        }));
+        setData(selectedData);
+        setCheckedItems(existingTemplate.map((item) => item._id));
+      } else {
+        fetchMasterData(search, statusFilter);
+      }
     }
-  }, [masterId, isModalOpen, currentPage, pageSize, sortBy, order, statusFilter]);
+  }, [masterId, isModalOpen, currentPage, pageSize, sortBy, order, statusFilter, isViewMode, selectedNode, templateDataMap]);
+
   const nodeTypes = useMemo(() => ({
     custom: (nodeProps) => (
-      <CustomNode
-        {...nodeProps}
-        onDoubleClick={handleNodeDoubleClick}
-      />
-    )
+      <CustomNode {...nodeProps} onDoubleClick={handleNodeDoubleClick} />
+    ),
   }), [handleNodeDoubleClick]);
+
   useEffect(() => {
     if (isModalOpen) {
-      document.body.style.overflow = 'hidden'; // prevent background scroll
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     }
-
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     };
   }, [isModalOpen]);
+
   function getAllCombinations(dataMap, currentNodeLabel) {
     const entries = Object.entries(dataMap).filter(
       ([key]) => key !== "document_code" && key !== currentNodeLabel
@@ -289,7 +268,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     if (currentNodeData.length > 0) {
       currentNodeData.forEach((row) => {
         const prevSelections = row.prevSelections || {};
-        // Handle multiple previous nodes
         const prevNodeLabels = Object.keys(prevSelections);
         let validCombos = getAllCombinations(
           Object.fromEntries(
@@ -299,12 +277,11 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
           )
         );
 
-        // Filter combinations based on all prevSelections
         prevNodeLabels.forEach((prevNodeLabel) => {
           const allowedIds = prevSelections[prevNodeLabel] || [];
           validCombos = validCombos.filter((combo) => {
-            const comboKey = getComboKey(combo);
-            return allowedIds.length === 0 || allowedIds.includes(comboKey);
+            const comboKey = getComboKey(combo, prevNodeLabel);
+            return allowedIds.length === 0 || allowedIds.some((sel) => sel.id === comboKey);
           });
         });
 
@@ -330,11 +307,11 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         tempCombinations.forEach((combo) => {
           values.forEach((val) => {
             const currentItem = val[key] || val;
-            const prevSelections = currentItem?.prevSelections || {};
+            const prevSelections = val?.prevSelections || {};
             const prevLabel = Object.keys(combo).find((k) => prevSelections[k]);
             const allowedIds = prevSelections[prevLabel] || [];
 
-            if (!prevLabel || allowedIds.includes(combo._id)) {
+            if (!prevLabel || allowedIds.length === 0 || allowedIds.some((sel) => sel.id === getComboKey(combo, prevLabel))) {
               newCombinations.push({
                 ...combo,
                 [key]: currentItem,
@@ -350,9 +327,43 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       return tempCombinations;
     }
 
-    console.log("Generated Combinations:", combinations); // Debug log
+    console.log("Generated Combinations:", combinations);
     return combinations;
   }
+
+function getDisplayValue(row, label) {
+  const excludedKeys = [
+    "_id",
+    "deleted_at",
+    "status",
+    "created_at",
+    "updated_at",
+    "__v",
+    "index",
+    "docId",
+    "masterId",
+    "prevSelections",
+  ];
+
+  const innerRow = row[label] || row;
+
+  // Prefer known fields
+  if (innerRow.name) return innerRow.name;
+  if (innerRow.label) return innerRow.label;
+  if (innerRow.documentcode) return innerRow.documentcode;
+
+  // Take first non-excluded value
+  const keys = Object.keys(innerRow).filter((k) => !excludedKeys.includes(k));
+  if (keys.length === 0) return "unknown";
+
+  const value = innerRow[keys[0]];
+
+  // ✅ Ensure full string, not just first character
+  return typeof value === "string" ? value : String(value);
+}
+
+
+
   function getDocumentCodePath(nodes, edges, comboMap, leafNodeId) {
     const path = [];
     let currentId = leafNodeId;
@@ -364,18 +375,42 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       const label = node.data.label;
       const selectedRow = comboMap[label];
       if (selectedRow) {
-        const defaultKey = Object.keys(selectedRow)[0];
-        path.unshift(selectedRow[defaultKey] ?? label);
+        const displayValue = getDisplayValue({ [label]: selectedRow }, label);
+        path.unshift(displayValue);
       } else {
         path.unshift(label);
       }
-
 
       const incomingEdge = edges.find((e) => e.target === currentId);
       currentId = incomingEdge?.source;
     }
     return path.join("-");
   }
+
+  function getFullLabel(combo, nodeLabel) {
+    const row = combo[nodeLabel];
+    const displayValue = getDisplayValue({ [nodeLabel]: row }, nodeLabel);
+
+    if (!combo.prevSelections || Object.keys(combo.prevSelections).length === 0) {
+      return displayValue;
+    }
+
+    const prevPrevLabel = Object.keys(combo.prevSelections)[0];
+    const prevSel = combo.prevSelections[prevPrevLabel]?.[0];
+    const prevDocCode = prevSel?.documentcode || prevSel?.label || "unknown";
+
+    return `${prevDocCode}-${displayValue}`;
+  }
+
+  function getComboKey(combo, prevNodeLabel) {
+    if (!prevNodeLabel) {
+      const keys = Object.keys(combo).filter((k) => k !== "_id").sort();
+      return keys.map((k) => combo[k]?._id || combo[k]).join("::");
+    }
+    const nodeData = combo[prevNodeLabel];
+    return nodeData?._id || nodeData;
+  }
+
   const handleSaveNodeData = () => {
     const selectedRows = data.filter((row) => checkedItems.includes(row._id));
     const label = selectedNode?.data?.label;
@@ -388,11 +423,10 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
         [label]: selectedRows.map((row) => ({
           [label]: row,
           _id: row._id,
-          prevSelections: row.prevSelections || {}, // Ensure prevSelections is included
+          prevSelections: row.prevSelections || {},
         })),
       };
 
-      // Generate document codes for all combinations
       const combinations = getAllCombinations(newMap, label);
       const allPaths = new Set();
       combinations.forEach((combo) => {
@@ -406,7 +440,24 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
       };
     });
 
-    // Reset checkedItems and update data to reflect saved prevSelections
+    setNodes((prevNodes) =>
+      prevNodes.map((node) =>
+        node.data.label === label
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                selectedData: selectedRows.map((row) => ({
+                  [label]: row,
+                  _id: row._id,
+                  prevSelections: row.prevSelections || {},
+                })),
+              },
+            }
+          : node
+      )
+    );
+
     setData((prevData) =>
       prevData.map((row) => ({
         ...row,
@@ -421,33 +472,27 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     const incomingEdge = edges.find((edge) => edge.target === currentNodeId);
     if (!incomingEdge) return null;
     const sourceNode = nodes.find((node) => node.id === incomingEdge.source);
-    console.log("Previous Node:", sourceNode); // Debug log
+    console.log("Previous Node:", sourceNode);
     return sourceNode;
   };
 
   const prevNode = selectedNode ? getPreviousNode(selectedNode.id) : null;
   const prevNodeLabel = prevNode?.data?.label;
 
-  // const prevNodeSelectedData =
-  //   prevNodeLabel && templateDataMap[prevNodeLabel]
-  //     ? templateDataMap[prevNodeLabel].map((entry) => entry[prevNodeLabel])
-  //     : [];
-  const previousCombinations = useMemo(
-    () =>
-      getAllCombinations(
-        Object.fromEntries(
-          Object.entries(templateDataMap).filter(
-            ([key]) => key !== selectedNode?.data?.label && key !== "document_code"
-          )
-        )
-      ),
-    [templateDataMap, selectedNode?.data?.label]
-  );
+  const previousCombinations = useMemo(() => {
+    const prevNodeData = templateDataMap[prevNodeLabel] || [];
+    return prevNodeData.map((row) => ({
+      [prevNodeLabel]: row[prevNodeLabel] || row,
+      _id: row._id,
+      prevSelections: row.prevSelections || {},
+    }));
+  }, [templateDataMap, prevNodeLabel]);
+
   const uniqueComboKeys = new Set();
   const deduplicatedCombinations = [];
 
   previousCombinations.forEach((combo) => {
-    const key = getComboKey(combo);
+    const key = getComboKey(combo, prevNodeLabel);
     if (!uniqueComboKeys.has(key)) {
       uniqueComboKeys.add(key);
       deduplicatedCombinations.push(combo);
@@ -456,17 +501,12 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
 
   const CheckboxOption = (props) => {
     const { data, innerRef, innerProps, selectProps } = props;
-
     const selectedValues = selectProps.value || [];
-
     const isSelectAll = data.value === "__select_all__";
-
     const allOptions = selectProps.options.filter((opt) => opt.value !== "__select_all__");
-
     const isAllSelected =
       selectedValues.length === allOptions.length &&
       allOptions.every((opt) => selectedValues.find((val) => val.value === opt.value));
-
     const isChecked = isSelectAll
       ? isAllSelected
       : selectedValues.some((val) => val.value === data.value);
@@ -484,35 +524,27 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     );
   };
 
-
   const MultiValueLabel = (props) => (
     <components.MultiValue {...props}>
       <span>{props.data.label}</span>
     </components.MultiValue>
   );
-  function getComboKey(combo, currentLabel) {
-    // Build a string using all node keys except `_id`, sorted
-    const keys = Object.keys(combo).filter((k) => k !== '_id').sort();
-    return keys.map((k) => combo[k]?._id || combo[k]).join("::");
-  }
 
   const optionsWithSelectAll = [
     { value: "__select_all__", label: "Select All" },
     ...deduplicatedCombinations.map((combo) => ({
-      value: getComboKey(combo),
-      label: getDocumentCodePath(nodes, edges, combo, prevNode?.id) || "Unnamed Combination",
+      value: getComboKey(combo, prevNodeLabel),
+      label: getFullLabel(combo, prevNodeLabel) || "Unnamed Combination",
       fullData: combo,
     })),
-  ].filter((option) => option.label !== ""); // Filter out invalid labels
-
+  ].filter((option) => option.label !== "");
 
   return (
     <>
       <div style={{ display: "flex", height: "600px" }}>
         <div style={{ zIndex: 10, position: "relative" }}>
-          <Sidebar master={master} usedTypes={nodes.map(n => n.data.label)} />
+          <Sidebar master={master} usedTypes={nodes.map((n) => n.data.label)} />
         </div>
-
         <div
           ref={reactFlowWrapper}
           style={{
@@ -536,7 +568,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
             onEdgeClick={(event, edge) => {
               event.preventDefault();
               event.stopPropagation();
-              console.log("Edge clicked:", edge);
               const bounds = reactFlowWrapper.current.getBoundingClientRect();
               setEdgeContextMenu({
                 isOpen: true,
@@ -545,26 +576,20 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
                   y: event.clientY - bounds.top,
                 },
                 edgeId: edge.id,
-                label: edge.label || '',
+                label: edge.label || "",
               });
             }}
             defaultEdgeOptions={{
-              type: 'smoothstep',
+              type: "smoothstep",
               markerEnd: { type: MarkerType.ArrowClosed },
-              style: { pointerEvents: 'auto' },
-              labelStyle: { pointerEvents: 'none' }, // label shouldn't block clicks
+              style: { pointerEvents: "auto" },
+              labelStyle: { pointerEvents: "none" },
             }}
-
             proOptions={{ hideAttribution: true }}
           >
             <Controls />
-            {/* <Controls showInteractive={false} position="top-right" /> */}
-
             <Background gap={12} color="#eee" variant={BackgroundVariant.Lines} />
           </ReactFlow>
-
-
-
           {edgeContextMenu.isOpen && (
             <div
               style={{
@@ -610,7 +635,6 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
               >
                 {edgeContextMenu.label ? "Update" : "Add Label"}
               </button>
-
               <button
                 style={{
                   display: "block",
@@ -636,19 +660,14 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
               </button>
             </div>
           )}
-
         </div>
-
       </div>
       {isModalOpen && (
         <div className="modal-overlay1" onClick={() => setIsModalOpen(false)}>
-          <div
-            className="addunit-card2"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="addunit-card2" onClick={(e) => e.stopPropagation()}>
             {loading && (
               <div className="loader-overlay d-flex justify-content-center align-items-center">
-                <Loader /> {/* or replace with <div>Loading...</div> if Loader not available */}
+                <Loader />
               </div>
             )}
             <div className="addunit-header d-flex justify-content-between align-items-center p-3">
@@ -667,253 +686,227 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
                 type="text"
                 placeholder="Search..."
                 className="form-control"
-              // value={searchQuery}
-              // onChange={(e) => setSearchQuery(e.target.value)}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-
-            {/* Modal Content */}
             <div className="">
               {loading ? (
                 <div>Loading...</div>
-              ) : (<>
-                <div className="table-responsive scrollable-table" style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "580px"
-                }} >
-                  <table className="table bg-white align-middle table-text">
-                    <thead className="table-head align-middle">
-                      <tr>
-                        <th className="table-check">
-                          <input
-                            type="checkbox"
-                            checked={data.length > 0 && checkedItems.length === data.length}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              const allIds = isChecked ? data.map((item) => item._id) : [];
-                              setCheckedItems(allIds);
-                            }}
-                          />
-                        </th>
-                        <th className="col">#</th>
-                        {data.length > 0 &&
-                          masterData?.master?.masterFields?.map((field) => (
-                            <th className="col text-uppercase" key={field._id}>{field.display_name}</th>
-                          ))}
-                        {prevNodeLabel && (
-                          <th className="col text-uppercase">Select {prevNodeLabel}</th>
-                        )}
-                        {/* <th>Action</th> */}
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {data.map((row, idx) => (
-                        <tr key={row._id} className={row.status ? "" : "text-muted"}>
-                          <td className="table-check">
-                            <input
-                              type="checkbox"
-                              checked={checkedItems.includes(row._id)}
-                              onChange={() => {
-                                if (checkedItems.includes(row._id)) {
-                                  setCheckedItems((prev) => prev.filter((id) => id !== row._id));
-                                } else {
-                                  setCheckedItems((prev) => [...prev, row._id]);
-                                }
-                              }}
-                            />
-                          </td>
-                          <td className="col">{idx + 1}</td>
-
-                          {masterData?.master?.masterFields?.map((field) => (
-                            <td key={field._id}>
-                              {field.field_name in row
-                                ? row[field.field_name]
-                                : row.attributes?.[field.field_name] ?? "-"}
-                            </td>
-                          ))}
-                          {prevNodeLabel && (
-                            <td className="custom-select-container">
-                              <Select
-                                isMulti
-                                closeMenuOnSelect={false}
-                                hideSelectedOptions={false}
-                                components={{
-                                  Option: CheckboxOption,
-                                  MultiValue: MultiValueLabel,
-                                }}
-                                value={
-                                  (() => {
-                                    const selectedIds = row.prevSelections?.[prevNodeLabel] || [];
-                                    return selectedIds
-                                      .map((id) => {
-                                        const combo = deduplicatedCombinations.find((c) => getComboKey(c) === id);
-                                        return combo
-                                          ? {
-                                            value: getComboKey(combo),
-                                            label: getDocumentCodePath(nodes, edges, combo, prevNode?.id) || "Unnamed Combination",
-                                            fullData: combo,
-                                          }
-                                          : null;
-                                      })
-                                      .filter(Boolean);
-                                  })()
-                                }
-
-
-                                onChange={(selectedOptions, { action, option }) => {
-                                  const isSelectAllOption = option?.value === "__select_all__";
-
-                                  console.log("Select onChange - Selected Options:", selectedOptions, "Action:", action); // Debug log
-
-                                  if (isSelectAllOption) {
-                                    const selectedIds = row.prevSelections?.[prevNodeLabel] || [];
-                                    const allIds = previousCombinations.map((combo) => getComboKey(combo));
-                                    const allSelected =
-                                      selectedIds.length === allIds.length &&
-                                      allIds.every((id) => selectedIds.includes(id));
-
-                                    // Toggle behavior
-                                    if (allSelected) {
-                                      // DESELECT ALL
-                                      setData((prevData) =>
-                                        prevData.map((r) =>
-                                          r._id === row._id
-                                            ? {
-                                              ...r,
-                                              prevSelections: {
-                                                ...(r.prevSelections || {}),
-                                                [prevNodeLabel]: [],
-                                              },
-                                            }
-                                            : r
-                                        )
-                                      );
-                                    } else {
-                                      // SELECT ALL
-                                      setData((prevData) =>
-                                        prevData.map((r) =>
-                                          r._id === row._id
-                                            ? {
-                                              ...r,
-                                              prevSelections: {
-                                                ...(r.prevSelections || {}),
-                                                [prevNodeLabel]: allIds,
-                                              },
-                                            }
-                                            : r
-                                        )
-                                      );
-                                    }
-                                    return;
-                                  }
-
-                                  // Regular selection change
-                                  const selectedIds = (selectedOptions || [])
-                                    .filter((opt) => opt.value !== "__select_all__")
-                                    .map((opt) => opt.value);
-
-                                  setData((prevData) =>
-                                    prevData.map((r) =>
-                                      r._id === row._id
-                                        ? {
-                                          ...r,
-                                          prevSelections: {
-                                            ...(r.prevSelections || {}),
-                                            [prevNodeLabel]: selectedIds,
-                                          },
-                                        }
-                                        : r
-                                    )
-                                  );
-                                }}
-
-                                options={optionsWithSelectAll}
-                                placeholder="Select connection(s)"
-                                styles={{
-                                  control: (provided, state) => ({
-                                    ...provided,
-                                    backgroundColor: "white",
-                                    borderColor: state.isFocused ? "#007BFF" : "#CED4DA",
-                                    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(0,123,255,.25)" : null,
-                                    "&:hover": { borderColor: "#007BFF" },
-                                    minHeight: "32px",
-                                  }),
-                                  option: (provided, state) => ({
-                                    ...provided,
-                                    padding: "4px 8px",
-                                    fontSize: "12px",
-                                    height: "30px",
-                                    backgroundColor: state.isSelected
-                                      ? "#ffffff"
-                                      : state.isFocused
-                                        ? "#E9ECEF"
-                                        : null,
-                                    color: "black",
-                                    "&:hover": { backgroundColor: "#E9ECEF" },
-                                  }),
-                                  menuPortal: (base) => ({ ...base, zIndex: 99999 }), // key fix
-                                  menu: (base) => ({ ...base, zIndex: 99999 }),        // optional
-                                  multiValue: (provided) => ({
-                                    ...provided,
-                                    backgroundColor: "#e0f0ff",
-                                    borderRadius: "12px",
-                                    padding: "0 4px",
-                                    fontSize: "12px",
-                                  }),
-                                  multiValueLabel: (provided) => ({
-                                    ...provided,
-                                    fontWeight: 500,
-                                  }),
+              ) : (
+                <>
+                  <div
+                    className="table-responsive scrollable-table"
+                    style={{ display: "flex", flexDirection: "column", height: "580px" }}
+                  >
+                    <table className="table bg-white align-middle table-text">
+                      <thead className="table-head align-middle">
+                        <tr>
+                          {!isViewMode && (
+                            <th className="table-check">
+                              <input
+                                type="checkbox"
+                                checked={data.length > 0 && checkedItems.length === data.length}
+                                onChange={(e) => {
+                                  const isChecked = e.target.checked;
+                                  const allIds = isChecked ? data.map((item) => item._id) : [];
+                                  setCheckedItems(allIds);
                                 }}
                               />
-
-                            </td>
+                            </th>
                           )}
-
-
+                          <th className="col">#</th>
+                          {data.length > 0 &&
+                            masterData?.master?.masterFields?.map((field) => (
+                              <th className="col text-uppercase" key={field._id}>
+                                {field.display_name}
+                              </th>
+                            ))}
+                          {prevNodeLabel && (
+                            <th className="col text-uppercase">Select {prevNodeLabel}</th>
+                          )}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                </div>
-                <div >  <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  pageSize={pageSize}
-                  totalItems={totalItems}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setCurrentPage(1);
-                  }}
-                /></div>
-              </>
+                      </thead>
+                      <tbody>
+                        {data.map((row, idx) => (
+                          <tr key={row._id} className={row.status ? "" : "text-muted"}>
+                            {!isViewMode && (
+                              <td className="table-check">
+                                <input
+                                  type="checkbox"
+                                  checked={checkedItems.includes(row._id)}
+                                  onChange={() => {
+                                    if (checkedItems.includes(row._id)) {
+                                      setCheckedItems((prev) => prev.filter((id) => id !== row._id));
+                                    } else {
+                                      setCheckedItems((prev) => [...prev, row._id]);
+                                    }
+                                  }}
+                                />
+                              </td>
+                            )}
+                            <td className="col">{idx + 1}</td>
+                            {masterData?.master?.masterFields?.map((field) => (
+                              <td key={field._id}>
+                                {field.field_name in row
+                                  ? row[field.field_name]
+                                  : row.attributes?.[field.field_name] ?? "-"}
+                              </td>
+                            ))}
+                            {prevNodeLabel && (
+                              <td className="custom-select-container">
+                                {isViewMode ? (
+                                  <div>
+                                    {(row.prevSelections?.[prevNodeLabel] || []).map((sel, i) => (
+                                      <span
+                                        key={i}
+                                        style={{
+                                          background: "#e0f0ff",
+                                          borderRadius: "12px",
+                                          padding: "2px 6px",
+                                          margin: "2px",
+                                          display: "inline-block",
+                                        }}
+                                      >
+                                        {sel.documentcode || sel.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <Select
+                                    isMulti
+                                    closeMenuOnSelect={false}
+                                    hideSelectedOptions={false}
+                                    components={{ Option: CheckboxOption, MultiValue: MultiValueLabel }}
+                                    value={
+                                      (row.prevSelections?.[prevNodeLabel] || []).map((item) => ({
+                                        value: item.id,
+                                        label: item.documentcode || item.label,
+                                        fullData: deduplicatedCombinations.find((c) => getComboKey(c, prevNodeLabel) === item.id),
+                                      }))
+                                    }
+                                    onChange={(selectedOptions, { action, option }) => {
+                                      const isSelectAllOption = option?.value === "__select_all__";
+                                      if (isSelectAllOption) {
+                                        const selectedItems = row.prevSelections?.[prevNodeLabel] || [];
+                                        const allOptions = optionsWithSelectAll.filter((opt) => opt.value !== "__select_all__");
+                                        const allSelected =
+                                          selectedItems.length === allOptions.length &&
+                                          allOptions.every((opt) => selectedItems.some((sel) => sel.id === opt.value));
+                                        setData((prevData) =>
+                                          prevData.map((r) =>
+                                            r._id === row._id
+                                              ? {
+                                                  ...r,
+                                                  prevSelections: {
+                                                    ...(r.prevSelections || {}),
+                                                    [prevNodeLabel]: allSelected
+                                                      ? []
+                                                      : allOptions.map((opt) => ({
+                                                          id: opt.value,
+                                                          label: opt.label,
+                                                          documentcode: opt.label,
+                                                        })),
+                                                  },
+                                                }
+                                              : r
+                                          )
+                                        );
+                                        return;
+                                      }
+                                      const selectedItems = (selectedOptions || [])
+                                        .filter((opt) => opt.value !== "__select_all__")
+                                        .map((opt) => ({
+                                          id: opt.value,
+                                          label: opt.label,
+                                          documentcode: opt.label,
+                                        }));
+                                      setData((prevData) =>
+                                        prevData.map((r) =>
+                                          r._id === row._id
+                                            ? {
+                                                ...r,
+                                                prevSelections: {
+                                                  ...(r.prevSelections || {}),
+                                                  [prevNodeLabel]: selectedItems,
+                                                },
+                                              }
+                                            : r
+                                        )
+                                      );
+                                    }}
+                                    options={optionsWithSelectAll}
+                                    placeholder="Select connection(s)"
+                                    styles={{
+                                      control: (provided, state) => ({
+                                        ...provided,
+                                        backgroundColor: "white",
+                                        borderColor: state.isFocused ? "#007BFF" : "#CED4DA",
+                                        boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(0,123,255,.25)" : null,
+                                        "&:hover": { borderColor: "#007BFF" },
+                                        minHeight: "32px",
+                                      }),
+                                      option: (provided, state) => ({
+                                        ...provided,
+                                        padding: "4px 8px",
+                                        fontSize: "12px",
+                                        height: "30px",
+                                        backgroundColor: state.isSelected ? "#ffffff" : state.isFocused ? "#E9ECEF" : null,
+                                        color: "black",
+                                        "&:hover": { backgroundColor: "#E9ECEF" },
+                                      }),
+                                      menuPortal: (base) => ({ ...base, zIndex: 99999 }),
+                                      menu: (base) => ({ ...base, zIndex: 99999 }),
+                                      multiValue: (provided) => ({
+                                        ...provided,
+                                        backgroundColor: "#e0f0ff",
+                                        borderRadius: "12px",
+                                        padding: "0 4px",
+                                        fontSize: "12px",
+                                      }),
+                                      multiValueLabel: (provided) => ({
+                                        ...provided,
+                                        fontWeight: 500,
+                                      }),
+                                    }}
+                                  />
+                                )}
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div>
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      pageSize={pageSize}
+                      totalItems={totalItems}
+                      onPageChange={setCurrentPage}
+                      onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setCurrentPage(1);
+                      }}
+                    />
+                  </div>
+                </>
               )}
             </div>
-
-
-
-            <div
-              className="addunit-card-footer"
-              style={{ position: "absolute", bottom: 0 }}
-            >
+            <div className="addunit-card-footer" style={{ position: "absolute", bottom: 0 }}>
               <button
                 type="button"
                 className="discard-btn"
-              // onClick={closeModal}
+                onClick={() => setIsModalOpen(false)}
               >
                 Close
               </button>
-              <button
-                onClick={handleSaveNodeData}
-                className="update-btn"
-              >
-                {" "}
-                Save Changes{" "}
-              </button>
+              {!isViewMode && (
+                <button onClick={handleSaveNodeData} className="update-btn">
+                  Save Changes
+                </button>
+              )}
             </div>
           </div>
         </div>

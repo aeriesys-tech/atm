@@ -56,21 +56,19 @@ function Header() {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [openMenu, setOpenMenu] = useState(null);
     const [openSubMenu, setOpenSubMenu] = useState(null);
-    // const [notificationCount, setNotificationCount] = useState(null);
     const location = useLocation();
     const dropdownRef = useRef(null);
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
     const navigate = useNavigate();
     const assetsRef = useRef();
+    const myassetsRef = useRef();
     const notificationCount = useSelector((state) => state.user.notificationCount);
-    // console.log(notificationCount)
     const menuAreaRef = useRef();
+    const templatesMenuRef = useRef();
 
     const [parameterTypes, setParameterTypes] = useState([]);
     const [templateTypes, setTemplateTypes] = useState([]);
-    const menuWrapperRef = useRef(null);
-    const templatesMenuRef = useRef();
 
     useEffect(() => {
         const stored = sessionStorage.getItem("parameterTypes");
@@ -80,7 +78,7 @@ function Header() {
                 const parsed = JSON.parse(stored);
                 setParameterTypes(parsed);
             } catch (err) {
-                // console.error("Invalid parameterTypes in sessionStorage", err);
+                console.error("Invalid parameterTypes in sessionStorage", err);
             }
         }
         if (storedTemplates) {
@@ -88,66 +86,67 @@ function Header() {
                 const parsed = JSON.parse(storedTemplates);
                 setTemplateTypes(parsed);
             } catch (err) {
-                // console.error("Invalid templateTypes in sessionStorage", err);
+                console.error("Invalid templateTypes in sessionStorage", err);
             }
         }
         getNotificationCount();
     }, []);
-
 
     useEffect(() => {
         setOpenMenu(null);
         setOpenSubMenu(null);
         setShowProfileMenu(false);
     }, [location]);
+
     useEffect(() => {
         const handleClickOutside = (e) => {
-            const clickedInside = dropdownRef.current?.contains(e.target);
-            const isLogoutButton = e.target.closest("button.dropdown-item");
-
-            if (!clickedInside && !isLogoutButton) {
+            // Check if click is outside profile dropdown
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target) && !e.target.closest("button.dropdown-item") &&
+                !e.target.closest("a.dropdown-item")) {
                 setShowProfileMenu(false);
             }
 
+            // Check if click is outside menu or submenu, but allow Link clicks to proceed
             if (
                 menuAreaRef.current &&
                 !menuAreaRef.current.contains(e.target) &&
-                (!templatesMenuRef.current || !templatesMenuRef.current.contains(e.target))
+                (!templatesMenuRef.current || !templatesMenuRef.current.contains(e.target)) &&
+                !e.target.closest("a.dropdown-item") // Exclude Link clicks
             ) {
                 setOpenMenu(null);
                 setOpenSubMenu(null);
             }
-
         };
-
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-
-
     const handleMenuToggle = (menuId) => {
-        setOpenSubMenu(openSubMenu === menuId ? null : menuId);
+        setOpenMenu(openMenu === menuId ? null : menuId);
+        setOpenSubMenu(null); // Reset submenu when toggling main menu
     };
 
     const getNotificationCount = async () => {
         try {
-            const response = await axiosWrapper(
-                `api/v1/notifications/countUnreadNotifications`,
-                { method: 'POST' }
-            );
-            dispatch(setNotificationCount(response.data))
-
+            const response = await axiosWrapper(`api/v1/notifications/countUnreadNotifications`, { method: "POST" });
+            dispatch(setNotificationCount(response.data));
         } catch (error) {
-            // console.error("Failed to fetch roles:", error.message || error);
+            console.error("Failed to fetch notification count:", error.message || error);
         }
     };
 
     const handleLogout = () => {
         dispatch(setUser({ user: null, token: null, _persist: null }));
-        clearAllStorage(); // ✅ clears sessionStorage and localStorage
+        clearAllStorage();
         navigate("/");
+    };
+
+    const handleDQClick = () => {
+        const token = sessionStorage.getItem("token");
+        const params = new URLSearchParams({ token: token || "" });
+        const dqUrl = `http://192.168.0.147:5173/?${params.toString()}`;
+        window.open(dqUrl, "_blank");
     };
 
     useEffect(() => {
@@ -181,22 +180,8 @@ function Header() {
         };
 
         window.addEventListener("scroll", handleScroll);
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
+        return () => window.removeEventListener("scroll", handleScroll);
     }, []);
-    const handleDQClick = () => {
-
-        const token = sessionStorage.getItem('token');
-
-        const params = new URLSearchParams({
-            token: token || ''
-        });
-        const dqUrl = `http://192.168.0.147:5173/?${params.toString()}`;
-        console.log("Opening URL:", dqUrl);
-        window.open(dqUrl, '_blank');
-    };
-
     return (
         <>
 
@@ -265,10 +250,16 @@ function Header() {
                             {showProfileMenu && (
                                 <ul className="dropdown-menu menu-list profile-ul show" style={{ display: "block" }}>
                                     <li>
-                                        <a className="dropdown-item d-flex justify-content-start gap-3" href="/profileSettings">
+                                        <Link
+                                            className="dropdown-item d-flex justify-content-start gap-3"
+                                            to="/profile_setting"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                            }}
+                                        >
                                             <img src={setting} alt="Settings" />
                                             <p className="m-0">Profile Settings</p>
-                                        </a>
+                                        </Link>
                                     </li>
                                     <li>
                                         <a className="dropdown-item d-flex justify-content-start gap-3" href="/globalSettings">
@@ -335,7 +326,7 @@ function Header() {
                                             setOpenSubMenu(null);
                                         }}
                                     >
-                                        <img src={fi_1828824} alt="Configure" />
+                                        <img src={wrench1} alt="Configure" />
                                         <span>CONFIGURE</span>
                                         <img src={ArrowDown} alt="Dropdown Arrow" />
                                     </a>
@@ -539,7 +530,7 @@ function Header() {
                                                     <p className="m-0">Asset Class</p>
                                                 </Link>
                                             </li>
-                                            <li className="menu-item">
+                                            {/* <li className="menu-item">
                                                 <button
                                                     className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
                                                     onClick={() => (window.location.href = "assetgroup.html")}
@@ -547,7 +538,7 @@ function Header() {
                                                     <img src={package1} alt="Asset Modal" />
                                                     <p className="m-0">Asset Modal</p>
                                                 </button>
-                                            </li>
+                                            </li> */}
                                         </ul>
                                     )}
 
@@ -583,33 +574,33 @@ function Header() {
                                     </ul>
                                 </li>
 
-                                <li className="nav-item dropdown">
+                                <li ref={myassetsRef} className={`nav-item dropdown position-relative ${openMenu === "myassets" ? "show" : ""}`}>
                                     <a
-                                        className="nav-link"
-                                        id="navbarDropdown"
+                                        className="nav-link d-flex align-items-center gap-2"
                                         role="button"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
+                                        onClick={() => handleMenuToggle("myassets")}
                                     >
-                                        <img src={fi_621995} />
+                                        <img src={fi_621995} alt="MyAssets" />
                                         <span>MY ASSETS</span>
-                                        <img src={ArrowDown} />
+                                        <img src={ArrowDown} alt="Dropdown" />
                                     </a>
-                                    <ul
-                                        className="dropdown-menu menu-list"
-                                        aria-labelledby="navbarDropdown"
-                                    >
-                                        <li>
-                                            <a
-                                                className="dropdown-item d-flex justify-content-start gap-3
-                  "
-                                                href="my-assets.html"
-                                            >
-                                                <img src={categories1} />
-                                                <p className="m-0">All Assets</p>
-                                            </a>
-                                        </li>
-                                    </ul>
+                                    {openMenu === "myassets" && (
+                                        <ul className="dropdown-menu show menu-list">
+                                            <li>
+                                                <Link
+                                                    className="dropdown-item d-flex justify-content-start gap-3 align-items-center"
+                                                    to="/all_assets"
+                                                    onClick={() => {
+                                                        setOpenMenu(null);
+                                                        setOpenSubMenu(null);
+                                                    }}
+                                                >
+                                                    <img src={categories1} alt="MyAsset" />
+                                                    <p className="m-0">All Assets</p>
+                                                </Link>
+                                            </li>
+                                        </ul>
+                                    )}
                                 </li>
 
                                 <li className="nav-item dropdown">

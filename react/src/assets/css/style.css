@@ -417,3 +417,32 @@ th .fa-angle-down.icon-down {
     appearance: none;
     cursor: pointer;
 }
+/* -----------------edit node  */
+.edit-cont {
+    display: flex;
+    flex-direction: column;
+    /* border-radius: 5px;
+    background-color: white;
+    padding: 4px;
+    border: 1px solid var(--primaryRed) */
+}
+
+.edit-btn {
+    /* background-color: #cccccc; */
+    border: 1px solid var(--primaryText);
+    color: var(--header);
+    padding: 0 5px;
+    border-radius: 5px;
+    margin: 2px;
+    font-size: 14px;
+}
+
+.delete-btn {
+    /* background-color: #cccccc; */
+    border: 1px solid var(--primaryText);
+    color: var(--primaryRed);
+    padding: 0 5px;
+    border-radius: 5px;
+    margin: 2px;
+    font-size: 14px;
+}
