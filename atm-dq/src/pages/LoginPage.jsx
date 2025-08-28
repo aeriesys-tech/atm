@@ -1,10 +1,21 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
 export default function LoginPage() {
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		// If already logged in, redirect to home
+		if (sessionStorage.getItem("auth_token")) {
+			navigate("/", { replace: true });
+		}
+	}, [navigate]);
 
 	const handleLogin = () => {
 		sessionStorage.setItem("auth_token", "dummy-token");
-		window.location.href = "/";
+		// Use navigate instead of window.location
+		navigate("/", { replace: true }); 
 	};
 
 	return (
