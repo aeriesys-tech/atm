@@ -81,7 +81,7 @@ const getAssetMaster = async (req, res) => {
 			asset_id: asset_id,
 			template_id: template_id
 		};
-		const assetMasters = await AssetMaster.find(query).populate('template_master_id');
+		const assetMasters = await AssetMaster.find(query).populate('template_id');
 		if (assetMasters.length === 0) {
 			const message = 'No assets found with the provided criteria';
 			await logApiResponse(req, message, 404, {});
