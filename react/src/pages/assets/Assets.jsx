@@ -174,7 +174,7 @@ const AssetName = () => {
                             }}
                         />
                         <Button
-                            name="Create Assets"
+                            name="CREATE NEW ASSET CLASS"
                             onClick={() =>
                                 navigate("/asset_add", {
                                     state: {

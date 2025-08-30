@@ -32,7 +32,7 @@ const AssetsCustomNode = ({ data, id, onDoubleClick }) => {
 
     const handleEdit = () => {
         setShowMenu(false);
-       if (data.onEdit) data.onEdit({ id, data });
+        if (data.onEdit) data.onEdit({ id, data });
     };
 
     const handleDelete = () => {
@@ -40,21 +40,20 @@ const AssetsCustomNode = ({ data, id, onDoubleClick }) => {
         if (data.onDelete) data.onDelete({ ...data, id });
     };
 
-const handleAddSpecification = () => {
-    setShowMenu(false);
-    if (data.onAddSpecification) data.onAddSpecification({ id, data });
-};
+    const handleAddSpecification = () => {
+        setShowMenu(false);
+        if (data.onAddSpecification) data.onAddSpecification({ id, data });
+    };
 
-const handleViewSpecification = () => {
-    setShowMenu(false);
-    if (data.onViewSpecification) data.onViewSpecification({ id, data });
-};
-
+    const handleViewSpecification = () => {
+        setShowMenu(false);
+        if (data.onViewSpecification) data.onViewSpecification({ id, data });
+    };
 
     return (
         <div
             ref={nodeRef}
-            className="resizable-node"
+            className={`resizable-node ${data.label === "Asset Class" ? "asset-class-node" : ""}`}
             onContextMenu={handleContextMenu}
             onDoubleClick={() => onDoubleClick && onDoubleClick({ id, data })}
         >
@@ -63,7 +62,7 @@ const handleViewSpecification = () => {
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
-                    color:  "black",
+                    color: "black",
                 }}
             >
                 {data.label}
@@ -76,7 +75,6 @@ const handleViewSpecification = () => {
                     <Handle type="target" position={Position.Right} id="target-right" />
                     <Handle type="target" position={Position.Bottom} id="target-bottom" />
                     <Handle type="target" position={Position.Left} id="target-left" />
-
                     <Handle type="source" position={Position.Top} id="source-top" />
                     <Handle type="source" position={Position.Right} id="source-right" />
                     <Handle type="source" position={Position.Bottom} id="source-bottom" />

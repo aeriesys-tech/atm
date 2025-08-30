@@ -271,7 +271,7 @@ const TemplateBuilder = () => {
       {loading && <div>Loading...</div>}
       <TemplateBuilderWrapper
         master={master}
-        isEditMode={!!templateId && !location.pathname.includes("/view")}
+        isEditMode={!!templateId && location.pathname.includes("/edit")}
         isViewMode={location.pathname.includes("/view")}
         usedTemplateTypeIds={[]}
         searchQuery={searchQuery}
