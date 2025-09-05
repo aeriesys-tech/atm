@@ -21,7 +21,7 @@ const roleSchema = new Schema({
     },
     deleted_at: {
         type: Date,
-        default: null,
+        default: null, 
     },
     status: {
         type: Boolean,

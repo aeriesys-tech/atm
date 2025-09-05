@@ -1,12 +1,74 @@
 const { query } = require('express');
 const AssetMaster = require('../models/assetMaster');
 const Asset = require('../models/asset');
+const mongoose = require("mongoose");
 // const Equipment = require('../models/equipment');
 const Template = require('../models/template');
 // const TemplateAttribute = require('../models/templateAttribute');
 const AssetConfiguration = require('../models/assetConfiguration');
 const { logApiResponse } = require('../utils/responseService');
 
+
+
+// const addAssetMaster = async (req, res) => {
+// 	try {
+// 		const { asset_id, template_id, data } = req.body;
+// 		let results = [];
+// 		let existingIds = [];
+
+// 		// Find and create/update entries
+// 		for (let item of data) {
+// 			const exists = await AssetMaster.findOne({
+// 				asset_id: asset_id,
+// 				template_id: template_id,
+// 				// template_master_id: item.template_master_id
+// 			});
+
+// 			if (!exists) {
+// 				const newAsset = await AssetMaster.create({
+// 					asset_id: asset_id,
+// 					template_id: template_id,
+// 					// template_master_id: item.template_master_id,
+// 					document_code: item.document_code,
+// 					node: item.node,
+// 					leaf_node: true,
+// 					asset_master_code: item.document_code
+// 				});
+// 				results.push(newAsset);
+// 			}
+// 			// existingIds.push(item.template_master_id);
+// 		}
+// 		const existingConfiguration = await AssetConfiguration.findOne({ asset_id, template_id });
+
+// 		// Update or create AssetConfiguration entry
+// 		const configurationResult = await AssetConfiguration.findOneAndUpdate(
+// 			{ asset_id, template_id },
+// 			// Set order and row_limit to null only if it doesn't exist
+// 			existingConfiguration ? {} : { order: null, row_limit: null },
+// 			{ new: true, upsert: true, setDefaultsOnInsert: true }
+// 		);
+
+// 		// Delete entries that no longer exist in the new data
+// 		await AssetMaster.deleteMany({
+// 			asset_id: asset_id,
+// 			template_id: template_id,
+// 			// template_master_id: { $nin: existingIds }
+// 		});
+
+// 		await logApiResponse(req, 'Assets processed successfully', 200, { added_updated: results });
+// 		res.status(200).send({
+// 			message: 'Assets processed successfully',
+// 			added_updated: results,
+// 		});
+// 	} catch (error) {
+// 		console.error("Failed to process assets:", error);
+// 		await logApiResponse(req, 'Failed to process assets', 500, { error: error.toString() });
+// 		res.status(500).send({
+// 			message: 'Failed to process assets',
+// 			error: error.toString()
+// 		});
+// 	}
+// };
 
 const addAssetMaster = async (req, res) => {
 	try {
@@ -17,16 +79,16 @@ const addAssetMaster = async (req, res) => {
 		// Find and create/update entries
 		for (let item of data) {
 			const exists = await AssetMaster.findOne({
-				asset_id: asset_id,
-				template_id: template_id,
-				// template_master_id: item.template_master_id
+				asset_id,
+				template_id,
+				template_master_id: item.template_master_id
 			});
 
 			if (!exists) {
 				const newAsset = await AssetMaster.create({
-					asset_id: asset_id,
-					template_id: template_id,
-					// template_master_id: item.template_master_id,
+					asset_id,
+					template_id,
+					template_master_id: item.template_master_id,
 					document_code: item.document_code,
 					node: item.node,
 					leaf_node: true,
@@ -34,23 +96,22 @@ const addAssetMaster = async (req, res) => {
 				});
 				results.push(newAsset);
 			}
-			// existingIds.push(item.template_master_id);
+			existingIds.push(item.template_master_id);
 		}
-		const existingConfiguration = await AssetConfiguration.findOne({ asset_id, template_id });
 
-		// Update or create AssetConfiguration entry
-		const configurationResult = await AssetConfiguration.findOneAndUpdate(
+		// Ensure AssetConfiguration exists
+		const existingConfiguration = await AssetConfiguration.findOne({ asset_id, template_id });
+		await AssetConfiguration.findOneAndUpdate(
 			{ asset_id, template_id },
-			// Set order and row_limit to null only if it doesn't exist
 			existingConfiguration ? {} : { order: null, row_limit: null },
 			{ new: true, upsert: true, setDefaultsOnInsert: true }
 		);
 
-		// Delete entries that no longer exist in the new data
+		// Delete entries that are not in new data
 		await AssetMaster.deleteMany({
-			asset_id: asset_id,
-			template_id: template_id,
-			// template_master_id: { $nin: existingIds }
+			asset_id,
+			template_id,
+			template_master_id: { $nin: existingIds }
 		});
 
 		await logApiResponse(req, 'Assets processed successfully', 200, { added_updated: results });
@@ -68,48 +129,63 @@ const addAssetMaster = async (req, res) => {
 	}
 };
 
-
 const getAssetMaster = async (req, res) => {
 	try {
 		const { asset_id, template_id } = req.body;
+
 		if (!asset_id || !template_id) {
-			const message = 'Both asset_id and template_id must be provided';
+			const message = "Both asset_id and template_id must be provided";
 			await logApiResponse(req, message, 400, {});
 			return res.status(400).send({ message });
 		}
+
+		// Ensure valid ObjectIds (Cosmos requires this)
+		if (!mongoose.Types.ObjectId.isValid(asset_id) || !mongoose.Types.ObjectId.isValid(template_id)) {
+			const message = "Invalid asset_id or template_id format";
+			await logApiResponse(req, message, 400, {});
+			return res.status(400).send({ message });
+		}
+
 		let query = {
-			asset_id: asset_id,
-			template_id: template_id
+			// asset_id: new mongoose.Types.ObjectId(asset_id),
+			template_id: new mongoose.Types.ObjectId(template_id),
 		};
-		const assetMasters = await AssetMaster.find(query).populate('template_id');
-		if (assetMasters.length === 0) {
-			const message = 'No assets found with the provided criteria';
+
+		// Fetch from Cosmos
+		const assetMasters = await AssetMaster.find(query)
+			.populate("template_id")
+			.lean(); // lean() improves Cosmos performance
+
+		if (!assetMasters || assetMasters.length === 0) {
+			const message = "No assets found with the provided criteria";
 			await logApiResponse(req, message, 404, {});
 			return res.status(404).send({ message });
 		}
-		assetMasters.sort((a, b) => {
-			const aIsLeafNode = a.asset_master_code.includes('-');
-			const bIsLeafNode = b.asset_master_code.includes('-');
+
+		// Sorting: Do this in JS (since it's custom string logic)
+		const sortedAssets = assetMasters.sort((a, b) => {
+			const aIsLeafNode = a.asset_master_code?.includes("-");
+			const bIsLeafNode = b.asset_master_code?.includes("-");
 			return bIsLeafNode - aIsLeafNode;
 		});
 
-		const message = 'Assets retrieved successfully';
-		await logApiResponse(req, message, 200, { data: assetMasters });
+		const message = "Assets retrieved successfully";
+		await logApiResponse(req, message, 200, { data: sortedAssets });
+
 		res.status(200).send({
 			message,
-			data: assetMasters
+			data: sortedAssets,
 		});
 	} catch (error) {
-		const errorMessage = 'Failed to retrieve assets';
+		const errorMessage = "Failed to retrieve assets";
 		console.error(errorMessage, error);
 		await logApiResponse(req, errorMessage, 500, { error: error.toString() });
 		res.status(500).send({
 			message: errorMessage,
-			error: error.toString()
+			error: error.toString(),
 		});
 	}
 };
-
 
 
 const getTemplatesByTemplateID = async (req, res) => {
@@ -290,83 +366,126 @@ const getAssetClassMasters = async (req, res) => {
 		});
 	}
 };
-
 const getAssetTemplatesWithAttributes = async (req, res) => {
 	try {
-		const { asset_id } = req.params;
+		const { asset_id } = req.body;
+		const ObjectId = mongoose.Types.ObjectId;
 
-		// Fetch template IDs associated with the given asset
-		const templateIds = await AssetMaster.distinct('template_id', { asset_id });
+		// 1️⃣ Fetch distinct template IDs linked to asset
+		const templateIds = await AssetMaster.distinct("template_id", { asset_id });
 		console.log("Fetched Template IDs from AssetMaster:", templateIds);
 
-		// Fetch the asset to get the structure
-		const asset = await Asset.findOne({ _id: asset_id });
+		// 2️⃣ Fetch asset document
+		const asset = await Asset.findOne({ _id: new ObjectId(asset_id) }).lean();
 		if (!asset) {
-			const message = 'Asset not found';
+			const message = "Asset not found";
 			await logApiResponse(req, message, 404, { asset_id });
 			return res.status(404).json({ message });
 		}
 
-		// Parse the structure field
-		const structure = Array.isArray(JSON.parse(asset.structure)) ? JSON.parse(asset.structure) : [];
-		const nodeIds = structure.flatMap(section => section.nodes?.map(node => node.id) || []);
-		console.log('Extracted Node IDs:', nodeIds);
+		// 3️⃣ Parse structure safely
+		let structure = [];
+		try {
+			const parsed = JSON.parse(asset.structure || "[]");
+			structure = Array.isArray(parsed) ? parsed : [];
+		} catch (err) {
+			structure = [];
+		}
+		console.log("structureeee", structure);
 
-		// Convert node IDs to ObjectId if applicable
-		const ObjectId = require('mongoose').Types.ObjectId;
-		const nodeIdsObjectId = nodeIds.map(id => (ObjectId.isValid(id) ? new ObjectId(id) : id));
-		const validTemplateIds = templateIds.filter(id =>
-			nodeIdsObjectId.some(objId => objId.toString() === id.toString())
-		);
-		console.log('Valid Template IDs:', validTemplateIds);
+		// 4️⃣ Recursive extraction of all node IDs
+		const extractNodeIds = (structure) => {
+			const ids = [];
 
-		// Fetch templates and configurations
-		const templates = await Template.find({ _id: { $in: validTemplateIds } });
-		const assetConfigurations = await AssetConfiguration.find({ asset_id });
+			const traverse = (item) => {
+				if (Array.isArray(item)) {
+					item.forEach(traverse);
+				} else if (item && typeof item === "object") {
+					if (Array.isArray(item.nodes)) {
+						item.nodes.forEach(node => {
+							if (node && node.id) ids.push(node.id);
+						});
+					}
+					// Continue traversing all object values
+					Object.values(item).forEach(traverse);
+				}
+			};
+
+			traverse(structure);
+			return ids;
+		};
+
+		const nodeIds = extractNodeIds(structure);
+		console.log("Extracted Node IDs:", nodeIds);
+		console.log("Template Idsssssssss:", templateIds);
+
+
+		// 5️⃣ Filter templateIds to keep only those present in structure
+		const templates = await Template.find({
+			_id: { $in: templateIds },
+			// document_code: { $in: nodeIds } // 🔹 adjust field if needed
+		}).lean();
+
+		const validTemplateIds = templates.map(t => t._id);
+		console.log("Valid Template IDs:", validTemplateIds);
+
+		if (validTemplateIds.length === 0) {
+			const message = "No valid templates found for asset";
+			await logApiResponse(req, message, 200, []);
+			return res.status(200).json([]);
+		}
+
+		// 6️⃣ Fetch asset configurations
+		const assetConfigurations = await AssetConfiguration.find({ asset_id }).lean();
 
 		const templatesMap = templates.reduce((map, template) => {
-			map[template._id] = template;
+			map[template._id.toString()] = template;
 			return map;
 		}, {});
-		console.log('Templates Map:', templatesMap);
+		console.log("Templates Map:", templatesMap);
 
-		// Ensure all templates are included, assigning undefined `order` to last
+		// 7️⃣ Merge templates with configurations
 		const allTemplates = validTemplateIds.map(templateId => {
-			const config = assetConfigurations.find(config => config.template_id.toString() === templateId.toString());
-			const template = templatesMap[templateId];
+			const config = assetConfigurations.find(
+				c => c.template_id.toString() === templateId.toString()
+			);
+			const template = templatesMap[templateId.toString()];
 			return {
-				...template._doc,
+				...template,
 				rowlimit: config?.row_limit || null,
-				order: config?.order ?? Number.MAX_SAFE_INTEGER, // Assign undefined `order` to the end
+				order: config?.order ?? Number.MAX_SAFE_INTEGER
 			};
 		});
 
-		// Sort templates by `order`
+		// 8️⃣ Sort by order
 		const sortedTemplates = allTemplates.sort((a, b) => a.order - b.order);
 
-		// Fetch attributes for each template
-		const templatesWithAttributes = await Promise.all(
-			sortedTemplates.map(async template => {
-				const attributes = await TemplateAttribute.find({
-					template_id: template._id,
-					asset_id,
-				});
-				return { ...template, attributes };
-			})
-		);
+		// 9️⃣ Fetch attributes for each template
+		// const templatesWithAttributes = await Promise.all(
+		// 	sortedTemplates.map(async template => {
+		// 		const attributes = await TemplateAttribute.find({
+		// 			template_id: template._id,
+		// 			asset_id
+		// 		}).lean();
+		// 		return { ...template, attributes };
+		// 	})
+		// );
 
-		const message = 'Templates with attributes retrieved successfully';
-		console.log(message, templatesWithAttributes);
+		const message = "Templates with attributes retrieved successfully";
+		console.log(message, sortedTemplates);
 
-		await logApiResponse(req, message, 200, templatesWithAttributes);
-		res.status(200).json(templatesWithAttributes);
+		await logApiResponse(req, message, 200, sortedTemplates);
+		res.status(200).json(sortedTemplates);
+
 	} catch (error) {
-		const errorMessage = 'Error fetching assets';
+		const errorMessage = "Error fetching assets";
 		console.error(errorMessage, error);
-		await logApiResponse(req, errorMessage, 500, { error: error.toString() });
-		res.status(500).json({ message: errorMessage, error: error.toString() });
+		await logApiResponse(req, errorMessage, 500, { error: error.message });
+		res.status(500).json({ message: errorMessage, error: error.message });
 	}
 };
+
+
 
 
 module.exports = {

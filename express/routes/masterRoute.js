@@ -35,5 +35,6 @@ router.post('/masters/delete', authMiddleware, masterController.deleteMaster);
 router.post('/masters-update', authMiddleware, dynamicTableUpdateValidation, masterController.updateDynamicData);
 router.post('/download-empty-sheet', masterController.downloadExcel);
 router.post('/upload-excel', authMiddleware, uploadExcelMiddleware.single('file'), masterController.uploadExcel);
+router.post('/get-masters', authMiddleware, masterController.getAllDynamicData);
 
 module.exports = router;

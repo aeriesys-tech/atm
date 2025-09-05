@@ -10,11 +10,11 @@ const assetMasterSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Template',
     },
-    // template_master_id: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     required: true,
-    //     ref: 'TemplateMaster'
-    // },
+    template_master_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'TemplateMaster'
+    },
     // document_id: {
     //     type: mongoose.Schema.Types.ObjectId,
     //     required: true
