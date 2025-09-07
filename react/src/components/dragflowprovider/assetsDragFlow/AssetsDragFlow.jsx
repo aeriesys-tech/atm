@@ -16,6 +16,8 @@ import Pagination from "../../general/Pagination";
 import Loader from "../../general/LoaderAndSpinner/Loader";
 import AssetSidebar from "./AssetsSidebar";
 import AssetsCustomNode from "./AssetsCustomNode";
+import search1 from "../../../assets/icons/search1.svg"
+import closeicon from "../../../assets/icons/close.svg"
 const initialNodes = [];
 const initialEdges = [];
 
@@ -32,11 +34,17 @@ const AssetDragDropFlow = ({
   usedHeaders,
   setUsedHeaders,
   isEditMode,
+  templateName,
 }) => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAttributeModalOpen, setIsAttributeModalOpen] = useState(false);
+  const [attributes, setAttributes] = useState([]);
+  const [checkedItems, setCheckedItems] = useState([]);
+  const [allChecked, setAllChecked] = useState(false);
+  const [orders, setOrders] = useState({});
   const [loading, setLoading] = useState(false);
   const [assetMasters, setAssetMasters] = useState([]);
   const [leafGroups, setLeafGroups] = useState([]);
@@ -54,11 +62,10 @@ const AssetDragDropFlow = ({
     [setNodes]
   );
 
-   const onEdgesChange = useCallback(
+  const onEdgesChange = useCallback(
     (changes) => {
       setEdges((eds) => {
         const newEdges = applyEdgeChanges(changes, eds);
-        // If an edge is deleted, clear prevSelections for affected nodes
         changes.forEach((change) => {
           if (change.type === "remove") {
             setTemplateDataMap((prev) => {
@@ -77,20 +84,18 @@ const AssetDragDropFlow = ({
         return newEdges;
       });
     },
-    [setEdges, nodes]
+    [setEdges, nodes, setTemplateDataMap]
   );
+
   const onConnect = useCallback(
     (params) => {
       const sourceNode = nodes.find((n) => n.id === params.source);
       const targetNode = nodes.find((n) => n.id === params.target);
-
       setEdges((eds) =>
         addEdge(
           {
             ...params,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-            },
+            markerEnd: { type: MarkerType.ArrowClosed },
           },
           eds
         )
@@ -122,7 +127,7 @@ const AssetDragDropFlow = ({
         x: event.clientX,
         y: event.clientY,
       });
-      const id = `${+new Date()}`;
+      const id = masterData.master_name === "Asset Class" ? "asset-class-node" : `${+new Date()}`;
 
       const newNode = {
         id,
@@ -147,7 +152,6 @@ const AssetDragDropFlow = ({
             setNodes((prevNodes) => {
               const filtered = prevNodes.filter((node) => node.id !== nodeData.id);
               const nextSelectedId = filtered.length > 0 ? filtered[0].id : null;
-
               setSelectedNodeId(nextSelectedId);
               return filtered;
             });
@@ -182,10 +186,7 @@ const AssetDragDropFlow = ({
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
-        data: {
-          ...node.data,
-          selectedNodeId,
-        },
+        data: { ...node.data, selectedNodeId },
       }))
     );
   }, [selectedNodeId, setNodes]);
@@ -198,24 +199,60 @@ const AssetDragDropFlow = ({
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
- const handleNodeDoubleClick = useCallback(
+  useEffect(() => {
+    const fetchAttributes = async () => {
+      const isViewRoute = matchPath({ path: "/asset/view/:assetId" }, location.pathname);
+      if (!isViewRoute) {
+        console.log("Not on view route, skipping attribute fetch:", location.pathname);
+        return;
+      }
+
+      const assetId = isViewRoute.params?.assetId;
+      if (!assetId) {
+        setErrorMessage("No asset ID found in the URL.");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const attributesResponse = await axiosWrapper(
+          "api/v1/asset-attributes/getAssetAttributes",
+          {
+            method: "POST",
+            data: { asset_id: assetId },
+          }
+        );
+        console.log("Initial Attributes API Response:", attributesResponse);
+        const allAttributes = attributesResponse.data || [];
+
+        const normalizedAttributes = allAttributes.map((attr) => ({
+          ...attr,
+          _id: String(attr._id),
+          order: String(attr.order || ""),
+        }));
+
+        console.log("Setting initial attributes:", normalizedAttributes);
+        setAttributes(normalizedAttributes);
+      } catch (error) {
+        console.error("Error fetching initial asset attributes:", error);
+        setErrorMessage(
+          error.response?.data?.message || "Failed to fetch asset attributes."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttributes();
+  }, [location.pathname]);
+
+  const handleNodeDoubleClick = useCallback(
     async (node) => {
+      console.log("Double-clicked node:", { id: node.id, label: node.data.label, templateName });
       const isViewRoute = matchPath({ path: "/asset/view/:assetId" }, location.pathname);
 
       if (!isViewRoute) {
-        return;
-      }
-
-      if (node.data.label === "Asset Class") {
-        console.log("Asset Class node double-clicked, no API call.");
-        return;
-      }
-
-      console.log("Double click node", node);
-      const masterIdFromNode = node?.data?.template_master_code;
-      if (!masterIdFromNode) {
-        setErrorMessage("No template ID found for this node.");
-        setIsModalOpen(true);
+        console.log("Not on view route:", location.pathname);
         return;
       }
 
@@ -226,58 +263,158 @@ const AssetDragDropFlow = ({
         return;
       }
 
+      // Clear assetMasters to prevent carrying over previous data
+      setAssetMasters([]);
+
+      if (
+        node.data.label === templateName ||
+        node.data.label === "Asset Class" ||
+        node.id === "asset-class-node"
+      ) {
+        console.log("Asset Class node detected, fetching attributes...");
+        setLoading(true);
+
+        try {
+          let savedAttributes = [];
+          try {
+            const savedAttributesResponse = await axiosWrapper(
+              "api/v1/asset-class-attributes/getAssetClassAttribute",
+              {
+                method: "POST",
+                data: { assetId },
+              }
+            );
+            console.log("Saved Attributes API Response:", savedAttributesResponse);
+            savedAttributes = savedAttributesResponse?.asset_attributes || [];
+          } catch (error) {
+            if (error?.response?.status === 404) {
+              console.warn("No saved attributes found for this asset.");
+              savedAttributes = [];
+            } else {
+              console.error("Error fetching saved attributes:", error);
+              setErrorMessage(error.response?.data?.message || "Failed to fetch saved attributes.");
+            }
+          }
+
+          const attributesResponse = await axiosWrapper(
+            "api/v1/asset-attributes/getAssetAttributes",
+            {
+              method: "POST",
+              data: { asset_id: assetId },
+            }
+          );
+          console.log("Attributes API Response:", attributesResponse);
+          const allAttributes = attributesResponse.data || [];
+
+          const savedCheckedItems = savedAttributes.map((attr) => String(attr._id || attr.id));
+          const savedOrders = savedAttributes.reduce((acc, attr) => {
+            acc[String(attr._id || attr.id)] = String(attr.order || "");
+            return acc;
+          }, {});
+
+          const mergedAttributes = allAttributes.map((attr) => ({
+            ...attr,
+            _id: String(attr._id),
+            order: savedOrders[String(attr._id)] || String(attr.order || ""),
+          }));
+
+          setAttributes(mergedAttributes);
+          setCheckedItems(savedCheckedItems);
+          setOrders(savedOrders);
+          setAllChecked(savedCheckedItems.length === mergedAttributes.length);
+
+          console.log("Opening attribute modal...");
+          setIsAttributeModalOpen(true);
+        } catch (error) {
+          console.error("Error fetching attributes:", error);
+          setErrorMessage(error.response?.data?.message || "Failed to fetch attributes.");
+          setIsAttributeModalOpen(true);
+        } finally {
+          setLoading(false);
+        }
+
+        return;
+      }
+
+      // Non-Asset Class flow
+      console.log("Non-Asset Class node, proceeding with template logic...");
+      const masterIdFromNode = node?.data?.template_master_code;
+      if (!masterIdFromNode) {
+        setErrorMessage("No template ID found for this node.");
+        setIsModalOpen(true);
+        return;
+      }
+
       setSelectedNode(node);
       setIsModalOpen(true);
       setLoading(true);
 
       try {
-        const [assetMasterResponse, leafTemplateResponse] = await Promise.all([
-          axiosWrapper("api/v1/asset-masters/getAssetMaster", {
+        const leafTemplateResponse = await axiosWrapper(
+          "api/v1/template-masters/templateMasters/leaf",
+          {
             method: "POST",
-            data: {
-              asset_id: assetId,
-              template_id: masterIdFromNode,
-            },
-          }),
-          axiosWrapper("api/v1/template-masters/templateMasters/leaf", {
-            method: "POST",
-            data: {
-              template_id: masterIdFromNode,
-            },
-          }),
-        ]);
+            data: { template_id: masterIdFromNode },
+          }
+        );
+        console.log("getTemplatesByTemplateIDLeaf Response:", leafTemplateResponse);
 
-        // Handle getAssetMaster response
-        const { message: assetMessage, data: assetData } = assetMasterResponse.data;
-        console.log("getAssetMaster Response:", assetMasterResponse.data);
-
-        // Handle getTemplatesByTemplateIDLeaf response
-        const { message: leafMessage, groups: leafData } = leafTemplateResponse.data;
-        console.log("getTemplatesByTemplateIDLeaf Response:", leafTemplateResponse.data);
-
-        if (assetMasterResponse.status === 200 && leafTemplateResponse.status === 200) {
-          setAssetMasters(assetData);
-          setLeafGroups(leafData);
+        if (leafTemplateResponse?.groups) {
+          setLeafGroups(leafTemplateResponse.groups || []);
           setErrorMessage(null);
         } else {
-          setErrorMessage(
-            assetMasterResponse.status !== 200
-              ? assetMessage || "Failed to fetch asset data."
-              : leafMessage || "Failed to fetch leaf templates."
-          );
-          setAssetMasters([]);
+          setErrorMessage("Failed to fetch leaf templates.");
           setLeafGroups([]);
+          return;
+        }
+
+        try {
+          const assetMasterResponse = await axiosWrapper(
+            "api/v1/asset-masters/getAssetMaster",
+            {
+              method: "POST",
+              data: {
+                asset_id: assetId,
+                template_id: masterIdFromNode,
+              },
+            }
+          );
+
+          if (assetMasterResponse?.data?.length > 0) {
+            const normalized = assetMasterResponse.data.map((am) => ({
+              document_code: am.document_code,
+              template_master_id: am.template_master_id,
+              asset_id: am.asset_id,
+              node_ids: {
+                  ...am.node_ids, // Preserve node_ids from getAssetMaster
+                  ...Object.fromEntries(
+                    Object.entries(am).filter(([key]) => key !== "_id" && key !== "asset_id" && key !== "template_id" && key !== "template_master_id" && key !== "document_code" && key !== "created_at" && key !== "updated_at" && key !== "deleted_at")
+                  ),
+                },
+            }));
+            setAssetMasters(normalized);
+          } else {
+            setAssetMasters([]);
+          }
+        } catch (error) {
+          if (error?.response?.status === 404) {
+            console.warn("No saved asset masters found, showing only leaves.");
+            setAssetMasters([]);
+          } else {
+            console.error("Error fetching asset masters:", error);
+            setErrorMessage({ type: "error", text: error.message?.message || "Failed to fetch asset masters." });
+            setAssetMasters([]);
+          }
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
-        setErrorMessage(error.response?.data?.message || "Failed to fetch data.");
-        setAssetMasters([]);
+        console.error("Error fetching leaf templates:", error);
+        setErrorMessage({ type: "error", text: error.message?.message || "Failed to fetch leaf templates." });
         setLeafGroups([]);
       } finally {
         setLoading(false);
       }
     },
-    [location.pathname]
+    [location.pathname, templateName]
   );
 
   const closeModal = () => {
@@ -288,6 +425,81 @@ const AssetDragDropFlow = ({
     setTableSearchQueries({});
   };
 
+  const closeAttributeModal = () => {
+    setIsAttributeModalOpen(false);
+    setAttributes([]);
+    setCheckedItems([]);
+    setAllChecked(false);
+    setOrders({});
+    setErrorMessage(null);
+  };
+
+  const handleHeaderCheckboxChange = (e) => {
+    const checked = e.target.checked;
+    setAllChecked(checked);
+    setCheckedItems(checked ? attributes.map((attr) => attr._id) : []);
+  };
+
+  const handleRowCheckboxChange = (id) => {
+    setCheckedItems((prev) => {
+      const newChecked = prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id];
+      setAllChecked(newChecked.length === attributes.length);
+      return newChecked;
+    });
+  };
+
+  const handleOrderChange = (id, value) => {
+    setOrders((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleSelectedAttributes = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const assetId = matchPath({ path: "/asset/view/:assetId" }, location.pathname)?.params?.assetId;
+      if (!assetId) {
+        setErrorMessage("No asset ID found in the URL.");
+        return;
+      }
+
+      const selectedAttributes = checkedItems.map((id) => {
+        const attr = attributes.find((a) => a._id === id);
+        const order = orders[id] || attr.order || "";
+        return {
+          id,
+          order,
+        };
+      });
+
+      const missingOrders = selectedAttributes.filter((attr) => !attr.order || attr.order < 1);
+      if (missingOrders.length > 0) {
+        alert("Please specify a valid order (greater than 0) for all selected attributes.");
+        setErrorMessage("Please specify a valid order for all selected attributes.");
+        return;
+      }
+
+      const payload = {
+        asset_id: assetId,
+        asset_attribute_ids: selectedAttributes,
+      };
+
+      console.log("Saving attributes payload:", payload);
+
+      await axiosWrapper("api/v1/asset-class-attributes/createAssetClassAttribute", {
+        method: "POST",
+        data: payload,
+      });
+
+      alert("Attributes saved successfully!");
+      closeAttributeModal();
+    } catch (error) {
+      console.error("Error saving attributes:", error);
+      setErrorMessage(error.response?.data?.message || "Failed to save attributes.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTableSearch = (e, masterName) => {
     setTableSearchQueries((prev) => ({
       ...prev,
@@ -295,78 +507,152 @@ const AssetDragDropFlow = ({
     }));
   };
 
-  // Placeholder functions for UI (not implemented as per your request)
-  const handleAddAssetMaster = (e) => {
+  const handleMasterRowCheckbox = (templateMasterId, documentCode, nodeIds) => {
+    setAssetMasters((prev) => {
+      const exists = prev.some((item) => item.document_code === documentCode);
+      if (exists) {
+        return prev.filter((item) => item.document_code !== documentCode);
+      } else {
+        return [
+          ...prev,
+          {
+            document_code: documentCode,
+            template_master_id: templateMasterId,
+            asset_id: matchPath({ path: '/asset/view/:assetId' }, location.pathname)?.params?.assetId,
+            node_ids: nodeIds || {}, // Include node_ids
+          },
+        ];
+      }
+    });
+  };
+
+  const handleSelectAll = (group, checked) => {
+    setAssetMasters((prev) => {
+      if (checked) {
+        const newItems = group.templates
+          .filter(
+            (t) => !prev.some((item) => item.document_code === t.document_code)
+          )
+          .map((t) => ({
+            document_code: t.document_code,
+            template_master_id: t.template_master_id,
+            asset_id: matchPath({ path: '/asset/view/:assetId' }, location.pathname)?.params?.assetId,
+            node_ids: t.node_ids || {}, // Include node_ids
+          }));
+        return [...prev, ...newItems];
+      } else {
+        return prev.filter(
+          (item) =>
+            !group.templates.some(
+              (t) => t.document_code === item.document_code
+            )
+        );
+      }
+    });
+  };
+
+  const handleAddAssetMaster = async (e) => {
     e.preventDefault();
-    // Placeholder: Add your submit logic here
-    console.log("Submit clicked");
-    closeModal();
+    try {
+      setLoading(true);
+
+      const assetId = matchPath(
+        { path: "/asset/view/:assetId" },
+        location.pathname
+      )?.params?.assetId;
+
+      const templateId = selectedNode?.data?.template_master_code;
+
+      if (!assetId || !templateId) {
+        setErrorMessage({ type: "error", text: "Missing asset ID or template ID." });
+        return;
+      }
+
+      if (assetMasters.length === 0) {
+        setErrorMessage({ type: "error", text: "Please select at least one document code." });
+        return;
+      }
+
+      const payload = {
+        asset_id: assetId,
+        template_id: templateId,
+        data: assetMasters.map((item) => ({
+          document_code: item.document_code,
+          template_master_id: item.template_master_id,
+          node_ids: item.node_ids || {},
+        })),
+      };
+
+      console.log("Submitting payload:", payload);
+
+      await axiosWrapper("api/v1/asset-masters/createAssetMaster", {
+        method: "POST",
+        data: payload,
+      });
+
+      alert("Asset masters saved successfully!");
+      closeModal();
+    } catch (error) {
+      console.error("Error saving asset masters:", error);
+      alert(error?.response?.data?.message || "Failed to save asset masters.");
+      setErrorMessage(
+        error?.response?.data?.message || "Failed to save asset masters."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleMasterHeaderCheckbox = (masterName) => {
-    // Placeholder: Add your checkbox logic here
-    console.log(`Header checkbox for ${masterName} clicked`);
-  };
-
-  const handleMasterRowCheckbox = (templateMasterId, documentCode) => {
-    // Placeholder: Add your row checkbox logic here
-    console.log(`Row checkbox for ${templateMasterId} clicked`);
-  };
+  const isGroupFullySelected = (group) =>
+    group.templates.every((t) =>
+      assetMasters.some((item) => item.document_code === t.document_code)
+    );
 
   const nodeTypes = useMemo(
     () => ({
       custom: (nodeProps) => (
-        <AssetsCustomNode {...nodeProps} onDoubleClick={handleNodeDoubleClick} />
+        <AssetsCustomNode {...nodeProps} onDoubleClick={handleNodeDoubleClick} templateName={templateName} />
       ),
     }),
-    [handleNodeDoubleClick]
+    [handleNodeDoubleClick, templateName]
   );
 
   useEffect(() => {
     if (isModalOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = 'auto';
     }
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = 'auto';
     };
   }, [isModalOpen]);
 
-  // Group assetMasters by a property (e.g., template_master_id.name) for display
-  const groupedAssetMasters = assetMasters.reduce((acc, asset) => {
-    const masterName = asset.template_master_id?.name || "Unknown";
-    if (!acc[masterName]) {
-      acc[masterName] = { master_name: masterName, templates: [] };
-    }
-    acc[masterName].templates.push(asset);
-    return acc;
-  }, {});
-
- const filteredTemplateMasters = leafGroups.map((group) => {
-    const templates = group.nodes
-      .map((node) => {
-        const matchingAsset = assetMasters.find(
-          (asset) => asset.template_master_id?.name === group.master_name
-        );
-        return matchingAsset
-          ? {
-              _id: matchingAsset._id,
-              asset_master_code: matchingAsset.asset_master_code,
-            }
-          : null;
-      })
-      .filter((template) => template !== null);
-
-    return {
-      master_name: group.master_name,
-      templates: templates.filter((template) =>
-        template.asset_master_code
-          ?.toLowerCase()
-          .includes(tableSearchQueries[group.master_name]?.toLowerCase() || "")
-      ),
-    };
-  }).filter((group) => group.templates.length > 0);
+  const filteredTemplateMasters = leafGroups
+    .map((group) => {
+      return {
+        master_name: group.master_name,
+        templates: group.templates.flatMap((t) => {
+          const selectedData = t.selectedData || [];
+          return selectedData
+            .filter((sd) =>
+              sd?.[t.label]?.documentcode
+                ?.toLowerCase()
+                .includes(
+                  tableSearchQueries[group.master_name]?.toLowerCase() || ""
+                )
+            )
+            .map((sd) => ({
+              _id: sd._id,
+              document_code: sd[t.label]?.documentcode,
+              template_master_id: sd._id,
+              masterId: sd[t.label]?.masterId,
+              node_ids: sd[t.label]?.node_ids || {},
+            }));
+        }),
+      };
+    })
+    .filter((group) => group.templates.length > 0);
 
   return (
     <>
@@ -495,7 +781,7 @@ const AssetDragDropFlow = ({
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay1" onClick={() => setIsModalOpen(false)}>
+        <div className="modal-overlay1" onClick={closeModal}>
           <div className="addunit-card2" onClick={(e) => e.stopPropagation()}>
             <div className="addunit-header">
               <h4 className="text-uppercase">
@@ -503,129 +789,110 @@ const AssetDragDropFlow = ({
                   ? selectedNode.data.label
                   : "Loading"}
               </h4>
-              <button
-                style={{ border: "none", backgroundColor: "inherit" }}
-                type="button"
-                className="close"
-                onClick={closeModal}
-              >
-                <a onClick={() => setIsModalOpen(false)} style={{ cursor: "pointer" }}>
+              <a onClick={closeModal} style={{ cursor: "pointer" }}>
                 <img
-                  src="src/assets/icons/close.svg"
+                  src={closeicon}
                   width="28px"
                   height="28px"
                   alt="Close"
                 />
               </a>
-              </button>
             </div>
 
             <form onSubmit={handleAddAssetMaster}>
               <div
-                className="addunit-form"
                 style={{
                   height: "calc(100vh - 50px - 72px)",
                   overflowY: "scroll",
                   padding: "0px 10px 0px 10px",
                 }}
               >
+                {errorMessage && (
+                  <p
+                    style={{
+                      position: "absolute",
+                      top: "20px",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      padding: "12px 20px",
+                      borderRadius: "8px",
+                      backgroundColor: errorMessage.type === "error" ? "#f44336" : "#4CAF50",
+                      color: "white",
+                      fontWeight: "bold",
+                      zIndex: 2000,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    {errorMessage.text}
+                  </p>
+                )}
                 {loading ? (
                   <p>Loading...</p>
-                ) : errorMessage ? (
-                  <p style={{ color: "red" }}>{errorMessage}</p>
                 ) : filteredTemplateMasters.length > 0 ? (
-                  filteredTemplateMasters.map((group) => {
-                    const allChecked =
-                      group.templates.length > 0 &&
-                      group.templates.every((templateMaster) =>
-                        assetMasters.some(
-                          (item) => item._id === templateMaster._id
-                        )
-                      );
-
-                    return (
-                      <div
-                        className="table-responsive"
-                        key={group.master_name}
-                      >
-                        <table className="table table-text">
-                          <thead className="table-head align-middle">
-                            <tr>
-                              <th
-                                style={{
-                                  borderBottomWidth: 0,
-                                  width: "60px",
-                                }}
-                                className="table-check"
-                              >
+                  filteredTemplateMasters.map((group) => (
+                    <div className="table-responsive" key={group.master_name}>
+                      <table className="table bg-white align-middle table-text">
+                        <thead className="table-head align-middle">
+                          <tr>
+                            <th className="table-check">
+                              <input
+                                type="checkbox"
+                                checked={isGroupFullySelected(group)}
+                                onChange={(e) => handleSelectAll(group, e.target.checked)}
+                              />
+                            </th>
+                            <th className="col d-flex justify-content-between align-items-center">
+                              <div>{group.master_name}</div>
+                              <div className="tb-search-div">
+                                <img src={search1} className="tg-search-icon mt-1" alt="search icon" />
                                 <input
-                                  style={{ marginLeft: "10px" }}
-                                  type="checkbox"
-                                  checked={allChecked}
-                                  onChange={() =>
-                                    handleMasterHeaderCheckbox(group.master_name)
-                                  }
+                                  className="tb-search-input"
+                                  placeholder="Search"
+                                  style={{ padding: '8px 35px', height: '48px' }}
+                                  value={tableSearchQueries[group.master_name] || ''}
+                                  onChange={(e) => handleTableSearch(e, group.master_name)}
                                 />
-                              </th>
-                              <th className="d-flex justify-content-between align-items-center">
-                                <div>{group.master_name}</div>
-                                <div className="tb-search-div">
-                                  <img
-                                    src={search1}
-                                    className="tg-search-icon"
-                                    alt="search icon"
-                                  />
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.templates.length > 0 ? (
+                            group.templates.map((templateMaster) => (
+                              <tr key={templateMaster._id}>
+                                <td className="table-check">
                                   <input
-                                    className="tb-search-input"
-                                    placeholder="search"
-                                    style={{
-                                      padding: "8px 35px",
-                                      height: "42px",
-                                    }}
-                                    value={tableSearchQueries[group.master_name] || ""}
-                                    onChange={(e) =>
-                                      handleTableSearch(e, group.master_name)
+                                    type="checkbox"
+                                    checked={assetMasters.some(
+                                      (item) => item.document_code === templateMaster.document_code
+                                    )}
+                                    onChange={() =>
+                                      handleMasterRowCheckbox(
+                                        templateMaster._id,
+                                        templateMaster.document_code,
+                                        templateMaster.node_ids
+                                      )
                                     }
                                   />
-                                </div>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {group.templates.length > 0 ? (
-                              group.templates.map((templateMaster) => (
-                                <tr key={templateMaster._id}>
-                                  <td className="table-check d-flex align-items-center justify-content-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={assetMasters.some(
-                                        (item) => item._id === templateMaster._id
-                                      )}
-                                      onChange={() =>
-                                        handleMasterRowCheckbox(
-                                          templateMaster._id,
-                                          templateMaster.asset_master_code
-                                        )
-                                      }
-                                    />
-                                  </td>
-                                  <td>{templateMaster.asset_master_code}</td>
-                                </tr>
-                              ))
-                            ) : (
-                              <tr>
-                                <td colSpan="2" className="text-center">
-                                  No Results Found
+                                </td>
+                                <td className="col d-flex justify-content-between align-items-center">
+                                  {templateMaster.document_code}
                                 </td>
                               </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  })
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={2} style={{ textAlign: "center", color: "#888" }}>
+                                No results found.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))
                 ) : (
-                  <p>No assets found.</p>
+                  <p>No templates found.</p>
                 )}
               </div>
               <div
@@ -641,6 +908,115 @@ const AssetDragDropFlow = ({
                 </button>
                 <button type="submit" className="update-btn">
                   SUBMIT
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {isAttributeModalOpen && (
+        <div
+          id="overlay"
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            paddingTop: "200px",
+          }}
+        >
+          <div className="addunit-card" style={{ width: "60%", background: "#fff", borderRadius: "8px", maxHeight: "500px" }}>
+            <div className="addunit-header">
+              <h4>Select Attributes</h4>
+              <button
+                style={{ border: "none", backgroundColor: "inherit" }}
+                type="button"
+                className="close"
+                onClick={closeAttributeModal}
+              >
+                <img
+                  src={closeicon}
+                  width="28px"
+                  height="28px"
+                  alt="Close"
+                />
+              </button>
+            </div>
+
+            <form onSubmit={handleSelectedAttributes}>
+              <div className="asset-table">
+                <div className="table-responsive m-3">
+                  <table className="table table-striped align-middle table-text">
+                    <thead className="table-head align-middle">
+                      <tr>
+                        <th className="table-check col">
+                          <input
+                            type="checkbox"
+                            checked={allChecked}
+                            onChange={handleHeaderCheckboxChange}
+                          />
+                        </th>
+                        <th className="col">Display Name</th>
+                        <th className="col">Field Type</th>
+                        <th className="col">Order</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {attributes.map((attribute) => (
+                        <tr key={attribute._id}>
+                          <td className="table-check col">
+                            <input
+                              type="checkbox"
+                              checked={checkedItems.includes(
+                                String(attribute._id)
+                              )}
+                              onChange={() =>
+                                handleRowCheckboxChange(String(attribute._id))
+                              }
+                            />
+                          </td>
+                          <td className="col">{attribute.display_name}</td>
+                          <td className="col">{attribute.field_type}</td>
+                          <td className="col">
+                            <input
+                              type="number"
+                              style={{ all: "unset", width: "70px" }}
+                              value={orders[String(attribute._id)] || attribute.order || ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value >= 1 || value === "") {
+                                  handleOrderChange(
+                                    String(attribute._id),
+                                    value
+                                  );
+                                }
+                              }}
+                              min="1"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="addunit-card-footer">
+                <button
+                  type="button"
+                  className="discard-btn"
+                  onClick={closeAttributeModal}
+                >
+                  Close
+                </button>
+                <button type="submit" className="update-btn">
+                  Save Changes
                 </button>
               </div>
             </form>

@@ -28,18 +28,23 @@ const TemplateBuilderWrapper = ({
   onConnect,
   usedHeaders,
   setUsedHeaders,
+  onStructureChange,
   isAsset = false,
 }) => {
   // 👇 condition to check whether to use Asset version
   const isAssetFlow = Boolean(usedHeaders && usedHeaders.size > 0);
   // Or you can use another explicit prop like `isAssetMode`
-
+const isAssetViewMode = isAsset && isViewMode;
+ const isTemplateViewMode = !isAsset && isViewMode;
+   const isEffectiveEditMode = isEditMode && !isViewMode;
   return (
     <div className="tb-responsive templatebuilder-body">
       <div className="pt-3">
         <nav className="breadcrumb-nav show-breadcrumb" aria-label="breadcrumb">
           <h5>
-            {isEditMode
+           {isViewMode
+              ? `View ${templateTypeName}`
+              : isEffectiveEditMode
               ? `Update ${templateTypeName}`
               : `New ${templateTypeName || "Template"}`}
           </h5>
@@ -61,16 +66,16 @@ const TemplateBuilderWrapper = ({
           <div className="col text-center">
             <div className="d-flex justify-content-between align-content-center">
               <h6 className="align-content-center">
-                {templateTypeName || "Template"} Builder
+                {templateTypeName || "-"} Builder
               </h6>
               <div className="d-flex gap-3">
                
                 <div className="tb-search-div d-flex gap-3">
-                   {isEditMode ? (
+                 {!isAsset && isEditMode && handleSaveNodeData && (
                     <button onClick={handleSaveNodeData} className="tb-save-btn">
                       Update Node
                     </button>
-                  ):(<></>) }
+                  )}
                   <img
                     src={foldericon}
                     className="tg-search-icon"
@@ -82,6 +87,7 @@ const TemplateBuilderWrapper = ({
                     style={{ padding: "8px 35px", width: "350px" }}
                     value={templateCode}
                     onChange={(e) => setTemplateCode(e.target.value)}
+                   disabled={isAssetViewMode || isTemplateViewMode}
                   />
                 </div>
                 <div className="tb-search-div d-flex gap-3">
@@ -97,16 +103,21 @@ const TemplateBuilderWrapper = ({
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
                     ref={templateNameRef}
+                    disabled={isAssetViewMode || isTemplateViewMode}
                   />
-                  {isViewMode ? (
+                  {isTemplateViewMode && handleSaveNodeData ? (
                     <button onClick={handleSaveNodeData} className="tb-save-btn">
                       Update Node
                     </button>
-                  ) : (
-                    <button onClick={handleSave} className="tb-save-btn">
-                      SAVE
+                  ) : !isAssetViewMode && (isEffectiveEditMode || !isViewMode) ? (
+                    <button
+                      onClick={handleSave}
+                      className="tb-save-btn"
+                      disabled={isAssetViewMode}
+                    >
+                      {isEffectiveEditMode ? 'UPDATE' : 'SAVE'}
                     </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -131,6 +142,7 @@ const TemplateBuilderWrapper = ({
                 usedHeaders={usedHeaders}
                 setUsedHeaders={setUsedHeaders}
                 isEditMode={isEditMode}
+                templateName={templateName}
               />
             ) : (
               <DragDropFlow
@@ -145,6 +157,7 @@ const TemplateBuilderWrapper = ({
                 setSelectedNodeId={setSelectedNodeId}
                 templateDataMap={templateDataMap}
                 setTemplateDataMap={setTemplateDataMap}
+                onStructureChange={onStructureChange}
               />
             )}
           </ReactFlowProvider>

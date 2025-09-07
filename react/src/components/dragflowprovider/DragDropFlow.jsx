@@ -19,8 +19,7 @@ import { matchPath, useLocation } from "react-router";
 const initialNodes = [];
 const initialEdges = [];
 
-
-const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId, setSelectedNodeId, templateDataMap, setTemplateDataMap, isEditMode, isViewMode }) => {
+const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId, setSelectedNodeId, templateDataMap, setTemplateDataMap, isEditMode, isViewMode, onStructureChange }) => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -46,7 +45,31 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
 
   const { MultiValue, Option } = components;
 
-  const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes]);
+  const getNodeStructure = useCallback(() => {
+    const connectedNodes = nodes.filter((node) =>
+      edges.some((edge) => edge.source === node.id || edge.target === node.id)
+    );
+    const unconnectedNodes = nodes.filter(
+      (node) => !edges.some((edge) => edge.source === node.id || edge.target === node.id)
+    );
+    console.log("Connected Nodes:", connectedNodes);
+    console.log("Unconnected Nodes:", unconnectedNodes);
+    return { connectedNodes, unconnectedNodes, edges };
+  }, [nodes, edges]);
+
+  // const onNodesChange = useCallback(
+  //   (changes) => {
+  //     setNodes((nds) => {
+  //       const newNodes = applyNodeChanges(changes, nds);
+  //       if (onStructureChange) {
+  //         onStructureChange({ ...getNodeStructure(), nodes: newNodes });
+  //       }
+  //       return newNodes;
+  //     });
+  //   },
+  //   [setNodes, onStructureChange, getNodeStructure]
+  // );
+
   const onEdgesChange = useCallback(
     (changes) => {
       setEdges((eds) => {
@@ -66,93 +89,167 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
             });
           }
         });
+        if (onStructureChange) {
+          onStructureChange({ ...getNodeStructure(), edges: newEdges });
+        }
         return newEdges;
       });
     },
-    [setEdges, nodes]
+    [setEdges, nodes, setTemplateDataMap, onStructureChange, getNodeStructure]
   );
 
   const onConnect = useCallback(
-    (params) => {
-      const sourceNode = nodes.find((n) => n.id === params.source);
-      const targetNode = nodes.find((n) => n.id === params.target);
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            markerEnd: { type: MarkerType.ArrowClosed },
-          },
-          eds
-        )
+  (params) => {
+    const sourceNode = nodes.find((n) => n.id === params.source);
+    const targetNode = nodes.find((n) => n.id === params.target);
+    setEdges((eds) => {
+      const newEdges = addEdge(
+        {
+          ...params,
+          markerEnd: { type: MarkerType.ArrowClosed },
+        },
+        eds
       );
-    },
-    [nodes, setEdges]
-  );
+      if (onStructureChange) {
+        const newStructure = {
+          connectedNodes: nodes
+            .filter((node) =>
+              newEdges.some((edge) => edge.source === node.id || edge.target === node.id)
+            )
+            .map((node) => ({ ...node, draggable: true })),
+          unconnectedNodes: nodes
+            .filter(
+              (node) => !newEdges.some((edge) => edge.source === node.id || edge.target === node.id)
+            )
+            .map((node) => ({ ...node, draggable: true })),
+          edges: newEdges,
+        };
+        console.log("Updated structure on connect:", newStructure);
+        onStructureChange(newStructure);
+      }
+      return newEdges;
+    });
+  },
+  [nodes, setEdges, onStructureChange]
+);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  const onDrop = useCallback(
-    (event) => {
-      event.preventDefault();
-      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-      const type = event.dataTransfer.getData("application/reactflow");
-      const masterData = JSON.parse(event.dataTransfer.getData("application/reactflow"));
+const onDrop = useCallback(
+  (event) => {
+    event.preventDefault();
+    console.log("reactFlowInstance:", reactFlowInstance);
+    if (!reactFlowInstance) {
+      console.error("ReactFlow instance not initialized");
+      return;
+    }
+    const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+    const type = event.dataTransfer.getData("application/reactflow");
+    let masterData;
+    try {
+      masterData = JSON.parse(event.dataTransfer.getData("application/reactflow"));
+    } catch (e) {
+      console.error("Failed to parse masterData:", e);
+      return;
+    }
+    console.log("Dropped masterData:", masterData);
+    if (!type || !masterData.master_name) {
+      console.warn("Invalid masterData:", masterData);
+      return;
+    }
 
-      if (!type) return;
-
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-      const id = `${+new Date()}`;
-      const newNode = {
-        id,
-        type: "custom",
-        position,
-        data: {
-          label: masterData.master_name,
-          selected: false,
-          onEdit: isViewMode ? null : (nodeData) => {
-            const newLabel = prompt("Edit label:", nodeData.label);
-            if (newLabel !== null) {
-              setNodes((nds) =>
-                nds.map((node) =>
-                  node.id === nodeData.id
-                    ? { ...node, data: { ...node.data, label: newLabel } }
-                    : node
-                )
-              );
-            }
-          },
-          onDelete: isViewMode ? null : (nodeData) => {
-            setNodes((prevNodes) => {
-              const filtered = prevNodes.filter((node) => node.id !== nodeData.id);
-              const nextSelectedId = filtered.length > 0 ? filtered[0].id : null;
-              setSelectedNodeId(nextSelectedId);
-              return filtered.map((node) => ({
-                ...node,
-                data: { ...node.data, selectedNodeId: nextSelectedId },
-              }));
-            });
-            setEdges((prevEdges) =>
-              prevEdges.filter(
-                (edge) => edge.source !== nodeData.id && edge.target !== nodeData.id
+    const position = reactFlowInstance.screenToFlowPosition({
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    });
+    const id = `${+new Date()}`;
+    const newNode = {
+      id,
+      type: "custom",
+      position,
+      draggable: true,
+      data: {
+        label: masterData.master_name,
+        selected: false,
+        onEdit: isViewMode ? null : (nodeData) => {
+          const newLabel = prompt("Edit label:", nodeData.label);
+          if (newLabel !== null) {
+            setNodes((nds) =>
+              nds.map((node) =>
+                node.id === nodeData.id
+                  ? { ...node, data: { ...node.data, label: newLabel } }
+                  : node
               )
             );
-          },
-          template_master_code: masterData._id,
+          }
         },
-      };
-      setNodes((nds) => nds.concat(newNode));
-      if (nodes.length === 0) {
-        setSelectedNodeId(id);
+        onDelete: isViewMode ? null : (nodeData) => {
+          setNodes((prevNodes) => {
+            const filtered = prevNodes.filter((node) => node.id !== nodeData.id);
+            const nextSelectedId = filtered.length > 0 ? filtered[0].id : null;
+            setSelectedNodeId(nextSelectedId);
+            return filtered;
+          });
+          setEdges((prevEdges) =>
+            prevEdges.filter(
+              (edge) => edge.source !== nodeData.id && edge.target !== nodeData.id
+            )
+          );
+        },
+        template_master_code: masterData._id,
+      },
+    };
+    setNodes((nds) => {
+      const newNodes = [...nds, newNode];
+      console.log("New nodes after drop:", newNodes);
+      if (onStructureChange) {
+        const newStructure = {
+          connectedNodes: nodes.filter((node) =>
+            edges.some((edge) => edge.source === node.id || edge.target === node.id)
+          ).map((node) => ({ ...node, draggable: true })),
+          unconnectedNodes: [
+            ...nodes.filter(
+              (node) => !edges.some((edge) => edge.source === node.id || edge.target === node.id)
+            ),
+            newNode,
+          ].map((node) => ({ ...node, draggable: true })),
+          edges,
+        };
+        console.log("Updated structure on drop:", newStructure);
+        onStructureChange(newStructure);
       }
-    },
-    [reactFlowInstance, setNodes, setSelectedNodeId, isViewMode]
-  );
+      return newNodes;
+    });
+    if (nodes.length === 0) {
+      setSelectedNodeId(id);
+    }
+  },
+  [reactFlowInstance, setNodes, setSelectedNodeId, isViewMode, nodes, edges, onStructureChange]
+);
+
+const onNodesChange = useCallback(
+  (changes) => {
+    console.log("Node changes:", changes); // Debug
+    setNodes((nds) => {
+      const newNodes = applyNodeChanges(changes, nds);
+      console.log("New nodes after change:", newNodes); // Debug
+
+      // Check if this includes a drag end (final position change with dragging: false)
+      const isDragEnd = changes.some((change) => 
+        change.type === 'position' && change.dragging === false
+      );
+
+      if (isDragEnd && onStructureChange) {
+        onStructureChange({ ...getNodeStructure(), nodes: newNodes });
+      }
+      return newNodes;
+    });
+  },
+  [setNodes, onStructureChange, getNodeStructure]
+);
 
   useEffect(() => {
     setNodes((nds) =>
@@ -256,113 +353,107 @@ const DragDropFlow = ({ master, nodes, setNodes, edges, setEdges, selectedNodeId
     };
   }, [isModalOpen]);
 
-  function getAllCombinations(dataMap, currentNodeLabel) {
-    const entries = Object.entries(dataMap).filter(
-      ([key]) => key !== "document_code" && key !== currentNodeLabel
-    );
-    if (entries.length === 0) return [];
+function getAllCombinations(dataMap, currentNodeLabel) {
+  const combinations = [];
 
-    const combinations = [];
-    const currentNodeData = dataMap[currentNodeLabel] || [];
+  // Get all connected nodes
+  const connectedNodes = nodes.filter((node) =>
+    edges.some((edge) => edge.source === node.id || edge.target === node.id)
+  );
 
-    if (currentNodeData.length > 0) {
-      currentNodeData.forEach((row) => {
-        const prevSelections = row.prevSelections || {};
-        const prevNodeLabels = Object.keys(prevSelections);
-        let validCombos = getAllCombinations(
-          Object.fromEntries(
-            Object.entries(dataMap).filter(
-              ([key]) => key !== "document_code" && key !== currentNodeLabel
-            )
-          )
-        );
+  // Leaf nodes = nodes with no outgoing edge
+  const leafNodes = connectedNodes.filter(
+    (node) => !edges.some((edge) => edge.source === node.id)
+  );
 
-        prevNodeLabels.forEach((prevNodeLabel) => {
-          const allowedIds = prevSelections[prevNodeLabel] || [];
-          validCombos = validCombos.filter((combo) => {
-            const comboKey = getComboKey(combo, prevNodeLabel);
-            return allowedIds.length === 0 || allowedIds.some((sel) => sel.id === comboKey);
-          });
-        });
+  leafNodes.forEach((leafNode) => {
+    const nodeLabel = leafNode.data.label;
+    const nodeData = dataMap[nodeLabel] || [];
 
-        validCombos.forEach((combo) => {
-          combinations.push({
-            ...combo,
-            [currentNodeLabel]: row[currentNodeLabel] || row,
-            _id: row._id,
-          });
-        });
-      });
-    } else {
-      const [firstKey, firstValues] = entries[0];
-      let tempCombinations = firstValues.map((val) => ({
-        [firstKey]: val[firstKey] || val,
-        _id: val._id,
-      }));
+    nodeData.forEach((row) => {
+      let comboList = [
+        {
+          [nodeLabel]: row[nodeLabel] || row,
+          _id: row._id,
+          prevSelections: row.prevSelections || {},
+        },
+      ];
 
-      for (let i = 1; i < entries.length; i++) {
-        const [key, values] = entries[i];
-        const newCombinations = [];
+      let currentId = leafNode.id;
 
-        tempCombinations.forEach((combo) => {
-          values.forEach((val) => {
-            const currentItem = val[key] || val;
-            const prevSelections = val?.prevSelections || {};
-            const prevLabel = Object.keys(combo).find((k) => prevSelections[k]);
-            const allowedIds = prevSelections[prevLabel] || [];
+      // Walk up the chain
+      while (currentId) {
+        const node = nodes.find((n) => n.id === currentId);
+        if (!node) break;
 
-            if (!prevLabel || allowedIds.length === 0 || allowedIds.some((sel) => sel.id === getComboKey(combo, prevLabel))) {
-              newCombinations.push({
-                ...combo,
-                [key]: currentItem,
-                _id: currentItem._id,
-              });
-            }
-          });
-        });
+        const label = node.data.label;
+        const nodeDataInner = dataMap[label] || [];
 
-        tempCombinations = newCombinations;
+        if (nodeDataInner.length > 0) {
+          // 🔥 branch combinations for each row
+          comboList = comboList.flatMap((combo) =>
+            nodeDataInner.map((innerRow) => ({
+              ...combo,
+              [label]: innerRow[label] || innerRow,
+            }))
+          );
+        }
+
+        const incomingEdge = edges.find((e) => e.target === currentId);
+        currentId = incomingEdge?.source;
       }
 
-      return tempCombinations;
-    }
+      combinations.push(...comboList);
+    });
+  });
 
-    console.log("Generated Combinations:", combinations);
-    return combinations;
-  }
+  // Add unconnected nodes too
+  const unconnectedNodes = nodes.filter(
+    (node) => !edges.some((edge) => edge.source === node.id || edge.target === node.id)
+  );
+  unconnectedNodes.forEach((node) => {
+    const label = node.data.label;
+    const nodeData = dataMap[label] || [];
+    nodeData.forEach((row) => {
+      combinations.push({
+        [label]: row[label] || row,
+        _id: row._id,
+        prevSelections: row.prevSelections || {},
+      });
+    });
+  });
 
-function getDisplayValue(row, label) {
-  const excludedKeys = [
-    "_id",
-    "deleted_at",
-    "status",
-    "created_at",
-    "updated_at",
-    "__v",
-    "index",
-    "docId",
-    "masterId",
-    "prevSelections",
-  ];
-
-  const innerRow = row[label] || row;
-
-  // Prefer known fields
-  if (innerRow.name) return innerRow.name;
-  if (innerRow.label) return innerRow.label;
-  if (innerRow.documentcode) return innerRow.documentcode;
-
-  // Take first non-excluded value
-  const keys = Object.keys(innerRow).filter((k) => !excludedKeys.includes(k));
-  if (keys.length === 0) return "unknown";
-
-  const value = innerRow[keys[0]];
-
-  // ✅ Ensure full string, not just first character
-  return typeof value === "string" ? value : String(value);
+  return combinations;
 }
 
 
+
+  function getDisplayValue(row, label) {
+    const excludedKeys = [
+      "_id",
+      "deleted_at",
+      "status",
+      "created_at",
+      "updated_at",
+      "__v",
+      "index",
+      "docId",
+      "masterId",
+      "prevSelections",
+    ];
+
+    const innerRow = row[label] || row;
+
+    if (innerRow.name) return innerRow.name;
+    if (innerRow.label) return innerRow.label;
+    if (innerRow.documentcode) return innerRow.documentcode;
+
+    const keys = Object.keys(innerRow).filter((k) => !excludedKeys.includes(k));
+    if (keys.length === 0) return "unknown";
+
+    const value = innerRow[keys[0]];
+    return typeof value === "string" ? value : String(value);
+  }
 
   function getDocumentCodePath(nodes, edges, comboMap, leafNodeId) {
     const path = [];
@@ -411,62 +502,114 @@ function getDisplayValue(row, label) {
     return nodeData?._id || nodeData;
   }
 
-  const handleSaveNodeData = () => {
-    const selectedRows = data.filter((row) => checkedItems.includes(row._id));
-    const label = selectedNode?.data?.label;
+const handleSaveNodeData = () => {
+  const selectedRows = data.filter((row) => checkedItems.includes(row._id));
+  const label = selectedNode?.data?.label;
 
-    if (!label || selectedRows.length === 0 || !masterData?.master?.masterFields) return;
+  if (!label || selectedRows.length === 0 || !masterData?.master?.masterFields) return;
 
-    setTemplateDataMap((prev) => {
-      const newMap = {
-        ...prev,
-        [label]: selectedRows.map((row) => ({
-          [label]: row,
-          _id: row._id,
-          prevSelections: row.prevSelections || {},
-        })),
-      };
+  setTemplateDataMap((prev) => {
+    const newMap = {
+      ...prev,
+      [label]: selectedRows.map((row) => ({
+        [label]: row,
+        _id: row._id,
+        prevSelections: row.prevSelections || {},
+      })),
+    };
 
-      const combinations = getAllCombinations(newMap, label);
-      const allPaths = new Set();
-      combinations.forEach((combo) => {
-        const docCode = getDocumentCodePath(nodes, edges, combo, selectedNode.id);
-        allPaths.add(docCode);
-      });
+    const combinations = getAllCombinations(newMap, label);
+    const allPaths = new Set(prev.document_code || []);
 
-      return {
-        ...newMap,
-        document_code: Array.from(allPaths),
-      };
-    });
-
-    setNodes((prevNodes) =>
-      prevNodes.map((node) =>
-        node.data.label === label
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                selectedData: selectedRows.map((row) => ({
-                  [label]: row,
-                  _id: row._id,
-                  prevSelections: row.prevSelections || {},
-                })),
-              },
-            }
-          : node
-      )
+    const connectedNodes = nodes.filter((node) =>
+      edges.some((edge) => edge.source === node.id || edge.target === node.id)
+    );
+    const leafNodes = connectedNodes.filter(
+      (node) => !edges.some((edge) => edge.source === node.id)
     );
 
-    setData((prevData) =>
-      prevData.map((row) => ({
-        ...row,
-        prevSelections: row.prevSelections || {},
+    leafNodes.forEach((leafNode) => {
+      combinations
+        .filter((combo) => Object.keys(combo).includes(leafNode.data.label))
+        .forEach((combo) => {
+          const docCode = getDocumentCodePath(nodes, edges, combo, leafNode.id);
+          allPaths.add(docCode);
+        });
+    });
+
+    const unconnectedNodes = nodes.filter(
+      (node) => !edges.some((edge) => edge.source === node.id || edge.target === node.id)
+    );
+    unconnectedNodes.forEach((node) => {
+      const nodeLabel = node.data.label;
+      const nodeData = newMap[nodeLabel] || [];
+      nodeData.forEach((row) => {
+        const displayValue = getDisplayValue({ [nodeLabel]: row[nodeLabel] || row }, nodeLabel);
+        allPaths.add(displayValue);
+      });
+    });
+
+    const updatedMap = {
+      ...newMap,
+      document_code: Array.from(allPaths),
+    };
+
+    // Update nodes with selectedData from updatedMap for all nodes
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          selectedData: updatedMap[node.data.label] || node.data.selectedData || [],
+        },
       }))
     );
 
-    setIsModalOpen(false);
-  };
+    // Update templateStructure via onStructureChange
+    if (onStructureChange) {
+      const newStructure = {
+        connectedNodes: nodes
+          .filter((node) =>
+            edges.some((edge) => edge.source === node.id || edge.target === node.id)
+          )
+          .map((node) => ({
+            ...node,
+            draggable: true,
+            data: {
+              ...node.data,
+              selectedData: updatedMap[node.data.label] || node.data.selectedData || [],
+            },
+          })),
+        unconnectedNodes: nodes
+          .filter(
+            (node) => !edges.some((edge) => edge.source === node.id || edge.target === node.id)
+          )
+          .map((node) => ({
+            ...node,
+            draggable: true,
+            data: {
+              ...node.data,
+              selectedData: updatedMap[node.data.label] || node.data.selectedData || [],
+            },
+          })),
+        edges,
+      };
+      console.log("Updated structure in handleSaveNodeData:", newStructure);
+      onStructureChange(newStructure);
+    }
+
+    return updatedMap;
+  });
+
+  setData((prevData) =>
+    prevData.map((row) => ({
+      ...row,
+      prevSelections: row.prevSelections || {},
+    }))
+  );
+
+  setIsModalOpen(false);
+};
 
   const getPreviousNode = (currentNodeId) => {
     const incomingEdge = edges.find((edge) => edge.target === currentNodeId);
@@ -565,6 +708,7 @@ function getDisplayValue(row, label) {
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
             fitView
+            nodesDraggable={true}
             onEdgeClick={(event, edge) => {
               event.preventDefault();
               event.stopPropagation();
@@ -914,6 +1058,7 @@ function getDisplayValue(row, label) {
     </>
   );
 };
+
 
 export default DragDropFlow;
 

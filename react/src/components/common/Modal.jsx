@@ -60,8 +60,7 @@ function Modal({
                 zIndex: 9999,
                 overflowY: "auto",
                 paddingTop: "60px",
-            }}
-        >
+            }}>
             <div
                 className="addunit-card"
                 style={{

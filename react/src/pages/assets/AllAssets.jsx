@@ -7,104 +7,131 @@ import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
 import Table from "../../components/common/Table";
 import search2 from "../../assets/icons/search2.svg";
+import downloadicon from "../../assets/icons/lucide_download.svg"
+import axiosWrapper from "../../../services/AxiosWrapper";
+
 const AllAssets = () => {
     const [assets, setAssets] = useState([]);
+    const [equipments, setEquipments] = useState([]);
+    const [assetAttributes, setAssetAttributes] = useState([]); // Store assetAttribute from API
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [sortBy, setSortBy] = useState("asset_name");
-    const [order, setOrder] = useState("asc");
+    const [sortBy, setSortBy] = useState('created_at'); // Default sort by created_at
+    const [order, setOrder] = useState('asc');
     const [totalItems, setTotalItems] = useState(0);
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState("");
-    const [selectedAssetId, setSelectedAssetId] = useState(""); // Track selected asset
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [selectedAssetId, setSelectedAssetId] = useState('');
+    const [selectedAssetName, setSelectedAssetName] = useState('');
     const debounceRef = useRef(null);
     const navigate = useNavigate();
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const dropdownRef = useRef(null);
+    const searchInputRef = useRef(null);
 
     const breadcrumbItems = [
-        { label: "My Assets", href: "#" },
-        { label: "All Assets", href: "#" },
+        { label: 'My Assets', href: '#' },
+        { label: 'All Assets', href: '#' },
     ];
 
+    // Dynamic headers based on assetAttribute only
     const headers = [
-        { label: "#", key: "index", sortable: false },
-        { label: "Asset Name", key: "asset_name", sortable: true },
-        { label: "Asset Code", key: "asset_code", sortable: true },
-        { label: "Status", key: "status", sortable: false },
-        { label: "Action", key: "action", sortable: false },
+        { label: '#', key: 'index', sortable: false },
+        ...assetAttributes.map((attr) => ({
+            label: attr.display_name,
+            key: attr.display_name, // Use display_name as key since equipment uses it
+            sortable: true,
+        })),
+        { label: 'Action', key: 'action', sortable: false },
     ];
 
-    // Hardcoded options for the Dropdown (replace with valid asset_id values if possible)
-    const assetOptions = [
-        { label: "Asset Class 1", value: "asset1" },
-        { label: "Asset Class 2", value: "asset2" },
-        { label: "Asset Class 3", value: "asset3" },
-        { label: "Asset Class 4", value: "asset4" },
-    ];
+    const fetchAssetClasses = async () => {
+        try {
+            const response = await axiosWrapper('api/v1/assets/getAssets', { method: 'POST' });
+            const options = response?.map((a) => ({
+                label: a.asset_name,
+                value: a._id,
+            })) || [];
+            setAssets(options);
+        } catch (error) {
+            console.error('Error fetching asset classes:', error);
+            toast.error('Failed to fetch asset classes');
+        }
+    };
 
-    // Fetch all assets
-    const fetchAssets = async (
+    const fetchEquipments = async (
         page = 1,
         limit = pageSize,
         sort = sortBy,
         sortOrder = order,
-        status = statusFilter,
         searchText = search,
         assetId = selectedAssetId
     ) => {
+        if (!assetId) {
+            setEquipments([]);
+            setAssetAttributes([]);
+            setTotalItems(0);
+            return;
+        }
+
         try {
             setLoading(true);
-            const params = new URLSearchParams();
-            params.append("page", page);
-            params.append("limit", limit);
-            params.append("sortBy", sort);
-            params.append("order", sortOrder);
+            const response = await axiosWrapper('api/v1/equipments/paginateEquipments', {
+                method: 'POST',
+                data: {
+                    page,
+                    limit,
+                    sortBy: sort,
+                    order: sortOrder,
+                    search: searchText,
+                    asset_id: assetId,
+                },
+            });
 
-            if (assetId) {
-                params.append("asset_id", assetId);
-            }
-            if (searchText?.trim()) params.append("search", searchText.trim());
-            if (status === "active") params.append("status", "true");
-            else if (status === "inactive") params.append("status", "false");
+            // Store asset attributes
+            setAssetAttributes(response?.assetAttribute || []);
 
-            const response = await axiosWrapper(
-                `api/v1/assets/paginateAssets?${params.toString()}`,
-                { method: "POST" }
-            );
-
-            const mapped = response?.assets?.map((tpl, index) => ({
-                ...tpl,
-                index: index + 1 + (page - 1) * pageSize,
+            const mapped = response?.equipments?.map((eq, index) => ({
+                ...eq,
+                index: index + 1 + (page - 1) * limit,
             })) || [];
-            setAssets(mapped);
+
+            setEquipments(mapped);
             setTotalPages(response.totalPages || 1);
             setCurrentPage(response.currentPage || 1);
             setTotalItems(response.totalItems || 0);
-            console.log("Fetch Assets Response:", {
-                assets: mapped,
-                totalItems: response.totalItems,
-                selectedAssetId: assetId,
-            });
+
+            console.log('Equipments Response:', response);
         } catch (error) {
-            console.error("Error fetching assets:", error.message || error);
-            setAssets([]);
-            setTotalItems(0);
+            console.error('Error fetching equipments:', error.message || error);
+            setEquipments([]);
+            setAssetAttributes([]);
+            toast.error('Failed to fetch equipments');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchAssets(currentPage, pageSize, sortBy, order, statusFilter, search, selectedAssetId);
-    }, [currentPage, pageSize, sortBy, order, statusFilter, search, selectedAssetId]);
+        fetchAssetClasses();
+    }, []);
+
+    useEffect(() => {
+        if (selectedAssetId) {
+            fetchEquipments(currentPage, pageSize, sortBy, order, search, selectedAssetId);
+        }
+    }, [currentPage, pageSize, sortBy, order, search, selectedAssetId]);
 
     const handleSearchChange = (e) => {
         const val = e.target.value;
         setSearch(val);
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
-            fetchAssets(1, pageSize, sortBy, order, statusFilter, val, selectedAssetId);
+            setCurrentPage(1);
+            fetchEquipments(1, pageSize, sortBy, order, val, selectedAssetId);
         }, 500);
     };
 
@@ -116,40 +143,90 @@ const AllAssets = () => {
 
     const handleToggleStatus = async (row) => {
         try {
-            const response = await axiosWrapper("api/v1/assets/deleteasset", {
-                method: "POST",
+            const response = await axiosWrapper('api/v1/equipments/toggleEquipmentStatus', {
+                method: 'POST',
                 data: { id: row._id },
             });
-            fetchAssets(currentPage, pageSize, sortBy, order, statusFilter, search, selectedAssetId);
+            fetchEquipments(currentPage, pageSize, sortBy, order, search, selectedAssetId);
+            toast.success('Equipment status updated successfully');
         } catch (error) {
-            alert(error?.response?.data?.message || "Failed to update asset status");
+            toast.error(error?.response?.data?.message || 'Failed to update equipment status');
         }
+    };
+
+    const handleEdit = (row) => {
+        // Navigate to edit page with equipment ID
+        navigate(`/edit_equipment/${row._id}`);
     };
 
     const handleDelete = async (row) => {
         try {
-            const confirmDelete = window.confirm("Are you sure you want to permanently delete this asset?");
+            const confirmDelete = window.confirm('Are you sure you want to permanently delete this equipment?');
             if (!confirmDelete) return;
 
-            const response = await axiosWrapper("api/v1/assets/destroyasset", {
-                method: "POST",
-                data: { id: row._id },
+            const response = await axiosWrapper('api/v1/equipments/deleteEquipment', {
+                method: 'POST',
+                data: { equipmentId: row._id },
             });
-            fetchAssets(currentPage, pageSize, sortBy, order, statusFilter, search, selectedAssetId);
+            fetchEquipments(currentPage, pageSize, sortBy, order, search, selectedAssetId);
+            toast.success('Equipment deleted successfully');
         } catch (error) {
-            alert(error?.response?.data?.message || "Failed to delete asset");
+            toast.error(error?.response?.data?.message || 'Failed to delete equipment');
         }
     };
 
     const downloadExcel = async () => {
+        if (!selectedAssetId) {
+            toast.error('Please select an Asset Class first!');
+            return;
+        }
+
         try {
-            console.log("Downloading Excel for asset:", selectedAssetId);
-            // Implement your download logic here
-            // Example: await axiosWrapper("api/v1/assets/export", { method: "GET", params: { asset_id: selectedAssetId } });
+            console.log('Downloading Excel for asset:', selectedAssetId);
+            const response = await axiosWrapper('api/v1/equipments/downloadExcel', {
+                method: 'POST',
+                data: { asset_id: selectedAssetId },
+                responseType: 'blob',
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'equipments.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
         } catch (error) {
-            alert("Failed to download Excel file");
+            console.error('Error downloading Excel:', error);
+            let errMsg = 'Failed to download Excel file';
+            try {
+                if (error?.response?.data instanceof Blob) {
+                    const text = await error.response.data.text();
+                    const json = JSON.parse(text);
+                    errMsg = json.message || errMsg;
+                } else if (error?.response?.data?.message) {
+                    errMsg = error.response.data.message;
+                } else if (error?.message) {
+                    errMsg = error.message;
+                }
+            } catch (parseErr) {
+                console.error('Error parsing backend error:', parseErr);
+            }
+            toast.error(errMsg);
         }
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     return (
         <div className="tb-responsive assetbuilder-body position-relative">
@@ -158,7 +235,7 @@ const AllAssets = () => {
                     <Loader />
                 </div>
             )}
-            <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
+            <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
                 <Breadcrumb title="All Assets" items={breadcrumbItems} />
                 <div className="navbar-3 mt-0 d-flex justify-content-between">
                     <div className="d-flex gap-4">
@@ -169,62 +246,103 @@ const AllAssets = () => {
                             </div>
                         )}
                     </div>
-                    <div className="d-flex gap-3">
-                        <Dropdown
-                            label="Asset Class"
-                            options={assetOptions}
-                            value={selectedAssetId}
-                            onChange={(e) => {
-                                const newValue = e.target.value;
-                                console.log("Dropdown selected value:", newValue);
-                                setSelectedAssetId(newValue);
-                                setCurrentPage(1);
-                            }}
-                        />
-                        {/* Temporarily relax the condition to test button visibility */}
-                        {selectedAssetId ? (
+                    <div className="d-flex gap-4">
+                        <div className="dropdown" style={{ position: 'relative' }}>
+                            <div
+                                className={`form-select btn-bg1 d-flex justify-content-between align-items-center`}
+                                style={{
+                                    height: '40px',
+                                    width: '240px',
+                                    borderRadius: '12px',
+                                    cursor: 'pointer',
+                                    padding: '10px',
+                                }}
+                                onClick={() => setIsOpen((prev) => !prev)}
+                            >
+                                <span className={selectedAssetName ? 'text-dark' : 'text-muted'}>
+                                    {selectedAssetName || 'Select Asset Class'}
+                                </span>
+                                <span style={{ marginLeft: 'auto' }}>
+                                    <i className={`bi bi-caret-${isOpen ? 'up' : 'down'}-fill`}></i>
+                                </span>
+                            </div>
+                            {isOpen && (
+                                <div
+                                    ref={dropdownRef}
+                                    className="dropdown-menu show"
+                                    style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        width: '100%',
+                                        marginTop: '2px',
+                                        borderRadius: '8px',
+                                        backgroundColor: 'white',
+                                        zIndex: 1000,
+                                        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                                    }}
+                                >
+                                    <div style={{ padding: '5px' }} onClick={(e) => e.stopPropagation()}>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Search..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            ref={searchInputRef}
+                                        />
+                                    </div>
+                                    <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
+                                        <ul className="list-unstyled mb-0">
+                                            {assets.length > 0 ? (
+                                                assets.map((asset) => (
+                                                    <li
+                                                        key={asset.value}
+                                                        onClick={() => {
+                                                            setSelectedAssetId(asset.value);
+                                                            setSelectedAssetName(asset.label);
+                                                            setCurrentPage(1);
+                                                            setIsOpen(false);
+                                                        }}
+                                                        className="px-3 py-2 dropdown-item"
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        {asset.label}
+                                                    </li>
+                                                ))
+                                            ) : (
+                                                <li className="px-3 py-2 text-muted">No results found</li>
+                                            )}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {selectedAssetId && (
                             <Button
                                 name="Download"
                                 onClick={downloadExcel}
                                 icon="download-icon"
                                 disabled={!selectedAssetId}
                             />
-                        ) : (
-                            <div>
-                            </div>
                         )}
                         <Button
-                            name="Add Equipment"
-                            onClick={() => navigate("/add_equipment")}
+                            name="ADD EQUIPMENT"
+                            onClick={() => navigate('/add_equipment')}
                             icon="plus-icon"
                         />
                     </div>
                 </div>
                 <Table
                     headers={headers}
-                    rows={assets}
+                    rows={equipments.map((eq) => ({
+                        ...eq,
+                    }))}
                     sortBy={sortBy}
                     order={order}
                     onSortChange={handleSortChange}
+                    onEdit={handleEdit}
                     onToggleStatus={handleToggleStatus}
-                    onEdit={(row) =>
-                        navigate(`/asset/edit/${row._id}`, {
-                            state: {
-                                assetCode: row.asset_code,
-                                assetName: row.asset_name,
-                                structure: row.structure,
-                            },
-                        })
-                    }
-                    onViewTemplate={(row) =>
-                        navigate(`/asset/view/${row._id}`, {
-                            state: {
-                                assetCode: row.asset_code,
-                                assetName: row.asset_name,
-                                structure: row.structure,
-                            },
-                        })
-                    }
                     onDelete={handleDelete}
                     paginationProps={{
                         currentPage,
@@ -242,4 +360,5 @@ const AllAssets = () => {
         </div>
     );
 };
+
 export default AllAssets

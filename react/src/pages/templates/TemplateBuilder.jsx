@@ -15,6 +15,7 @@ const TemplateBuilder = () => {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
+  const [templateStructure, setTemplateStructure] = useState({ connectedNodes: [], unconnectedNodes: [], edges: [] });
   const [contextMenu, setContextMenu] = useState({ isOpen: false, position: {}, nodeId: null });
   const [edgeLabelModal, setEdgeLabelModal] = useState({ isOpen: false, label: "", edgeId: null });
   const navigate = useNavigate();
@@ -24,39 +25,72 @@ const TemplateBuilder = () => {
   const [templateData, setTemplateData] = useState([]);
 
   useEffect(() => {
-    const parseStructure = (structureString) => {
-      try {
-        if (!structureString) {
-          console.warn("No structure provided for parsing");
-          return { nodes: [], edges: [] };
-        }
-        const parsed = JSON.parse(structureString);
-        const nodeList = parsed?.[0]?.nodes || [];
-        const edgeList = parsed?.[1]?.edges || [];
-        const updatedNodes = nodeList.map((node) => ({
-          ...node,
-          data: {
-            ...node.data,
-            selectedData: node.data.selectedData || [],
-            onEdit: location.pathname.includes("/view") ? null : (nodeData) => handleEditNode(node.id, nodeData.label),
-            onDelete: location.pathname.includes("/view") ? null : () => handleDeleteNode(node.id),
-          },
-        }));
-        console.log("Parsed structure:", { nodes: updatedNodes, edges: edgeList });
-        return { nodes: updatedNodes, edges: edgeList };
-      } catch (e) {
-        console.error("Failed to parse structure:", e, "Structure:", structureString);
-        return { nodes: [], edges: [] };
-      }
-    };
+const parseStructure = (structureString) => {
+  try {
+    if (!structureString) {
+      console.warn("No structure provided for parsing");
+      return { connectedNodes: [], unconnectedNodes: [], edges: [], nodes: [] };
+    }
+    const parsed = JSON.parse(structureString);
+    let connectedNodes, unconnectedNodes, edges;
+
+    if (Array.isArray(parsed) && parsed[0]?.nodes && parsed[1]?.edges) {
+      connectedNodes = parsed[0].nodes || [];
+      unconnectedNodes = []; // Old format
+      edges = parsed[1].edges || [];
+    } else {
+      connectedNodes = parsed.connectedNodes || [];
+      unconnectedNodes = parsed.unconnectedNodes || [];
+      edges = parsed.edges || [];
+    }
+
+    // Recompute connected/unconnected based on edges
+    const allNodes = [...connectedNodes, ...unconnectedNodes];
+    const updatedConnectedNodes = allNodes
+      .filter((node) =>
+        edges.some((edge) => edge.source === node.id || edge.target === node.id)
+      )
+      .map((node) => ({
+        ...node,
+        draggable: true,
+        data: {
+          ...node.data,
+          selectedData: node.data.selectedData || [],
+          onEdit: location.pathname.includes("/view") ? null : (nodeData) => handleEditNode(node.id, nodeData.label),
+          onDelete: location.pathname.includes("/view") ? null : () => handleDeleteNode(node.id),
+        },
+      }));
+    const updatedUnconnectedNodes = allNodes
+      .filter(
+        (node) => !edges.some((edge) => edge.source === node.id || edge.target === node.id)
+      )
+      .map((node) => ({
+        ...node,
+        draggable: true,
+        data: {
+          ...node.data,
+          selectedData: node.data.selectedData || [],
+          onEdit: location.pathname.includes("/view") ? null : (nodeData) => handleEditNode(node.id, nodeData.label),
+          onDelete: location.pathname.includes("/view") ? null : () => handleDeleteNode(node.id),
+        },
+      }));
+
+    const updatedNodes = [...updatedConnectedNodes, ...updatedUnconnectedNodes];
+    console.log("Parsed structure:", { connectedNodes: updatedConnectedNodes, unconnectedNodes: updatedUnconnectedNodes, edges });
+    return { connectedNodes: updatedConnectedNodes, unconnectedNodes: updatedUnconnectedNodes, edges, nodes: updatedNodes };
+  } catch (e) {
+    console.error("Failed to parse structure:", e, "Structure:", structureString);
+    return { connectedNodes: [], unconnectedNodes: [], edges: [], nodes: [] };
+  }
+};
 
     const initializeTemplateDataMap = (templateData) => {
       const newMap = {};
       if (templateData.length > 0 && templateData[0].structure) {
         try {
           const parsed = JSON.parse(templateData[0].structure);
-          const nodes = parsed?.[0]?.nodes || [];
-          nodes.forEach((node) => {
+          const allNodes = [...(parsed.connectedNodes || parsed[0]?.nodes || []), ...(parsed.unconnectedNodes || [])];
+          allNodes.forEach((node) => {
             const label = node.data.label;
             const selectedData = node.data.selectedData || [];
             newMap[label] = selectedData.map((row) => ({
@@ -65,7 +99,6 @@ const TemplateBuilder = () => {
               prevSelections: row.prevSelections || {},
             }));
           });
-          // Add document_code from template_master
           newMap.document_code = templateData[0].document_code || [];
         } catch (e) {
           console.error("Failed to parse template_data structure:", e);
@@ -78,16 +111,17 @@ const TemplateBuilder = () => {
       console.log("fetchTemplate called with templateId:", templateId, "location.state:", location.state);
 
       if (location.pathname.includes("/edit") && structure) {
-           console.log("Edit mode → binding structure from location.state");
-           const { nodes, edges } = parseStructure(structure);
-           setNodes(nodes);
-           setEdges(edges);
-           if (nodes.length > 0) {
-               setSelectedNodeId(nodes[0].id);
-             }
-           setTemplateName(templateName || templateNameState);
-           setTemplateCode(templateCode || templateCodeState);
-           return; // 🚀 stop here, don’t call API
+        console.log("Edit mode → binding structure from location.state");
+        const { connectedNodes, unconnectedNodes, edges, nodes: updatedNodes } = parseStructure(structure);
+        setNodes(updatedNodes);
+        setEdges(edges);
+        setTemplateStructure({ connectedNodes, unconnectedNodes, edges });
+        if (updatedNodes.length > 0) {
+          setSelectedNodeId(updatedNodes[0].id);
+        }
+        setTemplateName(templateName || templateNameState);
+        setTemplateCode(templateCode || templateCodeState);
+        return;
       }
 
       if (location.pathname.includes("/view") && templateId) {
@@ -99,33 +133,25 @@ const TemplateBuilder = () => {
           });
 
           console.log("API response:", response);
-          const tpl = response; // Fixed: Access response.template.data
+          const tpl = response;
           const tplData = response?.template_data[0];
-          console.log(tplData)
+          console.log(tplData);
           if (tplData?.structure) {
-            const { nodes, edges } = parseStructure(tplData.structure);
-            setNodes(nodes);
+            const { connectedNodes, unconnectedNodes, edges, nodes: updatedNodes } = parseStructure(tplData.structure);
+            setNodes(updatedNodes);
             setEdges(edges);
-            if (nodes.length > 0) {
-              setSelectedNodeId(nodes[0].id);
+            setTemplateStructure({ connectedNodes, unconnectedNodes, edges });
+            if (updatedNodes.length > 0) {
+              setSelectedNodeId(updatedNodes[0].id);
             }
             setTemplateName(tpl.template_name || templateNameState);
             setTemplateCode(tpl.template_code || templateCodeState);
             setTemplateData(tplData.template_data || []);
             setTemplateDataMap(initializeTemplateDataMap(tpl.template_data || []));
-      //       if (location.pathname.includes("/edit")) {
-      // setTemplateDataMap({});
-      // setNodes((prevNodes) =>
-      //   prevNodes.map((node) => ({
-      //     ...node,
-      //     data: { ...node.data, selectedData: [] },
-      //   }))
-      // );}
           } else {
             console.warn("No structure in API response");
           }
-        } 
-       catch (err) {
+        } catch (err) {
           console.error("Error fetching template:", err);
         } finally {
           setLoading(false);
@@ -134,7 +160,7 @@ const TemplateBuilder = () => {
     };
 
     fetchTemplate();
-  }, [templateId, structure]);
+  }, [templateId, structure, templateName, templateCode, templateNameState, templateCodeState]);
 
   useEffect(() => {
     if (!templateTypeId) return;
@@ -160,7 +186,20 @@ const TemplateBuilder = () => {
     console.log("Current nodes:", nodes);
     console.log("Current edges:", edges);
     console.log("Current templateDataMap:", templateDataMap);
-  }, [nodes, edges, templateDataMap]);
+    console.log("Current templateStructure:", templateStructure);
+  }, [nodes, edges, templateDataMap, templateStructure]);
+
+const handleStructureChange = (newStructure) => {
+  console.log("New structure:", newStructure);
+  setTemplateStructure(newStructure);
+  setNodes(
+    [...newStructure.connectedNodes, ...newStructure.unconnectedNodes].map((node) => ({
+      ...node,
+      draggable: true,
+    }))
+  );
+  setEdges(newStructure.edges);
+};
 
   const handleSave = async () => {
     if (!templateCodeState || !templateNameState || !templateTypeId) {
@@ -169,12 +208,12 @@ const TemplateBuilder = () => {
     }
     try {
       setLoading(true);
-      const structure = JSON.stringify([{ nodes }, { edges }]);
+      const structureString = JSON.stringify(templateStructure);
       const payload = {
         template_type_id: templateTypeId,
         template_code: templateCodeState,
         template_name: templateNameState,
-        structure,
+        structure: structureString,
       };
       await axiosWrapper("api/v1/templates/createTemplate", {
         method: "POST",
@@ -196,13 +235,13 @@ const TemplateBuilder = () => {
       return;
     }
     try {
-      const structure = JSON.stringify([{ nodes }, { edges }]);
+      const structureString = JSON.stringify(templateStructure);
       const payload = {
         id: templateId,
         template_type_id: templateTypeId,
         template_code: templateCodeState,
         template_name: templateNameState,
-        structure,
+        structure: structureString,
       };
       await axiosWrapper("api/v1/templates/updateTemplate", {
         method: "POST",
@@ -222,11 +261,11 @@ const TemplateBuilder = () => {
         alert("Please fill all required fields before saving node data.");
         return;
       }
-      const structure = JSON.stringify([{ nodes }, { edges }]);
+      const structureString = JSON.stringify(templateStructure);
       const payload = {
         id: templateId,
         templateNodeData: templateDataMap,
-        structure,
+        structure: structureString,
       };
       console.log("Payload sent to createTemplateMaster:", payload);
       await axiosWrapper("api/v1/template-masters/createTemplateMaster", {
@@ -297,9 +336,11 @@ const TemplateBuilder = () => {
         setTemplateDataMap={setTemplateDataMap}
         handleSaveNodeData={handleSaveNodeData}
         templateData={templateData}
+        onStructureChange={handleStructureChange}
       />
     </div>
   );
 };
+
 
 export default TemplateBuilder;

@@ -138,7 +138,7 @@ th .fa-angle-down.icon-down {
 
 .dropdown-item:focus,
 .dropdown-item:hover {
-  /* color: #1e2125; */
+  color: #D42124 !important;
   background-color: transparent !important;
 }
 

@@ -64,7 +64,7 @@ const AssetBuilder = () => {
                     type: "custom",
                     position: { x: 250, y: 100 },
                     data: {
-                        label: "Asset Class",
+                        label: assetNameState || "Asset Class",
                         selected: false,
                         onEdit: null,
                         onDelete: null,
