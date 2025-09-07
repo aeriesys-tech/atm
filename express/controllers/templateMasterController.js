@@ -5,6 +5,7 @@ const { logApiResponse } = require('../utils/responseService');
 const assetMaster = require('../models/assetMaster');
 const template = require('../models/template');
 const templateMaster = require('../models/templateMaster');
+const templateData = require('../models/templateData');
 
 // const createTemplateMaster = async (req, res) => {
 //     try {
@@ -506,6 +507,176 @@ const createTemplateMaster = async (req, res) => {
 //     }
 // };
 
+// const getTemplatesByTemplateIDLeaf = async (req, res) => {
+//     try {
+//         const { template_id } = req.body;
+
+//         if (!template_id) {
+//             return res.status(400).send({ message: "template_id is required" });
+//         }
+
+//         // Fetch template data
+//         const templateData = await TemplateData.findOne({ template_id: String(template_id) }).lean();
+//         if (!templateData) {
+//             return res.status(404).send({ message: "No template found for the provided template ID" });
+//         }
+
+//         // Parse structure
+//         let structureArray = [];
+//         if (typeof templateData.structure === "string") {
+//             structureArray = JSON.parse(templateData.structure);
+//         } else if (Array.isArray(templateData.structure)) {
+//             structureArray = templateData.structure;
+//         }
+//         const structure = structureArray || {};
+
+//         const nodes = structure.connectedNodes || [];
+//         const unconnectedNodes = structure.unconnectedNodes || [];
+//         const edges = structure.edges || [];
+
+//         const allNodes = [...nodes, ...unconnectedNodes];
+
+//         // Build node lookup
+//         const nodeMap = {};
+//         allNodes.forEach(node => nodeMap[node.id] = node);
+
+//         // Build adjacency list
+//         const adjacency = {};
+//         edges.forEach(edge => {
+//             if (!adjacency[edge.source]) adjacency[edge.source] = [];
+//             adjacency[edge.source].push(edge.target);
+//         });
+
+//         // Root nodes = nodes that are not target of any edge
+//         const targetSet = new Set(edges.map(e => e.target));
+//         const rootNodes = nodes.filter(n => !targetSet.has(n.id));
+
+//         const groupsMap = {};
+
+//         // DFS to traverse and fetch document_code from DB
+//         // DFS to traverse and fetch document_code from DB
+//         const dfs = async (nodeId, path) => {
+//             const node = nodeMap[nodeId];
+//             if (!node) return;
+
+//             const newPath = [...path, node];
+
+//             // If leaf node
+//             if (!adjacency[nodeId] || adjacency[nodeId].length === 0) {
+//                 const leafDataArray = node.data.selectedData || [];
+//                 const documentCodesSet = new Set();
+
+//                 for (const item of leafDataArray) {
+//                     const fieldName = Object.keys(item)[0];
+//                     const leafObj = item[fieldName];
+//                     if (!leafObj?._id) continue;
+
+//                     // Build query for all prevSelections + current leaf _id
+//                     const query = { template_id, deleted_at: null };
+//                     query[fieldName] = leafObj._id;
+
+//                     // Add previous selections if present
+//                     if (leafObj.prevSelections) {
+//                         for (const key of Object.keys(leafObj.prevSelections)) {
+//                             const prevSelectionIds = leafObj.prevSelections[key].map(s => s.id);
+//                             query[key] = { $in: prevSelectionIds };
+//                         }
+//                     }
+
+//                     // Fetch TemplateMaster document
+//                     const templateDoc = await TemplateMaster.findOne(query).lean();
+
+//                     if (templateDoc) {
+//                         documentCodesSet.add(templateDoc.document_code);
+//                         leafObj.documentcode = templateDoc.document_code;
+//                     } else {
+//                         leafObj.documentcode = "";
+//                     }
+//                 }
+
+//                 const groupName = newPath.map(n => n.data?.label).join("-");
+
+//                 if (!groupsMap[groupName]) {
+//                     groupsMap[groupName] = { master_name: groupName, templates: [] };
+//                 }
+
+//                 groupsMap[groupName].templates.push({
+//                     ...node.data,
+//                     node,
+//                     leaf_node: true,
+//                     document_codes: Array.from(documentCodesSet)
+//                 });
+
+//                 return;
+//             }
+
+//             // Traverse children
+//             for (const childId of adjacency[nodeId] || []) {
+//                 await dfs(childId, newPath);
+//             }
+//         };
+
+
+//         // Traverse all root nodes
+//         for (const root of rootNodes) {
+//             await dfs(root.id, []);
+//         }
+
+//         // Handle unconnected nodes
+//         for (const node of unconnectedNodes) {
+//             const leafDataArray = node.data.selectedData || [];
+//             const documentCodesSet = new Set();
+
+//             for (const item of leafDataArray) {
+//                 const fieldName = Object.keys(item)[0];
+//                 const leafId = item[fieldName]?._id;
+
+//                 const templateDoc = await TemplateMaster.findOne({
+//                     template_id,
+//                     [fieldName]: leafId,
+//                     deleted_at: null
+//                 }).lean();
+
+//                 if (templateDoc) {
+//                     documentCodesSet.add(templateDoc.document_code);
+//                     if (item[fieldName]) {
+//                         item[fieldName].documentcode = templateDoc.document_code;
+//                     }
+//                 } else {
+//                     if (item[fieldName]) {
+//                         item[fieldName].documentcode = "";
+//                     }
+//                 }
+//             }
+
+//             const groupName = node.data?.label || "Standalone Node";
+
+//             if (!groupsMap[groupName]) {
+//                 groupsMap[groupName] = { master_name: groupName, templates: [] };
+//             }
+
+//             groupsMap[groupName].templates.push({
+//                 ...node.data,
+//                 node,
+//                 leaf_node: true,
+//                 document_codes: Array.from(documentCodesSet)
+//             });
+//         }
+
+//         return res.status(200).send({
+//             message: "Templates retrieved successfully",
+//             groups: Object.values(groupsMap)
+//         });
+
+//     } catch (error) {
+//         console.error("Failed to retrieve templates:", error);
+//         return res.status(500).send({
+//             message: "Failed to retrieve templates",
+//             error: error.toString()
+//         });
+//     }
+// };
+
 const getTemplatesByTemplateIDLeaf = async (req, res) => {
     try {
         const { template_id } = req.body;
@@ -552,8 +723,17 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
 
         const groupsMap = {};
 
-        // DFS to traverse and fetch document_code from DB
-        // DFS to traverse and fetch document_code from DB
+        // helper: extract node references from TemplateMaster doc
+        const extractNodeRefs = (doc) => {
+            const nodeRefs = {};
+            for (const key of Object.keys(doc)) {
+                if (["_id", "template_id", "document_code", "created_at", "updated_at", "deleted_at", "__v"].includes(key)) continue;
+                nodeRefs[key] = doc[key];
+            }
+            return nodeRefs;
+        };
+
+        // DFS traversal
         const dfs = async (nodeId, path) => {
             const node = nodeMap[nodeId];
             if (!node) return;
@@ -570,11 +750,10 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
                     const leafObj = item[fieldName];
                     if (!leafObj?._id) continue;
 
-                    // Build query for all prevSelections + current leaf _id
+                    // Build query
                     const query = { template_id, deleted_at: null };
                     query[fieldName] = leafObj._id;
 
-                    // Add previous selections if present
                     if (leafObj.prevSelections) {
                         for (const key of Object.keys(leafObj.prevSelections)) {
                             const prevSelectionIds = leafObj.prevSelections[key].map(s => s.id);
@@ -582,12 +761,18 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
                         }
                     }
 
-                    // Fetch TemplateMaster document
                     const templateDoc = await TemplateMaster.findOne(query).lean();
 
                     if (templateDoc) {
-                        documentCodesSet.add(templateDoc.document_code);
+                        const nodeRefs = extractNodeRefs(templateDoc);
+
+                        documentCodesSet.add(JSON.stringify({
+                            code: templateDoc.document_code,
+                            node_ids: nodeRefs
+                        }));
+
                         leafObj.documentcode = templateDoc.document_code;
+                        leafObj.node_ids = nodeRefs;
                     } else {
                         leafObj.documentcode = "";
                     }
@@ -603,7 +788,7 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
                     ...node.data,
                     node,
                     leaf_node: true,
-                    document_codes: Array.from(documentCodesSet)
+                    document_codes: Array.from(documentCodesSet).map(dc => JSON.parse(dc))
                 });
 
                 return;
@@ -614,7 +799,6 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
                 await dfs(childId, newPath);
             }
         };
-
 
         // Traverse all root nodes
         for (const root of rootNodes) {
@@ -637,9 +821,16 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
                 }).lean();
 
                 if (templateDoc) {
-                    documentCodesSet.add(templateDoc.document_code);
+                    const nodeRefs = extractNodeRefs(templateDoc);
+
+                    documentCodesSet.add(JSON.stringify({
+                        code: templateDoc.document_code,
+                        node_ids: nodeRefs
+                    }));
+
                     if (item[fieldName]) {
                         item[fieldName].documentcode = templateDoc.document_code;
+                        item[fieldName].node_ids = nodeRefs;
                     }
                 } else {
                     if (item[fieldName]) {
@@ -658,7 +849,7 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
                 ...node.data,
                 node,
                 leaf_node: true,
-                document_codes: Array.from(documentCodesSet)
+                document_codes: Array.from(documentCodesSet).map(dc => JSON.parse(dc))
             });
         }
 
@@ -677,104 +868,219 @@ const getTemplatesByTemplateIDLeaf = async (req, res) => {
 };
 
 
+
+// const getTemplatesByTemplateIDLeafGroup = async (req, res) => {
+//     try {
+//         const { template_id } = req.body;
+//         const { asset_id } = req.body;
+
+//         if (!asset_id) {
+//             return res.status(400).send({
+//                 message: "asset_id is required"
+//             });
+//         }
+
+//         // Ensure template_id is cast correctly (Cosmos may store it as ObjectId)
+//         const templateObjectId = mongoose.Types.ObjectId.isValid(template_id)
+//             ? new mongoose.Types.ObjectId(template_id)
+//             : template_id;
+//         console.log("11111111111");
+//         // Fetch asset masters linked with asset_id
+//         const assetMasters = await assetMaster.find({ asset_id })
+//             .populate("template_master_id")
+//             .lean();
+//         console.log("222222222", assetMasters);
+//         // Collect linked template_master_ids
+//         const linkedMasterIds = new Set();
+//         assetMasters.forEach(assetMaster => {
+//             if (assetMaster.template_master_id) {
+//                 linkedMasterIds.add(String(assetMaster.template_master_id._id));
+//             }
+//         });
+//         console.log("333333333333333");
+//         console.log("templateIDDDDDDDDDD", templateObjectId)
+//         // Fetch leaf template masters for the given template_id
+//         const temp = await templateData.findOne({ template_id: templateObjectId }).lean();
+//         console.log("structureeeeee", temp);
+//         if (temp?.structure) {
+//             const structure = JSON.parse(temp.structure);
+
+//             // Combine all nodes in one array
+//             const allNodes = [
+//                 ...(structure.connectedNodes || []),
+//                 ...(structure.unconnectedNodes || [])
+//             ];
+
+//             // Example 1: filter by type (if you really expect type=leaf somewhere)
+//             const leafTypeNodes = allNodes.filter(n => n.type === "leaf");
+
+//             // Example 2: infer leaf nodes as those not appearing as a `source` in edges
+//             const sources = new Set((structure.edges || []).map(e => e.source));
+//             const leafNodes = allNodes.filter(n => !sources.has(n.id));
+
+//             console.log("Leaf nodes:", leafNodes);
+//         }
+
+//         // console.log("444444444444444", temp);
+
+//         // console.log("structureee", temp.structure);
+//         const templateMasters = await templateMaster.find({
+//             template_id: templateObjectId,
+//         }).lean();
+//         // console.log("55555555", templateMasters);
+
+//         const uniqueMastersSet = new Set();
+//         const uniqueMasters = [];
+
+//         templateMasters.forEach(master => {
+//             if (linkedMasterIds.has(String(master._id))) {
+//                 const masterKey = `${master.master_id}-${master.master_name}-${master.heading_name || ""}`;
+//                 if (!uniqueMastersSet.has(masterKey)) {
+//                     uniqueMastersSet.add(masterKey);
+//                     uniqueMasters.push({
+//                         master_id: master.master_id,
+//                         master_name: master.master_name,
+//                         heading_name: master.heading_name || null,
+//                         independent: master.hasCombination ? false : true
+//                     });
+//                 }
+//             }
+//         });
+
+//         // Sorting: dependent first, independent later, then alphabetically by name
+//         uniqueMasters.sort((a, b) => {
+//             if (a.independent && !b.independent) return 1;
+//             if (!a.independent && b.independent) return -1;
+//             return a.master_name.localeCompare(b.master_name);
+//         });
+
+//         // Response payload (exclude independent if not needed in frontend)
+//         const responseData = uniqueMasters.map(({ master_id, master_name, heading_name }) => ({
+//             master_id,
+//             master_name,
+//             heading_name
+//         }));
+
+//         await logApiResponse(req, "Templates retrieved successfully", 200, responseData);
+//         res.status(200).send({
+//             message: "Templates retrieved successfully",
+//             data: responseData
+//         });
+
+//     } catch (error) {
+//         console.error("Failed to retrieve templates:", error);
+//         await logApiResponse(req, "Failed to retrieve templates", 500, {
+//             message: "Failed to retrieve templates",
+//             error: error.toString()
+//         });
+//         res.status(500).send({
+//             message: "Failed to retrieve templates",
+//             error: error.toString()
+//         });
+//     }
+// };
+
+
 const getTemplatesByTemplateIDLeafGroup = async (req, res) => {
     try {
-        const { template_id } = req.body;
-        const { asset_id } = req.body;
+        const { template_id, asset_id } = req.body;
 
         if (!asset_id) {
-            return res.status(400).send({
-                message: "asset_id is required"
-            });
+            return res.status(400).send({ message: "asset_id is required" });
+        }
+        if (!template_id) {
+            return res.status(400).send({ message: "template_id is required" });
         }
 
-        // Ensure template_id is cast correctly (Cosmos may store it as ObjectId)
-        const templateObjectId = mongoose.Types.ObjectId.isValid(template_id)
-            ? new mongoose.Types.ObjectId(template_id)
-            : template_id;
-        console.log("11111111111");
+        console.log("Received template_id:", template_id, "asset_id:", asset_id);
+
         // Fetch asset masters linked with asset_id
-        const assetMasters = await assetMaster.find({ asset_id })
-            .populate("template_master_id")
-            .lean();
-        console.log("222222222", assetMasters);
+        const assetMasters = await assetMaster.find({ asset_id }).lean();
+        console.log("Fetched assetMasters:", assetMasters);
+
         // Collect linked template_master_ids
-        const linkedMasterIds = new Set();
-        assetMasters.forEach(assetMaster => {
-            if (assetMaster.template_master_id) {
-                linkedMasterIds.add(String(assetMaster.template_master_id._id));
-            }
+        const linkedMasterIds = assetMasters
+            .map(a => a.template_master_id)
+            .filter(Boolean);
+        console.log("Linked template_master_ids:", linkedMasterIds);
+
+        // Fetch template data (structure)
+        const temp = await templateData.findOne({ template_id }).lean();
+        if (!temp || !temp.structure) {
+            console.log("No template data found for template_id:", template_id);
+            return res.status(404).send({ message: "No template data found" });
+        }
+
+        const structure = typeof temp.structure === "string"
+            ? JSON.parse(temp.structure)
+            : temp.structure;
+        console.log("Parsed structure:", structure);
+
+        // Combine all nodes
+        const allNodes = [...(structure.connectedNodes || []), ...(structure.unconnectedNodes || [])];
+        console.log("All nodes combined:", allNodes);
+
+        // Map nodeId => node
+        const nodeMap = {};
+        allNodes.forEach(n => nodeMap[n.id] = n);
+        console.log("Node map created:", nodeMap);
+
+        // Map childId => parentId
+        const parentMap = {};
+        (structure.edges || []).forEach(e => {
+            parentMap[e.target] = e.source;
         });
-        console.log("333333333333333");
-        console.log("templateIDDDDDDDDDD", templateObjectId)
-        // Fetch leaf template masters for the given template_id
-        const temp = await template.findOne({
-            _id: templateObjectId,
-            // leaf_node: true
-        }).lean();
-        console.log("444444444444444", temp);
+        console.log("Parent map created:", parentMap);
 
-        console.log("structureee", temp.structure);
-        const templateMasters = await templateMaster.find({
-            template_id: templateObjectId,
-            // leaf_node: true
-        }).lean();
-        console.log("55555555", templateMasters);
+        // Function to get full path for a node
+        const getNodePath = (nodeId) => {
+            const node = nodeMap[nodeId];
+            if (!node) return "";
+            const parentId = parentMap[nodeId];
+            if (parentId) return `${getNodePath(parentId)}-${node.data?.label || ""}`;
+            return node.data?.label || "";
+        };
 
-        // Deduplicate masters
-        const uniqueMastersSet = new Set();
-        const uniqueMasters = [];
+        // Identify leaf nodes (nodes that are not source in edges)
+        const sources = new Set((structure.edges || []).map(e => e.source));
+        const leafNodes = allNodes.filter(n => !sources.has(n.id));
+        console.log("Identified leaf nodes:", leafNodes);
 
-        templateMasters.forEach(master => {
-            if (linkedMasterIds.has(String(master._id))) {
-                const masterKey = `${master.master_id}-${master.master_name}-${master.heading_name || ""}`;
-                if (!uniqueMastersSet.has(masterKey)) {
-                    uniqueMastersSet.add(masterKey);
-                    uniqueMasters.push({
-                        master_id: master.master_id,
-                        master_name: master.master_name,
-                        heading_name: master.heading_name || null,
-                        independent: !master.hasCombination
-                    });
-                }
-            }
+        // Build response with heading_name + template_master_id
+        const responseData = leafNodes.map(leaf => {
+            const heading = getNodePath(leaf.id);
+
+            // Match assetMaster for this leaf
+            const matchedMaster = assetMasters.find(
+                am => String(am.template_master_id) === String(leaf.data.template_master_code)
+            );
+
+            return {
+                node_id: leaf.id,
+                node_label: leaf.data.label,
+                heading_name: heading,
+                template_master_code: leaf.data.template_master_code,
+                master_id: matchedMaster?._id || null,                // assetMaster _id
+                template_master_id: matchedMaster?.template_master_id || null, // <-- Added
+                document_code: matchedMaster?.document_code || null
+            };
         });
 
-        // Sorting (independent after dependent, then by master_name)
-        uniqueMasters.sort((a, b) => {
-            if (a.independent && !b.independent) return 1;
-            if (!a.independent && b.independent) return -1;
-            return a.master_name.localeCompare(b.master_name);
-        });
+        console.log("Final response data:", responseData);
 
-        // Response payload
-        const responseData = uniqueMasters.map(({ master_id, master_name, heading_name }) => ({
-            master_id,
-            master_name,
-            heading_name
-        }));
-
-        await logApiResponse(req, "Templates retrieved successfully", 200, responseData);
         res.status(200).send({
             message: "Templates retrieved successfully",
-            data: responseData
+            leaf_nodes: responseData
         });
 
     } catch (error) {
         console.error("Failed to retrieve templates:", error);
-        await logApiResponse(req, "Failed to retrieve templates", 500, {
-            message: "Failed to retrieve templates",
-            error: error.toString()
-        });
         res.status(500).send({
             message: "Failed to retrieve templates",
             error: error.toString()
         });
     }
 };
-
-
-
 
 
 module.exports = { createTemplateMaster, getTemplatesByTemplateIDLeaf, getTemplatesByTemplateIDLeafGroup };

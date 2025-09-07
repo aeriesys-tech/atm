@@ -152,6 +152,153 @@ const { createNotification } = require('../utils/notification');
 
 
 // structed code
+// const createTemplate = async (req, res) => {
+//     try {
+//         const {
+//             template_type_id,
+//             template_code,
+//             template_name,
+//             structure,
+//             status,
+//             deleted_at
+//         } = req.body;
+
+//         const validationErrors = {};
+//         if (!template_type_id || !mongoose.Types.ObjectId.isValid(template_type_id)) {
+//             validationErrors.template_type_id = 'Invalid or missing template type ID';
+//         } else {
+//             const templateTypeExists = await TemplateType.findById(template_type_id);
+//             if (!templateTypeExists) {
+//                 validationErrors.template_type_id = 'Template type does not exist';
+//             }
+//         }
+
+//         if (!template_code || template_code.trim() === '') {
+//             validationErrors.template_code = 'Template code is required';
+//         } else {
+//             const existingTemplate = await Template.findOne({ template_code: template_code.trim() });
+//             if (existingTemplate) {
+//                 validationErrors.template_code = 'Template code already exists';
+//             }
+//         }
+
+//         if (!template_name || template_name.trim() === '') {
+//             validationErrors.template_name = 'Template name is required';
+//         }
+
+//         if (Object.keys(validationErrors).length > 0) {
+//             const errorMessage = Object.values(validationErrors).join(', ');
+//             await logApiResponse(req, 'Validation Error', 400, validationErrors);
+//             return res.status(400).json({ message: errorMessage, errors: validationErrors });
+//         }
+
+//         const newTemplate = new Template({
+//             template_type_id,
+//             template_code: template_code.trim(),
+//             template_name: template_name.trim(),
+//             structure: structure || null,
+//             status: status !== undefined ? status : true,
+//             deleted_at: deleted_at || null
+//         });
+
+//         if (req.body.source_id !== '1') {
+//             let parsedStructure;
+//             try {
+//                 parsedStructure = typeof newTemplate.structure === 'string'
+//                     ? JSON.parse(newTemplate.structure)
+//                     : newTemplate.structure;
+//             } catch (err) {
+//                 await logApiResponse(req, 'Invalid structure JSON', 400, {
+//                     structure: 'Could not parse structure'
+//                 });
+//                 return res.status(400).json({ message: 'Invalid structure format' });
+//             }
+
+//             const nodesItem = parsedStructure.find(item => Array.isArray(item.nodes));
+//             const edgesItem = parsedStructure.find(item => Array.isArray(item.edges));
+
+//             const nodes = nodesItem?.nodes || [];
+//             const edges = edgesItem?.edges || [];
+
+//             if (nodes.length === 0) {
+//                 await logApiResponse(req, 'Validation Error', 400, {
+//                     message: 'Selected items must have at least one node selected.'
+//                 });
+//                 return res.status(400).json({
+//                     message: 'Selected items must have at least one node selected.'
+//                 });
+//             }
+
+//             const sanitize = str => str.toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '_');
+
+//             const nodeMap = new Map(nodes.map(node => [node.id, node]));
+//             const sourceIds = new Set(edges.map(edge => edge.source));
+//             const leafNodes = nodes.filter(node => !sourceIds.has(node.id));
+
+//             for (const leaf of leafNodes) {
+//                 const leafLabel = leaf.data?.label || 'unnamed';
+//                 const incomingEdge = edges.find(edge => edge.target === leaf.id);
+//                 const parentNodeId = incomingEdge?.source || null;
+//                 const parentNode = parentNodeId ? nodeMap.get(parentNodeId) : null;
+//                 const parentLabel = parentNode?.data?.label || null;
+
+//                 const sanitizedLeafLabel = sanitize(leafLabel);
+//                 const sanitizedParentLabel = parentLabel ? sanitize(parentLabel) : null;
+
+//                 const collectionName = sanitize(`${template_name}_${leafLabel}`);
+//                 const modelName = `Dynamic_${leaf.id}_${newTemplate._id}`;
+
+//                 if (mongoose.models[modelName]) {
+//                     delete mongoose.models[modelName];
+//                 }
+
+//                 const schemaFields = {
+//                     template_id: mongoose.Schema.Types.ObjectId
+//                 };
+//                 const entry = {
+//                     template_id: newTemplate._id
+//                 };
+
+//                 if (sanitizedParentLabel && parentNodeId) {
+//                     // Add parent_id field
+//                     schemaFields[`${sanitizedParentLabel}_id`] = String;
+//                     entry[`${sanitizedParentLabel}_id`] = parentNodeId;
+
+//                     // Add parent object with child inside
+//                     schemaFields[sanitizedParentLabel] = mongoose.Schema.Types.Mixed;
+//                     entry[sanitizedParentLabel] = {
+//                         [`${sanitizedLeafLabel}_id`]: leaf.id
+//                     };
+//                 } else {
+//                     // If no parent, store child normally
+//                     schemaFields[`${sanitizedLeafLabel}_id`] = String;
+//                     entry[`${sanitizedLeafLabel}_id`] = leaf.id;
+//                 }
+
+//                 const dynamicSchema = new mongoose.Schema(schemaFields, { collection: collectionName });
+//                 const DynamicModel = mongoose.model(modelName, dynamicSchema);
+
+//                 await DynamicModel.insertMany([entry]);
+//             }
+
+//             console.log("Dynamic collections created for all leaf nodes.");
+//         }
+
+//         const savedTemplate = await newTemplate.save();
+
+//         const message = `Template "${newTemplate.template_name}" created successfully`;
+//         await createNotification(req, 'Template', newTemplate._id, message, 'template');
+//         await logApiResponse(req, 'Template created successfully', 201, savedTemplate);
+
+//         res.status(201).json(savedTemplate);
+
+//     } catch (error) {
+//         console.error('Create Template Error:', error);
+//         await logApiResponse(req, 'Server error', 500, { error: error.message });
+//         res.status(500).json({ message: 'Server error', error: error.message });
+//     }
+// };
+
 const createTemplate = async (req, res) => {
     try {
         const {
@@ -160,7 +307,8 @@ const createTemplate = async (req, res) => {
             template_name,
             structure,
             status,
-            deleted_at
+            deleted_at,
+            source_id
         } = req.body;
 
         const validationErrors = {};
@@ -201,12 +349,13 @@ const createTemplate = async (req, res) => {
             deleted_at: deleted_at || null
         });
 
-        if (req.body.source_id !== '1') {
+        if (source_id !== '1' && structure) {
             let parsedStructure;
+
             try {
-                parsedStructure = typeof newTemplate.structure === 'string'
-                    ? JSON.parse(newTemplate.structure)
-                    : newTemplate.structure;
+                parsedStructure = typeof structure === 'string'
+                    ? JSON.parse(structure)
+                    : structure;
             } catch (err) {
                 await logApiResponse(req, 'Invalid structure JSON', 400, {
                     structure: 'Could not parse structure'
@@ -214,11 +363,9 @@ const createTemplate = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid structure format' });
             }
 
-            const nodesItem = parsedStructure.find(item => Array.isArray(item.nodes));
-            const edgesItem = parsedStructure.find(item => Array.isArray(item.edges));
-
-            const nodes = nodesItem?.nodes || [];
-            const edges = edgesItem?.edges || [];
+            // Use connectedNodes and edges arrays from your payload
+            const nodes = Array.isArray(parsedStructure.connectedNodes) ? parsedStructure.connectedNodes : [];
+            const edges = Array.isArray(parsedStructure.edges) ? parsedStructure.edges : [];
 
             if (nodes.length === 0) {
                 await logApiResponse(req, 'Validation Error', 400, {
@@ -230,7 +377,6 @@ const createTemplate = async (req, res) => {
             }
 
             const sanitize = str => str.toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '_');
-
             const nodeMap = new Map(nodes.map(node => [node.id, node]));
             const sourceIds = new Set(edges.map(edge => edge.source));
             const leafNodes = nodes.filter(node => !sourceIds.has(node.id));
@@ -252,25 +398,16 @@ const createTemplate = async (req, res) => {
                     delete mongoose.models[modelName];
                 }
 
-                const schemaFields = {
-                    template_id: mongoose.Schema.Types.ObjectId
-                };
-                const entry = {
-                    template_id: newTemplate._id
-                };
+                const schemaFields = { template_id: mongoose.Schema.Types.ObjectId };
+                const entry = { template_id: newTemplate._id };
 
                 if (sanitizedParentLabel && parentNodeId) {
-                    // Add parent_id field
                     schemaFields[`${sanitizedParentLabel}_id`] = String;
                     entry[`${sanitizedParentLabel}_id`] = parentNodeId;
 
-                    // Add parent object with child inside
                     schemaFields[sanitizedParentLabel] = mongoose.Schema.Types.Mixed;
-                    entry[sanitizedParentLabel] = {
-                        [`${sanitizedLeafLabel}_id`]: leaf.id
-                    };
+                    entry[sanitizedParentLabel] = { [`${sanitizedLeafLabel}_id`]: leaf.id };
                 } else {
-                    // If no parent, store child normally
                     schemaFields[`${sanitizedLeafLabel}_id`] = String;
                     entry[`${sanitizedLeafLabel}_id`] = leaf.id;
                 }
@@ -285,8 +422,8 @@ const createTemplate = async (req, res) => {
         }
 
         const savedTemplate = await newTemplate.save();
-
         const message = `Template "${newTemplate.template_name}" created successfully`;
+
         await createNotification(req, 'Template', newTemplate._id, message, 'template');
         await logApiResponse(req, 'Template created successfully', 201, savedTemplate);
 
@@ -298,6 +435,7 @@ const createTemplate = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
 
 // const updateTemplate = async (req, res) => {
 //     try {

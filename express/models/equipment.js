@@ -13,7 +13,7 @@ const equipmentSchema = new Schema(
         },
     },
     {
-        strict: false, // allows dynamic fields
+        strict: false,
         versionKey: false,
         timestamps: {
             createdAt: 'created_at',
@@ -22,5 +22,4 @@ const equipmentSchema = new Schema(
     }
 );
 
-// Explicitly specify collection name
 module.exports = mongoose.models.Equipment || mongoose.model('Equipment', equipmentSchema, 'equipments');

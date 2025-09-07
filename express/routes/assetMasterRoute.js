@@ -12,5 +12,6 @@ router.post('/getAssetMaster', authMiddleware, assetMasterController.getAssetMas
 router.post('/getAssetTemplates', authMiddleware, assetMasterController.getAssetTemplates);
 router.post('/assetTemplateAttributes', authMiddleware, assetMasterController.getAssetTemplatesWithAttributes);
 
+router.post('/getAssetClassMasters', authMiddleware, assetMasterController.getAssetClassMasters);
 
 module.exports = router;
