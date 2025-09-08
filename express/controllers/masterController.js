@@ -1092,9 +1092,6 @@ const destroyDynamicData = async (req, res) => {
     }
 };
 
-
-
-
 const getPaginatedDynamicData = async (req, res) => {
     const { masterId } = req.body;
     const {
