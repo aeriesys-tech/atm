@@ -35,7 +35,7 @@ app.use("/uploads", express.static("uploads"));
 app.use('/api/v1', router);
 
 // Serve React frontend (if deployed together)
-const reactPath = path.join(__dirname, '../reeact/dist')
+const reactPath = path.join(__dirname, '../react/dist')
 app.use(express.static(reactPath))
 // app.get('*', (req, res) => {
 //     res.sendFile(path.join(__dirname, '../react/build', 'index.html'));
