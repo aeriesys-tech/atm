@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Button from '../common/Button';
 import InputField from '../common/InputField';
 import Dropdown from '../common/Dropdown';
-
+import closeIcon from "../../assets/icons/close.svg"
 function Modal({
     onClose,
     onSubmit,
@@ -79,7 +79,7 @@ function Modal({
                     <h4>{title}</h4>
                     <a onClick={onClose} style={{ cursor: "pointer" }}>
                         <img
-                            src="src/assets/icons/close.svg"
+                            src={closeIcon}
                             width="28px"
                             height="28px"
                             alt="Close"

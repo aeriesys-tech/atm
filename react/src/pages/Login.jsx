@@ -10,10 +10,7 @@ import passicon from '../assets/icons/Component 26.svg';
 import ActionButton from '../components/common/ActionButton';
 import Loader from '../components/general/LoaderAndSpinner/Loader'; // ✅ make sure this exists
 import authWrapper from '../../services/AuthWrapper'
-import { useDispatch } from 'react-redux';
-import { setUser } from '../redux/user/UserSlice';
 function Login() {
-	 const dispatch = useDispatch();
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState({ email: '', password: '' });
 	const [errors, setErrors] = useState({});
@@ -37,10 +34,6 @@ function Login() {
 		try {
 			const data = await authWrapper('api/v1/login', payload);
 
-			dispatch(setUser({
-                token: data.token,   // make sure your API returns this
-                user: data.user,     // and this
-            }));
 			// Store email and navigate
 			sessionStorage.setItem("email", payload.email);
 			navigate('/otpverify');

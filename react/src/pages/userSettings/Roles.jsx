@@ -5,6 +5,10 @@ import Navbar from "../../components/general/Navbar";
 import Modal from "../../components/common/Modal";
 import axiosWrapper from "../../../services/AxiosWrapper";
 import Loader from "../../components/general/LoaderAndSpinner/Loader";
+import Search from "../../components/common/Search";
+import Dropdown from "../../components/common/Dropdown";
+import Button from "../../components/common/Button";
+import search2 from "../../../src/assets/icons/search2.svg";
 
 const Role = () => {
     const [roles, setRoles] = useState([]);
@@ -280,6 +284,28 @@ const Role = () => {
             )}
             <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 <Breadcrumb title="Roles" items={breadcrumbItems} />
+                   <div className="navbar-3 mt-0 d-flex justify-content-between">
+            <div className="d-flex gap-4">
+              <div className="search-container">
+                <img src={search2} alt="Search" />
+                <Search value={search} onChange={handleSearchChange} />
+              </div>
+            </div>
+            <div className="d-flex gap-3">
+              <Dropdown
+                label="All"
+                options={[
+                  { label: "Active", value: "active" },
+                  { label: "Inactive", value: "inactive" },
+                ]}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <Button name="Add Role Group" onClick={() => setAddModalOpen(true)} />
+            </div>
+          </div>
                 <Navbar
                     modalTitle="Add Role"
                     modalFields={roleFields}

@@ -312,8 +312,6 @@ const Master = () => {
                 })),
             };
 
-            let createdMaster = null;
-
             if (isEditMode) {
                 payload.id = editingMasterId;
                 await axiosWrapper("api/v1/masters/updateMaster", {
@@ -321,37 +319,20 @@ const Master = () => {
                     data: payload,
                 });
             } else {
-                const res = await axiosWrapper("api/v1/masters/createMaster", {
+                await axiosWrapper("api/v1/masters/createMaster", {
                     method: "POST",
                     data: payload,
                 });
-                createdMaster = res?.master || res?.data?.master; // adjust based on API format
             }
 
-            // ✅ Update sessionStorage only on create
-            if (!isEditMode && createdMaster) {
-                const sessionData = JSON.parse(sessionStorage.getItem("parameterTypes"));
-                if (sessionData && Array.isArray(sessionData)) {
-                    const updatedSessionData = sessionData.map((item) => {
-                        if (item._id === payload.masterData.parameter_type_id) {
-                            return {
-                                ...item,
-                                masterDetails: [
-                                    ...(item.masterDetails || []),
-                                    {
-                                        masterId: createdMaster._id,
-                                        masterName: createdMaster.master_name,
-                                        order: createdMaster.order,
-                                    },
-                                ],
-                            };
-                        }
-                        return item;
-                    });
-                    sessionStorage.setItem("parameterTypes", JSON.stringify(updatedSessionData));
-                }
-            }
+            // ✅ Re-fetch parameterTypes after create/update
+            const paramTypes = await axiosWrapper("api/v1/parameter-types/getParameterTypes", { method: "POST" });
+            sessionStorage.setItem("parameterTypes", JSON.stringify(paramTypes));
 
+            // ✅ Re-fetch templateTypes as well (if needed)
+            const templateTypes = await axiosWrapper("api/v1/template-types/getAllTemplateTypes", { method: "POST" });
+            sessionStorage.setItem("templateTypes", JSON.stringify(templateTypes));
+            window.location.reload();
             onSuccess();
             await fetchMasters();
         } catch (err) {
@@ -380,6 +361,7 @@ const Master = () => {
             setModalLoading(false);
         }
     };
+
 
     const handleSoftDelete = async (row) => {
         try {

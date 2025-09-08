@@ -62,9 +62,10 @@ function OtpVerification() {
 			sessionStorage.setItem("user", JSON.stringify(data.user));
 			sessionStorage.setItem("role", JSON.stringify(data.role));
 			sessionStorage.setItem("email", data.user.email);
+			console.log(JSON.stringify(data.user))
 			dispatch(setUser({
 				token: data.token,
-				user: data.user,
+				user: JSON.stringify(data.user),
 			}));
 			const paramTypes = await axiosWrapper("api/v1/parameter-types/getParameterTypes", { method: "POST" });
 			sessionStorage.setItem("parameterTypes", JSON.stringify(paramTypes));

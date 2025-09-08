@@ -14,6 +14,8 @@ import axiosWrapper from "../../../services/AxiosWrapper";
 import InputField from "../../components/common/InputField";
 import Table from "../../components/common/Table";
 import Select from "react-select";
+import * as XLSX from 'xlsx'; // For parsing Excel files
+import { toast } from "react-toastify";
 
 const AddEquipment = () => {
     const [assets, setAssets] = useState([]);
@@ -34,6 +36,7 @@ const AddEquipment = () => {
     const [modalErrors, setModalErrors] = useState({});
     const [groupedItems, setGroupedItems] = useState([]);
     const [masterOptionsMap, setMasterOptionsMap] = useState({});
+    const [templateLeafNodes, setTemplateLeafNodes] = useState({});
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -93,7 +96,7 @@ const AddEquipment = () => {
                 setAssets(options);
             } catch (error) {
                 console.error('Error fetching asset classes:', error);
-                alert('Failed to fetch asset classes');
+                toast.error('Failed to fetch asset classes');
             } finally {
                 setLoading(false);
             }
@@ -119,6 +122,7 @@ const AddEquipment = () => {
         setShowUploadModal(false);
         setAssetTemplates([]);
         setMasterOptionsMap({});
+        setTemplateLeafNodes({});
 
         try {
             setLoading(true);
@@ -176,6 +180,11 @@ const AddEquipment = () => {
                         : [];
                     console.log(`Leaf nodes for template ${template._id}:`, leafNodes);
 
+                    setTemplateLeafNodes((prev) => ({
+                        ...prev,
+                        [template._id]: leafNodes,
+                    }));
+
                     const compositePathFields = new Set();
                     leafNodes.forEach((node) => {
                         if (node.heading_name.includes('-')) {
@@ -226,7 +235,7 @@ const AddEquipment = () => {
             setAssetTemplates(processedTemplates);
         } catch (error) {
             console.error('Error fetching data:', error);
-            alert(error?.response?.data?.message || 'Failed to fetch data');
+            toast.error(error?.response?.data?.message || 'Failed to fetch data');
         } finally {
             setLoading(false);
         }
@@ -287,7 +296,7 @@ const AddEquipment = () => {
 
         if (!hasSelections) {
             setErrors((prev) => ({ ...prev, [templateId]: newErrors }));
-            alert('Please select at least one value before adding a row.');
+            toast.error('Please select at least one value before adding a row.');
             return;
         }
 
@@ -328,7 +337,7 @@ const AddEquipment = () => {
 
         if (hasEmptyFields) {
             setErrors((prev) => ({ ...prev, [templateId]: newErrors }));
-            alert('All fields must be selected.');
+            toast.error('All fields must be selected.');
             return;
         }
 
@@ -373,7 +382,7 @@ const AddEquipment = () => {
 
         if (Object.keys(formFieldErrors).length > 0 || Object.keys(tableErrors).length > 0) {
             setErrors({ ...formFieldErrors, ...tableErrors });
-            alert('Please fill in all required fields and add at least one row per template.');
+            toast.error('Please fill in all required fields and add at least one row per template.');
             return;
         }
 
@@ -396,12 +405,12 @@ const AddEquipment = () => {
                 data: payload,
             });
 
-            alert('Equipment added successfully');
+            toast.success('Equipment added successfully');
             console.log('Equipment created:', response);
             navigate('/all_assets');
         } catch (error) {
             console.error('Error submitting equipment:', error);
-            alert(error?.response?.data?.message || 'Failed to add equipment');
+            toast.error(error?.response?.data?.message || 'Failed to add equipment');
         } finally {
             setLoading(false);
         }
@@ -429,33 +438,33 @@ const AddEquipment = () => {
         setModalErrors((prev) => ({ ...prev, file: '' }));
     };
 
-    const downloadExcel = async (templateId) => {
+    const downloadExcel = async () => {
         if (!selectedAssetId) {
-            alert('Please select an Asset Class first!');
+            toast.error('Please select an Asset Class first!');
             return;
         }
 
-        if (!templateId) {
-            alert('No template selected!');
+        if (!assetTemplates.length || !selectedTemplateId) {
+            toast.error('No template selected or available for the asset!');
             return;
         }
 
         try {
-            console.log('Downloading Excel template for:', templateId);
+            console.log('Downloading Excel template for:', selectedTemplateId);
             const response = await axiosWrapper('api/v1/equipments/downloadEmptySheet', {
                 method: 'POST',
-                data: { templateId },
+                data: { templateId: selectedTemplateId },
                 responseType: 'blob',
             });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Template-${templateId}.xlsx`); // Backend sets filename, but fallback for safety
+            link.setAttribute('download', `Template-${selectedTemplateId}.xlsx`); // Backend sets filename, but fallback for safety
             document.body.appendChild(link);
             link.click();
             link.remove();
-            alert('Excel template downloaded successfully');
+            toast.success('Excel template downloaded successfully');
         } catch (error) {
             console.error('Error downloading Excel:', error);
             let errMsg = 'Failed to download Excel template';
@@ -472,7 +481,7 @@ const AddEquipment = () => {
             } catch (parseErr) {
                 console.error('Error parsing backend error:', parseErr);
             }
-            alert(errMsg);
+            toast.error(errMsg);
         }
     };
 
@@ -484,25 +493,41 @@ const AddEquipment = () => {
         }
 
         try {
-            console.log('Uploading Excel for template:', templateId, modalValues.file);
-            const formData = new FormData();
-            formData.append('file', modalValues.file);
-            formData.append('templateId', templateId);
-
-            const response = await axiosWrapper('api/v1/equipments/uploadExcel', {
-                method: 'POST',
-                data: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            alert('Excel data uploaded successfully');
-            handleCloseUploadModal();
-            // Optionally, refresh the table rows for the template
-            const updatedRows = response.data.rows || []; // Assuming API returns parsed rows
-            setRows((prev) => ({
-                ...prev,
-                [templateId]: updatedRows,
-            }));
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = e.target.result;
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets['Leaf Master Fields'];
+                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                const headers = json[0] || [];
+                const dataRows = json.slice(1) || [];
+                const leafNodes = templateLeafNodes[templateId] || [];
+                const newRows = [];
+                for (const dataRow of dataRows) {
+                    const newRow = {};
+                    headers.forEach((header, index) => {
+                        const value = dataRow[index] || '';
+                        const leafNode = leafNodes.find(node => node.node_label === header || node.heading_name === header);
+                        if (leafNode) {
+                            const node_id = leafNode.node_id;
+                            const options = masterOptionsMap[node_id] || [];
+                            const option = options.find(opt => opt.label === value);
+                            const value_id = option ? option.value : value;
+                            newRow[node_id] = { value: value_id, label: value };
+                        }
+                    });
+                    if (Object.keys(newRow).length > 0) {
+                        newRows.push(newRow);
+                    }
+                }
+                setRows((prev) => ({
+                    ...prev,
+                    [templateId]: [...(prev[templateId] || []), ...newRows],
+                }));
+                toast.success(`Successfully added ${newRows.length} rows to the table.`);
+                handleCloseUploadModal();
+            };
+            reader.readAsArrayBuffer(modalValues.file);
         } catch (error) {
             console.error('Error uploading Excel:', error);
             let errMsg = error?.response?.data?.message || 'Failed to upload file';
@@ -904,6 +929,5 @@ const AddEquipment = () => {
         </div>
     );
 };
-
 
 export default AddEquipment
