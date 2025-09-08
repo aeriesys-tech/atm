@@ -28,7 +28,7 @@ const AddEquipment = () => {
     const [editRowIndex, setEditRowIndex] = useState(null);
     const [editRowValues, setEditRowValues] = useState({});
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [selectedTemplateId, setSelectedTemplateId] = useState('');
+    const [selectedTemplateId, setSelectedTemplateId] = useState(''); // Still needed for modal state
     const [selectedTemplateCode, setSelectedTemplateCode] = useState('');
     const [modalValues, setModalValues] = useState({ file: null });
     const [modalErrors, setModalErrors] = useState({});
@@ -407,12 +407,11 @@ const AddEquipment = () => {
         }
     };
 
-    const handleOpenuploadModal = () => {
-        console.log('Opening modal');
+    const handleOpenuploadModal = (templateId, templateCode) => {
+        console.log('Opening modal for template:', templateId);
         setShowUploadModal(true);
-        const firstTemplate = assetTemplates[0] || {};
-        setSelectedTemplateId(firstTemplate._id || '');
-        setSelectedTemplateCode(firstTemplate.template_code || '');
+        setSelectedTemplateId(templateId || '');
+        setSelectedTemplateCode(templateCode || '');
         setModalValues({ file: null });
         setModalErrors({});
     };
@@ -431,26 +430,86 @@ const AddEquipment = () => {
     };
 
     const downloadExcel = async (templateId) => {
+        if (!selectedAssetId) {
+            alert('Please select an Asset Class first!');
+            return;
+        }
+
+        if (!templateId) {
+            alert('No template selected!');
+            return;
+        }
+
         try {
             console.log('Downloading Excel template for:', templateId);
-            // Implement download logic
+            const response = await axiosWrapper('api/v1/equipments/downloadEmptySheet', {
+                method: 'POST',
+                data: { templateId },
+                responseType: 'blob',
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Template-${templateId}.xlsx`); // Backend sets filename, but fallback for safety
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            alert('Excel template downloaded successfully');
         } catch (error) {
-            console.error('Error downloading Excel:', error.message || error);
+            console.error('Error downloading Excel:', error);
+            let errMsg = 'Failed to download Excel template';
+            try {
+                if (error?.response?.data instanceof Blob) {
+                    const text = await error.response.data.text();
+                    const json = JSON.parse(text);
+                    errMsg = json.message || errMsg;
+                } else if (error?.response?.data?.message) {
+                    errMsg = error.response.data.message;
+                } else if (error?.message) {
+                    errMsg = error.message;
+                }
+            } catch (parseErr) {
+                console.error('Error parsing backend error:', parseErr);
+            }
+            alert(errMsg);
         }
     };
 
-    const uploadExcel = (e, templateId) => {
+    const uploadExcel = async (e, templateId) => {
         e.preventDefault();
         if (!modalValues.file) {
             setModalErrors({ file: 'Please select a file to upload.' });
             return;
         }
+
         try {
-            console.log('Uploading Excel for:', templateId, modalValues.file);
+            console.log('Uploading Excel for template:', templateId, modalValues.file);
+            const formData = new FormData();
+            formData.append('file', modalValues.file);
+            formData.append('templateId', templateId);
+
+            const response = await axiosWrapper('api/v1/equipments/uploadExcel', {
+                method: 'POST',
+                data: formData,
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
             alert('Excel data uploaded successfully');
             handleCloseUploadModal();
+            // Optionally, refresh the table rows for the template
+            const updatedRows = response.data.rows || []; // Assuming API returns parsed rows
+            setRows((prev) => ({
+                ...prev,
+                [templateId]: updatedRows,
+            }));
         } catch (error) {
-            setModalErrors({ file: error?.response?.data?.message || 'Failed to upload file' });
+            console.error('Error uploading Excel:', error);
+            let errMsg = error?.response?.data?.message || 'Failed to upload file';
+            if (Array.isArray(error?.response?.data?.errors)) {
+                errMsg = error.response.data.errors;
+            }
+            setModalErrors({ file: errMsg });
         }
     };
 
@@ -579,7 +638,7 @@ const AddEquipment = () => {
                                                 type="button"
                                                 id="openPopup"
                                                 className="btn-bg text-capitalize"
-                                                onClick={handleOpenuploadModal}
+                                                onClick={() => handleOpenuploadModal(assetTemplate._id, assetTemplate.template_code)}
                                             >
                                                 Bulk Upload
                                             </button>
@@ -749,7 +808,6 @@ const AddEquipment = () => {
                         className="addunit-card"
                         style={{
                             width: '60%',
-                            marginTop: '100px',
                             maxHeight: 'calc(100vh - 120px)',
                             background: '#fff',
                             borderRadius: '8px',
@@ -759,7 +817,7 @@ const AddEquipment = () => {
                         }}
                     >
                         <div className="addunit-header">
-                            <h4>Bulk Add Data</h4>
+                            <h4>Bulk Add Data for {selectedTemplateCode}</h4>
                             <button
                                 style={{ border: 'none', backgroundColor: 'inherit' }}
                                 type="button"
@@ -799,6 +857,7 @@ const AddEquipment = () => {
                                                 ref={fileInputRef}
                                                 aria-label="File browser example"
                                                 onChange={handleFileChange}
+                                                accept=".xls,.xlsx,.csv"
                                             />
                                             <span className="file-custom" id="fileName">
                                                 {modalValues?.file ? modalValues.file.name : 'No file chosen'}
@@ -845,5 +904,6 @@ const AddEquipment = () => {
         </div>
     );
 };
+
 
 export default AddEquipment
