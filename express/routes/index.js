@@ -21,6 +21,8 @@ const assetRoute = require('./assetRoute');
 const specificationRoute = require('./specificationRoute');
 const assetConfigurationRoute = require('./assetConfigurationRoute')
 const assetMasterRoute = require('./assetMasterRoute')
+const equipmentRoute = require('./equipmentRoute')
+const assetClassAttributeRoute = require('./assetClassAttributeRoute')
 
 
 router.use('/', authRoute);
@@ -42,5 +44,8 @@ router.use('/assets', assetRoute);
 router.use('/specifications', specificationRoute);
 router.use('/asset-configurations', assetConfigurationRoute);
 router.use('/asset-masters', assetMasterRoute);
+router.use('/equipments', equipmentRoute);
+router.use('/asset-class-attributes', assetClassAttributeRoute);
 
 module.exports = router;
+

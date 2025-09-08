@@ -1,39 +1,70 @@
 const AssetClassAttribute = require('../models/assetClassAttribute');
 const AssetAttribute = require('../models/assetAttribute');
 const { logApiResponse } = require('../utils/responseService');
-
+const mongoose = require('mongoose');
 
 const createAssetClassAttribute = async (req, res) => {
     try {
         const { asset_id, asset_attribute_ids } = req.body;
-        // Validate the input
+
+        // 1️⃣ Validate input
         if (!asset_id || !Array.isArray(asset_attribute_ids)) {
             await logApiResponse(req, "Validation Error", 400, "Invalid request body");
             return res.status(400).json({ message: "Invalid request body" });
         }
-        // Construct the update object
-        const update = {
-            $set: {
-                asset_attribute_ids: asset_attribute_ids,
-                updated_at: new Date()  // Update the timestamp
+
+        let results = [];
+
+        // 2️⃣ Loop through each attribute and upsert individually
+        for (const attr of asset_attribute_ids) {
+            const filter = {
+                asset_id: new mongoose.Types.ObjectId(asset_id),
+                "asset_attribute_ids.id": attr.id,
+                deleted_at: null
+            };
+
+            const update = {
+                $set: {
+                    "asset_attribute_ids.$": attr, // update the matching attribute in the array
+                    updated_at: new Date()
+                }
+            };
+
+            // 3️⃣ Try updating an existing attribute
+            let updated = await AssetClassAttribute.findOneAndUpdate(filter, update, {
+                new: true
+            });
+
+            if (!updated) {
+                // 4️⃣ If not found, push new attribute into array
+                updated = await AssetClassAttribute.findOneAndUpdate(
+                    { asset_id: new mongoose.Types.ObjectId(asset_id) },
+                    {
+                        $push: { asset_attribute_ids: attr },
+                        $set: { updated_at: new Date() }
+                    },
+                    { new: true, upsert: true }
+                );
             }
-        };
-        // The upsert option creates a new document if no documents match the filter
-        const assetClassAttribute = await AssetClassAttribute.findOneAndUpdate(
-            { asset_id: asset_id },  // filter
-            update,  // update
-            { new: true, upsert: true, runValidators: true }  // options
-        );
-        await logApiResponse(req, " AssetClass Attribute created Successful", 201, assetClassAttribute);
-        res.status(201).json(assetClassAttribute);
+
+            results.push(updated);
+        }
+
+        // 5️⃣ Final response
+        await logApiResponse(req, "AssetClassAttribute upserted successfully", 201, results);
+        res.status(201).json(results);
+
     } catch (error) {
-        await logApiResponse(req, { message: error.message }, 400, { message: error.message });
+        console.error("Error in createAssetClassAttribute:", error);
+        await logApiResponse(req, "Error creating AssetClassAttribute", 400, { message: error.message });
         res.status(400).json({ message: error.message });
     }
 };
+
+
 const getAttributesByAssetId = async (req, res) => {
     try {
-        const { assetId } = req.params;
+        const { assetId } = req.body;
         const assetClassAttributes = await AssetClassAttribute.findOne({ asset_id: assetId });
         if (!assetClassAttributes) {
             await logApiResponse(req, { message: 'Asset not found with provided ID' }, 404, { message: 'Asset not found with provided ID' });
@@ -72,6 +103,7 @@ const getAttributesByAssetId = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 const deleteAttributeFromAsset = async (req, res) => {
     const { assetId, attributeId } = req.params;
     try {

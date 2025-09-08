@@ -38,3 +38,4 @@ assetConfigurationSchema.index(
 
 // Explicitly specify collection name
 module.exports = mongoose.model('AssetConfiguration', assetConfigurationSchema, 'asset_configuration');
+    

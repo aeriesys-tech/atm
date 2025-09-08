@@ -6,5 +6,6 @@ const { add_template_master_validation } = require('../validations/templateMaste
 
 router.post('/createTemplateMaster', authMiddleware, add_template_master_validation, templateMasterController.createTemplateMaster);
 router.post("/templateMasters/leaf", authMiddleware, templateMasterController.getTemplatesByTemplateIDLeaf);
+router.post("/leafGroup", authMiddleware, templateMasterController.getTemplatesByTemplateIDLeafGroup);
 
 module.exports = router;

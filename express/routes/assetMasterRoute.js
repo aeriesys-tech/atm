@@ -7,7 +7,11 @@ const { Validate } = require('../middlewares/validationMiddleware');
 // const { checkPermission } = require("../middlewares/permissionsMiddleware");
 
 // POST endpoint to create a new asset
-router.post('/assetMaster/create', authMiddleware, assetMasterController.addAssetMaster);
+router.post('/createAssetMaster', authMiddleware, assetMasterController.addAssetMaster);
 router.post('/getAssetMaster', authMiddleware, assetMasterController.getAssetMaster);
+router.post('/getAssetTemplates', authMiddleware, assetMasterController.getAssetTemplates);
+router.post('/assetTemplateAttributes', authMiddleware, assetMasterController.getAssetTemplatesWithAttributes);
+
+router.post('/getAssetClassMasters', authMiddleware, assetMasterController.getAssetClassMasters);
 
 module.exports = router;
