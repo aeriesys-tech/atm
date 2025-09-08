@@ -800,7 +800,7 @@ const paginatedMasters = async (req, res) => {
         status
     } = req.query;
 
-    const allowedSortFields = ['_id', 'master_name', 'slug', 'display_name_singular', 'model_name', 'created_at'];
+    const allowedSortFields = ['_id', 'master_name', 'slug', 'display_name_singular', 'display_name_plural', 'model_name', 'created_at'];
     const cleanSortBy = String(sortBy).trim();
     const safeSortBy = allowedSortFields.includes(cleanSortBy) ? cleanSortBy : '_id';
 

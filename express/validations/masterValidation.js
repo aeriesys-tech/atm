@@ -6,7 +6,7 @@ const { validateId } = require('./commonValidation');
 
 const add_master_validation = (req, res, next) => {
     return Validate([
-        validateId('masterData.parameter_type_id', 'Parameter Type ID', parameterType),
+        validateId('masterData.parameter_type_id', 'Parameter Type', parameterType),
 
         body("masterData.master_name", "Master name is required")
             .isString().trim().escape().notEmpty(),

@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 const ExcelJS = require('exceljs');
 const templateMaster = require('../models/templateMaster');
 const templateData = require('../models/templateData');
-
+const assetMaster = require('../models/assetMaster');
 
 // const paginatedEquipments = async (req, res) => {
 //     const { page = 1, limit = 10, sortBy = 'equipment_code', order = 'asc', search = '', status } = req.query;
@@ -421,6 +421,7 @@ const downloadExcel = async (req, res) => {
     }
 };
 
+
 // const downloadEquipmentExcel = async (req, res) => {
 //     try {
 //         const { templateId } = req.body;
@@ -517,222 +518,136 @@ const downloadExcel = async (req, res) => {
 //     }
 // };
 
-// const downloadEquipmentExcel = async (req, res) => {
-//     try {
-//         const { templateId } = req.body;
+const downloadEquipmentExcel = async (req, res) => {
+    try {
+        const { templateId } = req.body;
 
-//         if (!mongoose.Types.ObjectId.isValid(templateId)) {
-//             await logApiResponse(req, "Invalid templateId format", 400, {});
-//             return res.status(400).json({ message: "Invalid templateId format" });
-//         }
+        if (!mongoose.Types.ObjectId.isValid(templateId)) {
+            await logApiResponse(req, "Invalid templateId format", 400, {});
+            return res.status(400).json({ message: "Invalid templateId format" });
+        }
 
-//         const templateObjectId = new mongoose.Types.ObjectId(templateId);
+        const templateObjectId = new mongoose.Types.ObjectId(templateId);
+        const templateExists = await Template.findOne({ _id: templateObjectId });
+        if (!templateExists) {
+            await logApiResponse(req, "Template not found", 404, {});
+            return res.status(404).json({ message: "Template not found" });
+        }
+        const templateDataDoc = await templateData.findOne({
+            template_id: templateObjectId,
+            deleted_at: null
+        });
 
-//         // 1️⃣ Check if template exists
-//         const templateExists = await Template.findOne({ _id: templateObjectId });
-//         if (!templateExists) {
-//             await logApiResponse(req, "Template not found", 404, {});
-//             return res.status(404).json({ message: "Template not found" });
-//         }
+        if (!templateDataDoc) {
+            await logApiResponse(req, "Template data not found", 404, {});
+            return res.status(404).json({ message: "Template data not found" });
+        }
 
-//         // 2️⃣ Get TemplateData for this template
-//         const templateDataDoc = await templateData.findOne({
-//             template_id: templateObjectId,
-//         });
-//         console.log("template data docccccccccc", templateDataDoc)
-//         if (!templateDataDoc) {
-//             await logApiResponse(req, "Template data not found", 404, {});
-//             return res.status(404).json({ message: "Template data not found" });
-//         }
+        // 3️⃣ Parse structure
+        let parsedStructure;
+        try {
+            parsedStructure = JSON.parse(templateDataDoc.structure);
+        } catch (err) {
+            console.error("Error parsing structure:", err);
+            await logApiResponse(req, "Invalid structure format", 500, {});
+            return res.status(500).json({ message: "Invalid structure format" });
+        }
 
-//         // 3️⃣ Parse structure safely
-//         let parsedStructure;
-//         try {
-//             parsedStructure = JSON.parse(templateDataDoc.structure);
-//         } catch (err) {
-//             console.error("Error parsing structure:", err);
-//             await logApiResponse(req, "Invalid structure format", 500, {});
-//             return res.status(500).json({ message: "Invalid structure format" });
-//         }
+        // 4️⃣ Extract leaf nodes from graph
+        const extractLeafNodes = (parsed) => {
+            if (!parsed || typeof parsed !== "object") return [];
 
-//         // Helper: recursively extract nodes that have leaf_node === true
-//         const extractLeafNodes = (input) => {
-//             const result = [];
-//             const visited = new WeakSet();
+            const nodes = [
+                ...(parsed.connectedNodes || []),
+                ...(parsed.unconnectedNodes || [])
+            ];
+            const edges = parsed.edges || [];
 
-//             const traverse = (node) => {
-//                 if (!node || typeof node !== "object") return;
+            const sourceIds = new Set(edges.map(edge => edge.source));
 
-//                 // avoid circular references
-//                 try {
-//                     if (visited.has(node)) return;
-//                     visited.add(node);
-//                 } catch (e) {
-//                     // WeakSet only accepts objects — ignore non-objects
-//                 }
+            return nodes.filter(node => !sourceIds.has(node.id));
+        };
 
-//                 // If this object itself is a leaf node, collect it
-//                 if (Object.prototype.hasOwnProperty.call(node, "leaf_node") && node.leaf_node === true) {
-//                     result.push(node);
-//                 }
+        const leafTemplateMasters = extractLeafNodes(parsedStructure);
 
-//                 // Common node container keys
-//                 if (Array.isArray(node.nodes)) {
-//                     node.nodes.forEach(traverse);
-//                 }
-//                 if (Array.isArray(node.connectedNodes)) {
-//                     node.connectedNodes.forEach(traverse);
-//                 }
+        if (leafTemplateMasters.length === 0) {
+            await logApiResponse(req, "No leaf nodes found for this template", 404, {});
+            return res.status(404).json({ message: "No leaf nodes found for this template" });
+        }
 
-//                 // Also walk all object values (to catch nested shapes)
-//                 Object.values(node).forEach(val => {
-//                     if (Array.isArray(val)) {
-//                         val.forEach(traverse);
-//                     } else if (val && typeof val === "object") {
-//                         traverse(val);
-//                     }
-//                 });
-//             };
+        // 5️⃣ Deduplicate leaf masters by label
+        const uniqueLeafTemplateMasters = Array.from(
+            new Set(leafTemplateMasters.map(leaf => leaf.data?.label || leaf.id))
+        ).map(label =>
+            leafTemplateMasters.find(leaf => (leaf.data?.label || leaf.id) === label)
+        );
 
-//             traverse(input);
-//             return result;
-//         };
+        // 6️⃣ Create workbook
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Leaf Master Fields");
 
-//         // 4️⃣ Extract leaf nodes from parsed structure (works whether parsedStructure is array or object)
-//         const leafTemplateMasters = extractLeafNodes(parsedStructure);
+        worksheet.columns = uniqueLeafTemplateMasters.map(leaf => ({
+            header: leaf.data?.label || leaf.id,
+            key: leaf.data?.label || leaf.id,
+            width: 20
+        }));
 
-//         if (!leafTemplateMasters || leafTemplateMasters.length === 0) {
-//             await logApiResponse(req, "No leaf nodes found for this template", 404, {});
-//             return res.status(404).json({ message: "No leaf nodes found for this template" });
-//         }
+        worksheet.autoFilter = {
+            from: "A1",
+            to: `${String.fromCharCode(64 + worksheet.columns.length)}1`
+        };
 
-//         // 5️⃣ Deduplicate leaf masters by label OR master_name (keep first occurrence)
-//         const uniqueLeafTemplateMasters = Array.from(
-//             new Set(leafTemplateMasters.map(leaf => (leaf.label || leaf.master_name)))
-//         ).map(label =>
-//             leafTemplateMasters.find(leaf => (leaf.label || leaf.master_name) === label)
-//         );
+        // 7️⃣ Extra sheets for each leaf node
+        const sheetsMap = {};
 
-//         // Helper: sanitize Excel sheet names (max 31 chars, remove invalid chars)
-//         const sanitizeSheetName = (name = "Sheet") => {
-//             const cleaned = String(name).replace(/[:\\\/\?\*\[\]]/g, "").trim();
-//             return (cleaned || "Sheet").slice(0, 31);
-//         };
+        for (const leafMaster of leafTemplateMasters) {
+            const masterName = leafMaster.data?.label || leafMaster.id;
+            const nodeId = leafMaster.id; // string node id from structure
 
-//         // Helper: convert column index (1-based) to Excel letters (A, B, ..., Z, AA, AB, ...)
-//         const getExcelColLetter = (n) => {
-//             let s = "";
-//             while (n > 0) {
-//                 const m = (n - 1) % 26;
-//                 s = String.fromCharCode(65 + m) + s;
-//                 n = Math.floor((n - 1) / 26);
-//             }
-//             return s;
-//         };
+            if (!sheetsMap[masterName]) {
+                sheetsMap[masterName] = workbook.addWorksheet(masterName);
+                sheetsMap[masterName].columns = [
+                    { header: masterName, key: "document_code", width: 30 }
+                ];
+            }
 
-//         // 6️⃣ Create workbook and main sheet (headers only)
-//         const workbook = new ExcelJS.Workbook();
-//         const worksheet = workbook.addWorksheet("Leaf Master Fields");
+            // ✅ Fetch related AssetMasters using node_id (string)
+            const relatedMasters = await assetMaster.find({
+                node_id: nodeId,
+                template_id: templateObjectId
+            });
 
-//         worksheet.columns = uniqueLeafTemplateMasters.map(leaf => ({
-//             header: leaf.label || leaf.master_name || "Unnamed",
-//             key: leaf.label || leaf.master_name || `col_${Math.random().toString(36).slice(2, 6)}`,
-//             width: 20
-//         }));
+            relatedMasters.forEach(master => {
+                sheetsMap[masterName].addRow([master.document_code]);
+            });
+        }
 
-//         // safe autofilter target
-//         worksheet.autoFilter = {
-//             from: "A1",
-//             to: `${getExcelColLetter(worksheet.columns.length)}1`
-//         };
+        // 8️⃣ Write workbook to buffer
+        const buffer = await workbook.xlsx.writeBuffer();
+        const filename = `Template-${encodeURIComponent(templateExists.template_name)}.xlsx`;
 
-//         // 7️⃣ Create extra sheets for each leaf node and fill with related AssetMaster.document_code
-//         const sheetsMap = {}; // masterName -> worksheet
-//         const usedSheetNames = new Set();
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
-//         for (const leafMaster of leafTemplateMasters) {
-//             const masterNameRaw = leafMaster.label || leafMaster.master_name || `Master_${leafMaster.id || ""}`;
-//             const masterName = String(masterNameRaw);
-//             const nodeId = leafMaster.id ?? leafMaster._id ?? null;
+        await logApiResponse(req, "Excel file generated successfully", 200, { filename });
+        res.send(buffer);
 
-//             // ensure we only create one sheet per masterName
-//             if (!sheetsMap[masterName]) {
-//                 // ensure sanitized and unique sheet name
-//                 let sheetName = sanitizeSheetName(masterName);
-//                 let idx = 1;
-//                 while (usedSheetNames.has(sheetName)) {
-//                     // append a small suffix to make unique (respect 31-char limit)
-//                     const base = sheetName.slice(0, 28);
-//                     sheetName = `${base}_${idx++}`;
-//                 }
-//                 usedSheetNames.add(sheetName);
-
-//                 sheetsMap[masterName] = workbook.addWorksheet(sheetName);
-//                 sheetsMap[masterName].columns = [
-//                     { header: masterName, key: "document_code", width: 30 }
-//                 ];
-//             }
-
-//             // 7a️⃣ Fetch related AssetMasters for this leaf node
-//             let relatedMasters = [];
-//             try {
-//                 const orQueries = [{ template_master_id: nodeId }];
-
-//                 // if nodeId looks like an ObjectId, also try that form
-//                 if (nodeId && mongoose.Types.ObjectId.isValid(String(nodeId))) {
-//                     orQueries.push({ template_master_id: mongoose.Types.ObjectId(String(nodeId)) });
-//                 }
-
-//                 // Also try matching by a field named template_master_id that is stringified ObjectId stored as string
-//                 // (first condition already covers string equality)
-
-//                 relatedMasters = await AssetMaster.find({
-//                     $or: orQueries,
-//                     deleted_at: null
-//                 });
-//             } catch (err) {
-//                 console.error("Error fetching related AssetMaster for nodeId:", nodeId, err);
-//                 relatedMasters = [];
-//             }
-
-//             // 7b️⃣ Add rows
-//             if (!relatedMasters || relatedMasters.length === 0) {
-//                 // keep a placeholder row so sheet is not empty (optional)
-//                 // sheetsMap[masterName].addRow(["(no related assets)"]);
-//             } else {
-//                 relatedMasters.forEach(master => {
-//                     const code = master.document_code ?? "";
-//                     sheetsMap[masterName].addRow([code]);
-//                 });
-//             }
-//         }
-
-//         // 8️⃣ Write workbook to buffer and send
-//         const buffer = await workbook.xlsx.writeBuffer();
-//         const filename = `Template-${encodeURIComponent(templateExists.template_name || "template")}.xlsx`;
-
-//         res.setHeader(
-//             "Content-Type",
-//             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-//         );
-//         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-
-//         await logApiResponse(req, "Excel file generated successfully", 200, { filename });
-//         return res.send(buffer);
-
-//     } catch (error) {
-//         console.error("Error generating Excel file for template:", error);
-//         await logApiResponse(req, "Internal Server Error", 500, { error: error.message });
-//         return res.status(500).json({
-//             message: "Internal Server Error",
-//             errors: { message: error.message }
-//         });
-//     }
-// };
+    } catch (error) {
+        console.error("Error generating Excel file for template:", error);
+        await logApiResponse(req, "Internal Server Error", 500, { error: error.message });
+        res.status(500).json({
+            message: "Internal Server Error",
+            errors: { message: error.message }
+        });
+    }
+};
 
 
 
 module.exports = {
-    paginatedEquipments, downloadExcel, addEquipment, updateEquipment, deleteEquipment
+    paginatedEquipments, downloadExcel, addEquipment, updateEquipment, deleteEquipment, downloadEquipmentExcel
 }
 
