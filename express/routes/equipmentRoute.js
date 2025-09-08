@@ -12,7 +12,7 @@ router.post('/downloadExcel', authMiddleware, equipmentController.downloadExcel)
 router.post('/createEquipment', authMiddleware, equipmentController.addEquipment);
 router.post('/updateEquipment', authMiddleware, equipmentController.updateEquipment);
 router.post('/deleteEquipment', authMiddleware, equipmentController.deleteEquipment);
-// router.post('/downloadEmptySheet', authMiddleware, equipmentController.downloadEquipmentExcel);
+router.post('/downloadEmptySheet', authMiddleware, equipmentController.downloadEquipmentExcel);
 
 
 module.exports = router;

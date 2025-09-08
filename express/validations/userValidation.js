@@ -7,12 +7,12 @@ const Department = require('../models/department');
 
 const add_user_validation = (req, res, next) => {
 	return Validate([
-		validateId('role_id', 'Role ID', Role),
-		validateId('department_id', 'Department ID', Department),
+		validateId('role_id', 'Role', Role),
+		validateId('department_id', 'Department', Department),
 		body("name", "Name is required").isString().trim().escape().notEmpty(),
 		body("username", "Username is required").isString().trim().escape().notEmpty(),
 		body("email", "Email is required").isEmail().withMessage("Invalid email format").normalizeEmail(),
-		body("mobile_no", "Mobile number is required").isString().trim().escape().notEmpty(),
+		body("mobile_no", "Mobile Number is required").isString().trim().escape().notEmpty(),
 		body("password").isString().trim().escape().notEmpty().withMessage("Password is required").isLength({ min: 6 }).withMessage("Password must be at least 6 characters long")
 	])(req, res, next);
 };
@@ -20,12 +20,12 @@ const add_user_validation = (req, res, next) => {
 const update_user_validation = (req, res, next) => {
 	return Validate([
 		validateId('id', 'User ID'),
-		validateId('role_id', 'Role ID', Role),
-		validateId('department_id', 'Department ID', Department),
+		validateId('role_id', 'Role', Role),
+		validateId('department_id', 'Department', Department),
 		body("name", "Name is required").isString().trim().escape().notEmpty(),
 		body("username", "Username is required").isString().trim().escape().notEmpty(),
 		body("email", "Email is required").isEmail().withMessage("Invalid email format").normalizeEmail(),
-		body("mobile_no", "Mobile number is required").isString().trim().escape().notEmpty()
+		body("mobile_no", "Mobile Number is required").isString().trim().escape().notEmpty()
 	])(req, res, next);
 };
 
