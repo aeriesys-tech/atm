@@ -454,3 +454,8 @@ th .fa-angle-down.icon-down {
     margin: 2px;
     font-size: 14px;
 }
+
+/* input error  */
+.signin-form-input.is-invalid {
+    border-color: #dc3545;
+}

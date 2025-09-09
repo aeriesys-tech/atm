@@ -5,6 +5,11 @@ import Navbar from "../../components/general/Navbar";
 import axiosWrapper from "../../../services/AxiosWrapper";
 import Modal from "../../components/common/Modal";
 import Loader from "../../components/general/LoaderAndSpinner/Loader";
+import search2 from "../../../src/assets/icons/search2.svg";
+import Search from "../../components/common/Search";
+import Dropdown from "../../components/common/Dropdown";
+import Button from "../../components/common/Button";
+import { toast } from "react-toastify";
 
 const Department = () => {
     const [departments, setDepartments] = useState([]);
@@ -20,6 +25,16 @@ const Department = () => {
     const [editErrors, setEditErrors] = useState({});
     const [statusFilter, setStatusFilter] = useState("");
     const [search, setSearch] = useState('');
+const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addFormData, setAddFormData] = useState({
+    department_code: "",
+    department_name: "",
+  });
+   const handleAddInputChange = (e) => {
+    const { name, value } = e.target;
+    setAddFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  const [addErrors, setAddErrors] = useState({});
 
 
     const debounceTimeoutRef = useRef(null);
@@ -115,15 +130,24 @@ const Department = () => {
                 department_code: formData.department_code,
                 department_name: formData.department_name,
             };
-            await axiosWrapper("api/v1/departments/createDepartment", {
+            const response=await axiosWrapper("api/v1/departments/createDepartment", {
                 method: "POST",
                 data: payload,
             });
+            toast.success(response?.message || "Department created successfully", {
+        autoClose: 3000,
+      });
             onSuccess();
             fetchDepartments();
         } catch (err) {
-            const apiErrors = err?.response?.data?.errors || {};
-            setErrors(apiErrors);
+             const apiErrors = err?.message?.errors || err?.response?.data?.errors;
+      setErrors({
+        department_code: apiErrors?.department_code || "",
+        department_name: apiErrors?.department_name || "",
+      });
+      toast.error(err?.message?.message || "Failed to create department", {
+        autoClose: 3000,
+      });
         } finally {
             setLoading(false);
         }
@@ -139,16 +163,25 @@ const Department = () => {
                 status: formData.status ?? true,
                 // deleted_at: null
             };
-            await axiosWrapper("api/v1/departments/updateDepartment", {
+            const response = await axiosWrapper("api/v1/departments/updateDepartment", {
                 method: "POST",
                 data: payload,
             });
+            toast.success(response?.message || "Department updated successfully", {
+        autoClose: 3000,
+      });
             onSuccess();
             fetchDepartments();
             setEditModalOpen(false);
         } catch (err) {
-            const apiErrors = err?.response?.data?.errors || {};
-            setErrors(apiErrors);
+             const apiErrors = err?.message?.errors || err?.response?.data?.errors;
+      setErrors({
+        department_code: apiErrors?.department_code || "",
+        department_name: apiErrors?.department_name || "",
+      });
+      toast.error(err?.message?.message || "Failed to update department", {
+        autoClose: 3000,
+      });
         } finally {
             setLoading(false);
         }
@@ -167,15 +200,19 @@ const Department = () => {
     const handleToggleStatus = async (row) => {
         try {
             setLoading(true);
-            await axiosWrapper("api/v1/departments/deleteDepartment", {
+            const response=await axiosWrapper("api/v1/departments/deleteDepartment", {
                 method: "POST",
                 data: { id: row._id },
             });
+            toast.success(response?.message || "Department status successfully Changed", {
+        autoClose: 3000,
+      });
             fetchDepartments(currentPage, pageSize, sortBy, order, statusFilter);
         } catch (err) {
             // console.error("Failed to toggle department status:", err.message || err);
-            alert(err?.message?.message)
-
+              toast.error(err?.message?.message || "Failed to update department", {
+        autoClose: 3000,
+      });
         } finally {
             setLoading(false);
         }
@@ -192,9 +229,9 @@ const Department = () => {
                 data: { id: row._id },
             });
 
-            if (response?.message) {
-                alert(response.message); // Shows: "rdepartment permanently deleted"
-            }
+            toast.success(response?.message || "Department deleted successfully", {
+        autoClose: 3000,
+      });
 
             fetchDepartments(); // Refresh the table
         } catch (error) {
@@ -221,17 +258,52 @@ const Department = () => {
             )}
             <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 <Breadcrumb title="Departments" items={breadcrumbItems} />
-                <Navbar
-                    modalTitle="Add Department"
-                    modalFields={departmentFields}
-                    onSubmit={handleCreateSubmit}
-                    onFilterChange={(val) => {
-                        setStatusFilter(val);
-                        setCurrentPage(1);
-                    }}
-                    searchValue={search}
-                    onSearchChange={handleSearchChange}
-                />
+                <div className="d-flex justify-content-between mb-3">
+          <div className="search-container d-flex align-items-center">
+            <img src={search2} alt="Search" />
+            <Search value={search} onChange={handleSearchChange} />
+          </div>
+          <div className="d-flex gap-3">
+            <Dropdown
+              label="All"
+              options={[
+                { label: "Active", value: "active" },
+                { label: "Inactive", value: "inactive" },
+              ]}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <Button
+              name="Add Department"
+              onClick={() => setAddModalOpen(true)}
+            />
+          </div>
+        </div>
+        {addModalOpen && (
+          <Modal
+            title="Add Department"
+            fields={departmentFields}
+            values={addFormData}
+            errors={addErrors}
+            onChange={handleAddInputChange}
+            onSubmit={() =>
+              handleCreateSubmit(addFormData, setAddErrors, () => {
+                setAddModalOpen(false);
+                setAddFormData({ department_code: "", department_name: "" });
+                setAddErrors({});
+              })
+            }
+            onClose={() => {
+              setAddModalOpen(false);
+              setAddFormData({ department_code: "", department_name: "" });
+              setAddErrors({});
+            }}
+            submitButtonLabel="ADD"
+          />
+        )}
+
                 <Table
                     headers={headers}
                     rows={departments}

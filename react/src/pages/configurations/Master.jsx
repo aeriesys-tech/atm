@@ -11,7 +11,7 @@ import Button from "../../components/common/Button";
 import InputField from "../../components/common/InputField";
 import Loader from "../../components/general/LoaderAndSpinner/Loader";
 import deleteicon from '../../../src/assets/icons/trash.svg';
-
+import closeIcon from "../../../src/assets/icons/close.svg"
 const Master = () => {
     const breadcrumbItems = [
         { label: 'Configure', href: '#' },
@@ -457,7 +457,7 @@ const Master = () => {
                         <Button name="Add Master" onClick={() => {
                             setIsEditMode(false);
                             setEditingMasterId(null);
-                            setFormValues({});
+                            setFormValues({order:1});
                             setFormErrors({});
                             setMasterFieldErrors({});
                             setMasterFieldData([
@@ -510,7 +510,7 @@ const Master = () => {
                         <div className="addunit-header d-flex justify-content-between align-items-center p-3">
                             <h4>{isEditMode ? "Update Master" : "Add Master"}</h4>
                             <a onClick={() => setIsModalOpen(false)} style={{ cursor: "pointer" }}>
-                                <img src="src/assets/icons/close.svg" width="28px" height="28px" alt="Close" />
+                                <img src={closeIcon} width="28px" height="28px" alt="Close" />
                             </a>
                             {/* <button onClick={() => setIsModalOpen(false)} className="btn-close" /> */}
                         </div>
