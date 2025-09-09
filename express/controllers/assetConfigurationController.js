@@ -13,10 +13,7 @@ const upsertConfiguration = async (req, res) => {
             },
             { upsert: true }
         );
-
-        // Fetch the updated/inserted doc (since updateOne doesn't return doc)
         const updatedDoc = await AssetConfiguration.findOne({ asset_id, template_id });
-
         await logApiResponse(req, "Successfully processed asset configuration", 200, updatedDoc);
         return res.status(200).json({
             message: "Successfully processed asset configuration",
@@ -41,7 +38,4 @@ const getAssetConfiguration = async (req, res) => {
     }
 };
 
-module.exports = {
-    upsertConfiguration,
-    getAssetConfiguration
-}
+module.exports = { upsertConfiguration, getAssetConfiguration }

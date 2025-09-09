@@ -13,8 +13,6 @@ const createBatch = async (req, res) => {
 	try {
 		const lastBatch = await Batch.findOne().sort({ batch_no: -1 }).lean();
 		const nextBatchNo = lastBatch ? lastBatch.batch_no + 1 : 1;
-
-		// const fileName = req.file ? req.file.originalname : null;
 		const fileName = req.file ? req.file.filename : null;
 
 		const newBatch = new Batch({
@@ -27,9 +25,7 @@ const createBatch = async (req, res) => {
 			file: fileName,
 			user_id: "6870f12f8f0cb7fa8e74a472"
 		});
-
 		await newBatch.save();
-
 		return responseService.success(req, res, "Batch created successfully", newBatch, 201);
 	} catch (error) {
 		console.error("Failed to create batch:", error);
@@ -42,7 +38,6 @@ const createBatch = async (req, res) => {
 
 const updateBatch = async (req, res) => {
 	const { batch_id, no_of_tags, no_of_attributes, data, master, batch_type } = req.body;
-
 	try {
 		const batch = await Batch.findById(batch_id);
 		if (!batch) {
@@ -59,9 +54,7 @@ const updateBatch = async (req, res) => {
 		if (req.file) {
 			batch.file = req.file.filename;
 		}
-
 		await batch.save();
-
 		return responseService.success(req, res, "Batch updated successfully", batch);
 	} catch (error) {
 		console.error("Failed to update batch:", error);
@@ -88,10 +81,7 @@ const deleteBatch = async (req, res) => {
 				message: "Batch not found"
 			}, 404);
 		}
-
-		// await Batch.findByIdAndDelete(id);
-		await batch.deleteOne(); // Trigger cascading delete
-
+		await batch.deleteOne();
 		return responseService.success(req, res, "Batch deleted successfully");
 	} catch (error) {
 		console.error("Failed to delete batch:", error);
@@ -110,7 +100,6 @@ const viewBatch = async (req, res) => {
 			batch_id: "Invalid or missing Batch ID"
 		}, 400);
 	}
-
 	try {
 		const batch = await Batch.findById(batch_id);
 		if (!batch) {
@@ -118,19 +107,13 @@ const viewBatch = async (req, res) => {
 				message: "Batch not found"
 			}, 404);
 		}
-
-		// Fetch associated variables
 		const variables = await Variable.find({ batch_id });
-
-		// If no variables found, return error
 		if (!variables || variables.length === 0) {
 			return responseService.error(req, res, "No variables found in this batch", {
 				message: "Cannot view batch without any variables"
 			}, 400);
 		}
-
 		let fileContent = null;
-
 		// if the batch has a file and is a 'direct' upload, read the file
 		if (batch.batch_type === 'direct' && batch.file) {
 			const uploadsDir = path.join(__dirname, '..', 'uploads');

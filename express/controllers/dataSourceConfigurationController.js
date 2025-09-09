@@ -142,22 +142,7 @@ const createDataSourceConfiguration = async (req, res) => {
 
 const updateDataSourceConfiguration = async (req, res) => {
     try {
-        const {
-            id,
-            data_source,
-            description,
-            username,
-            password,
-            host,
-            port_no,
-            database_name,
-            table_name,
-            token,
-            org,
-            bucket,
-            status,
-            deleted_at
-        } = req.body;
+        const { id, data_source, description, username, password, host, port_no, database_name, table_name, token, org, bucket, status, deleted_at } = req.body;
 
         const existingConfig = await DataSourceConfiguration.findById(id);
         if (!existingConfig) {
@@ -352,6 +337,8 @@ const destroyDataSourceConfiguration = async (req, res) => {
         return res.status(500).json({ message: "Failed to Data Source Configuration", error: error.message });
     }
 };
+
+
 
 
 

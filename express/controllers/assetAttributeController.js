@@ -1,14 +1,11 @@
 const AssetAttribute = require('../models/assetAttribute');
 const { createNotification } = require('../utils/notification');
-// const Equipment = require('../models/equipment');
 const { logApiResponse } = require('../utils/responseService');
 
 const createAssetAttribute = async (req, res) => {
     try {
         const { field_name, field_type, field_value, display_name, required } = req.body;
         let validationErrors = {};
-
-        // Validate input fields
         if (!field_name) {
             validationErrors.field_name = "Field name is required";
         }
@@ -16,7 +13,6 @@ const createAssetAttribute = async (req, res) => {
             validationErrors.field_type = "Field type is required";
         }
         if (field_type === 'select' && !field_value) {
-            // Check if field_value is provided when field_type is 'select'
             validationErrors.field_value = "Field value is mandatory for 'select' type";
         }
         if (!display_name) {
@@ -25,11 +21,6 @@ const createAssetAttribute = async (req, res) => {
         if (required === undefined) {
             validationErrors.required = "Required field must be specified as true or false";
         }
-        // if (equipmentId && !mongoose.Types.ObjectId.isValid(equipmentId)) {
-        //     validationErrors.equipmentId = "Invalid equipment ID";
-        // }
-
-        // Check if there are any validation errors so far
         if (Object.keys(validationErrors).length > 0) {
             await logApiResponse(req, "Validation Error", 400, validationErrors);
             return res.status(400).json({
@@ -37,8 +28,6 @@ const createAssetAttribute = async (req, res) => {
                 errors: validationErrors
             });
         }
-
-        // Check for uniqueness in the database for field_name
         const existingAttribute = await AssetAttribute.findOne({ field_name });
         if (existingAttribute) {
             validationErrors.field_name = "An attribute with this field name already exists";
@@ -57,15 +46,6 @@ const createAssetAttribute = async (req, res) => {
             required
         });
         const savedAttribute = await newAttribute.save();
-
-        // Optionally update equipment if an ID is provided
-        // if (equipmentId) {
-        //     await Equipment.findByIdAndUpdate(
-        //         equipmentId,
-        //         { $set: { [`dynamicAttributes.${field_name}`]: field_value } },
-        //         { new: true, upsert: true }
-        //     );
-        // }
         await logApiResponse(req, "Asset attribute created and equipment updated successfully", 201, savedAttribute);
         res.status(201).json({
             message: "Asset attribute created and equipment updated successfully",
@@ -85,16 +65,12 @@ const updateAssetAttribute = async (req, res) => {
     try {
         const { id } = req.body;
         const { field_name, field_type, field_value, display_name, required } = req.body;
-
-        // 1. Check if the record exists
         const existingAssetAttribute = await AssetAttribute.findById(id);
         if (!existingAssetAttribute) {
             const errors = { id: "Asset attribute not found" };
             await logApiResponse(req, "Asset attribute not found", 404, errors);
             return res.status(404).json({ message: "Asset attribute not found", errors });
         }
-
-        // 2. Duplicate checks
         const duplicateName = await AssetAttribute.findOne({ field_name, _id: { $ne: id } });
         const duplicateDisplayName = await AssetAttribute.findOne({ display_name, _id: { $ne: id } });
 
@@ -111,8 +87,6 @@ const updateAssetAttribute = async (req, res) => {
             await logApiResponse(req, "Validation Error", 400, errors);
             return res.status(400).json({ message: "Validation Error", errors });
         }
-
-        // 3. Capture before state
         const beforeUpdate = {
             field_name: existingAssetAttribute.field_name,
             field_type: existingAssetAttribute.field_type,
@@ -120,8 +94,6 @@ const updateAssetAttribute = async (req, res) => {
             display_name: existingAssetAttribute.display_name,
             required: existingAssetAttribute.required
         };
-
-        // 4. Update record
         await AssetAttribute.findByIdAndUpdate(id, {
             field_name,
             field_type,
@@ -130,8 +102,6 @@ const updateAssetAttribute = async (req, res) => {
             required,
             updated_at: Date.now()
         });
-
-        // 5. Capture after state
         const updatedAssetAttribute = await AssetAttribute.findById(id);
         const afterUpdate = {
             field_name: updatedAssetAttribute.field_name,
@@ -140,8 +110,6 @@ const updateAssetAttribute = async (req, res) => {
             display_name: updatedAssetAttribute.display_name,
             required: updatedAssetAttribute.required
         };
-
-        // 6. Log changes and notify
         const message = `Asset Attribute "${updatedAssetAttribute.display_name}" updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
         await createNotification(req, 'Asset Attribute', id, message, 'master');
         await logApiResponse(req, "Asset attribute updated successfully", 200, updatedAssetAttribute);
@@ -156,10 +124,7 @@ const updateAssetAttribute = async (req, res) => {
 
 const getAllAssetAttributes = async (req, res) => {
     try {
-        // Retrieve all asset attributes from the database
         const assetAttributes = await AssetAttribute.find({ status: true });
-
-        // Send a successful response back with the retrieved data
         await logApiResponse(req, "Asset attributes retrieved successfully", 200, assetAttributes);
         res.status(200).json({
             message: "Asset attributes retrieved successfully",
@@ -177,9 +142,7 @@ const getAllAssetAttributes = async (req, res) => {
 
 const getAssetAttributeById = async (req, res) => {
     try {
-        const { id } = req.params; // Get the ID from the URL parameter
-
-        // Retrieve the asset attribute from the database
+        const { id } = req.params;
         const assetAttribute = await AssetAttribute.findById(id);
 
         if (!assetAttribute) {
@@ -190,8 +153,6 @@ const getAssetAttributeById = async (req, res) => {
                 error: "No asset attribute found with this ID"
             });
         }
-
-        // Send a successful response back with the retrieved data
         await logApiResponse(req, "Asset attribute retrieved successfully", 200, assetAttribute);
 
         res.status(200).json({
@@ -212,8 +173,6 @@ const toggleSoftDeleteAssetAttribute = async (req, res) => {
     try {
         const { id } = req.body;
         const { ids } = req.body;
-
-        // Function to toggle soft delete for a single asset attribute
         const toggleSoftDelete = async (attributeId) => {
             const attribute = await AssetAttribute.findById(attributeId);
             if (!attribute) {
@@ -221,11 +180,9 @@ const toggleSoftDeleteAssetAttribute = async (req, res) => {
             }
 
             if (attribute.deleted_at) {
-                // Restore the asset attribute
                 attribute.deleted_at = null;
                 attribute.status = true;
             } else {
-                // Soft delete the asset attribute
                 attribute.deleted_at = new Date();
                 attribute.status = false;
             }
@@ -233,10 +190,7 @@ const toggleSoftDeleteAssetAttribute = async (req, res) => {
             attribute.updated_at = new Date();
             return await attribute.save();
         };
-
-        // Check if multiple IDs are provided
         if (ids && Array.isArray(ids)) {
-            // Toggle soft delete for multiple asset attributes
             const promises = ids.map(toggleSoftDelete);
             const updatedAttributes = await Promise.all(promises);
             await logApiResponse(req, "Asset attributes updated successfully", 200, updatedAttributes);
@@ -245,7 +199,6 @@ const toggleSoftDeleteAssetAttribute = async (req, res) => {
                 data: updatedAttributes
             });
         } else if (id) {
-            // Toggle soft delete for a single asset attribute
             const updatedAttribute = await toggleSoftDelete(id);
             await logApiResponse(req, updatedAttribute.deleted_at ? 'Asset attribute soft-deleted successfully' : 'Asset attribute restored successfully', 200, updatedAttribute);
             res.status(200).json({
@@ -363,12 +316,4 @@ const paginatedAssetAttributes = async (req, res) => {
     }
 };
 
-module.exports = {
-    createAssetAttribute,
-    updateAssetAttribute,
-    getAllAssetAttributes,
-    getAssetAttributeById,
-    toggleSoftDeleteAssetAttribute,
-    paginatedAssetAttributes,
-    destroyAssetAttribute
-}
+module.exports = { createAssetAttribute, updateAssetAttribute, getAllAssetAttributes, getAssetAttributeById, toggleSoftDeleteAssetAttribute, paginatedAssetAttributes, destroyAssetAttribute }

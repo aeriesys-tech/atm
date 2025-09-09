@@ -12,6 +12,8 @@ const ExcelJS = require('exceljs');
 const templateMaster = require('../models/templateMaster');
 const templateData = require('../models/templateData');
 const assetMaster = require('../models/assetMaster');
+const templateType = require('../models/templateType');
+const templateType = require('../models/templateType');
 
 // const paginatedEquipments = async (req, res) => {
 //     const { page = 1, limit = 10, sortBy = 'equipment_code', order = 'asc', search = '', status } = req.query;
@@ -193,9 +195,6 @@ const paginatedEquipments = async (req, res) => {
     }
 };
 
-
-
-
 const addEquipment = async (req, res) => {
     try {
         const { templates, attributes, ...otherFields } = req.body;
@@ -256,17 +255,79 @@ const addEquipment = async (req, res) => {
     }
 };
 
+// const updateEquipment = async (req, res) => {
+//     try {
+//         const equipmentId = req.body.equipmentId;
+//         const attributes = req.body;
+//         const updatedEquipment = await Equipment.findByIdAndUpdate(equipmentId, attributes, { new: true });
+
+//         if (!updatedEquipment) {
+//             await logApiResponse(req, "Not Found: Equipment not found", 404, {});
+//             return res.status(404).json({
+//                 message: "Not Found: Equipment not found"
+//             });
+//         }
+
+//         res.status(200).json({
+//             message: "Equipment updated successfully",
+//             data: updatedEquipment
+//         });
+
+//         await logApiResponse(req, "Equipment updated successfully", 200, updatedEquipment);
+//     } catch (error) {
+//         console.error("Error editing equipment:", {
+//             error: error.message,
+//             stack: error.stack
+//         });
+
+//         await logApiResponse(req, "Error editing equipment", 500, { error: error.message });
+
+//         res.status(500).json({
+//             message: "Internal Server Error",
+//             error: error.message
+//         });
+//     }
+// };
+
 const updateEquipment = async (req, res) => {
     try {
-        const equipmentId = req.body.equipmentId;
-        const attributes = req.body;
-        const updatedEquipment = await Equipment.findByIdAndUpdate(equipmentId, attributes, { new: true });
+        const { equipmentId, templates, attributes, ...otherFields } = req.body;
+
+        // Transform attributes to { label: value }
+        const transformedAttributes = {};
+        if (attributes) {
+            for (const key in attributes) {
+                const attr = attributes[key];
+                if (attr && attr.label !== undefined && attr.value !== undefined) {
+                    transformedAttributes[attr.label] = attr.value;
+                } else {
+                    // If payload is just { fieldId: value }
+                    transformedAttributes[key] = attributes[key];
+                }
+            }
+        }
+
+        // Keep all templates instead of just the first
+        let templatesArray = [];
+        if (Array.isArray(templates) && templates.length > 0) {
+            templatesArray = templates;
+        }
+
+        const updatedData = {
+            ...otherFields,             // dynamic fields like equipment_code, equipment_name, etc.
+            ...transformedAttributes,   // flattened attributes
+            templates: templatesArray   // ✅ fixed to keep array
+        };
+
+        const updatedEquipment = await Equipment.findByIdAndUpdate(
+            equipmentId,
+            updatedData,
+            { new: true }
+        );
 
         if (!updatedEquipment) {
             await logApiResponse(req, "Not Found: Equipment not found", 404, {});
-            return res.status(404).json({
-                message: "Not Found: Equipment not found"
-            });
+            return res.status(404).json({ message: "Not Found: Equipment not found" });
         }
 
         res.status(200).json({
@@ -274,7 +335,13 @@ const updateEquipment = async (req, res) => {
             data: updatedEquipment
         });
 
-        await logApiResponse(req, "Equipment updated successfully", 200, updatedEquipment);
+        await logApiResponse(
+            req,
+            "Equipment updated successfully",
+            200,
+            JSON.parse(JSON.stringify(updatedEquipment))
+        );
+
     } catch (error) {
         console.error("Error editing equipment:", {
             error: error.message,
@@ -289,6 +356,8 @@ const updateEquipment = async (req, res) => {
         });
     }
 };
+
+
 
 const deleteEquipment = async (req, res) => {
     try {
@@ -645,9 +714,95 @@ const downloadEquipmentExcel = async (req, res) => {
     }
 };
 
+// const downloadReviewEquipmentYml = async (req, res) => {
+//     try {
+//         const { equipmentId } = req.body;
+
+//         // 1. Fetch equipment
+//         const equipment = await Equipment.findById(equipmentId);
+//         if (!equipment) {
+//             await logApiResponse(req, "Equipment not found", 404, {});
+//             return res.status(404).json({ message: "Equipment not found" });
+//         }
+
+//         // 2. Fetch TemplateType (use correct model + name)
+//         const templateType = await templateType.findOne({
+//             template_type_name: "Lineage Template",
+//         });
+//         if (!templateType) {
+//             await logApiResponse(req, "Template Type 'Lineage Template' not found", 404, {});
+//             return res.status(404).json({ message: "Template Type 'Lineage Template' not found" });
+//         }
+
+//         // 3. Extract all templateIds from equipment.templates array
+//         const templateIds = (equipment.templates || [])
+//             .map(t => t.template_id?.toString())
+//             .filter(Boolean);
+
+//         if (templateIds.length === 0) {
+//             await logApiResponse(req, "No template_id found in equipment", 400, {});
+//             return res.status(400).json({ message: "No template_id found in equipment" });
+//         }
+
+//         // 4. Fetch all lineage templates
+//         const lineageTemplates = await Template.find({
+//             _id: { $in: templateIds },
+//             template_type_id: templateType._id.toString(),
+//         });
+
+//         if (!lineageTemplates || lineageTemplates.length === 0) {
+//             await logApiResponse(req, "Lineage templates not found", 404, {});
+//             return res.status(404).json({ message: "Lineage templates not found" });
+//         }
+
+//         // 5. Loop through lineageTemplates instead of single lineageTemplate
+//         for (const lineageTemplate of lineageTemplates) {
+//             let structure;
+//             try {
+//                 structure = JSON.parse(lineageTemplate.structure);
+//             } catch (error) {
+//                 await logApiResponse(req, "Template structure is not valid JSON.", 400, {});
+//                 return res.status(400).json({ message: "Template structure is not valid JSON." });
+//             }
+
+//             if (!Array.isArray(structure) || structure.length < 2) {
+//                 await logApiResponse(req, "Template structure must include nodes and edges.", 400, {});
+//                 return res.status(400).json({ message: "Template structure must include nodes and edges." });
+//             }
+//             const eqTemplate = equipment.templates.find(
+//                 t => t.template_id.toString() === lineageTemplate._id.toString()
+//             );
+
+//             if (!eqTemplate || !Array.isArray(eqTemplate.rows) || eqTemplate.rows.length === 0) {
+//                 await logApiResponse(req, "The lineage template does not contain any data.", 400, {});
+//                 return res.status(400).json({ message: "The lineage template does not contain any data." });
+//             }
+
+//             // ✅ use eqTemplate.rows[0] instead of wrong object indexing
+//             const firstObject = eqTemplate.rows[0];
+//             if (!firstObject || Object.keys(firstObject).length === 0) {
+//                 await logApiResponse(req, "The first object in the lineage template is invalid or empty.", 400, {});
+//                 return res.status(400).json({ message: "The first object in the lineage template is invalid or empty." });
+//             }
+
+//             const firstKey = Object.keys(firstObject)[0];
+//             if (!firstKey || !firstObject[firstKey] || typeof firstObject[firstKey].text !== "string") {
+//                 await logApiResponse(req, "The first key or its text property is invalid.", 400, {});
+//                 return res.status(400).json({ message: "The first key or its text property is invalid." });
+//             }
+
+//             // --- (rest of your TemplateMaster + YAML logic continues here) ---
+//         }
+
+//     } catch (error) {
+//         console.error("Error downloading equipment:", error);
+//         await logApiResponse(req, "Internal Server Error", 500, { error: error.message });
+//         res.status(500).json({ message: "Internal Server Error", error: error.message });
+//     }
+// };
 
 
 module.exports = {
-    paginatedEquipments, downloadExcel, addEquipment, updateEquipment, deleteEquipment, downloadEquipmentExcel
+    paginatedEquipments, downloadExcel, addEquipment, updateEquipment, deleteEquipment, downloadEquipmentExcel,
 }
 

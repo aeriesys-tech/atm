@@ -3,88 +3,21 @@ const AssetAttribute = require('../models/assetAttribute');
 const { logApiResponse } = require('../utils/responseService');
 const mongoose = require('mongoose');
 
-// const createAssetClassAttribute = async (req, res) => {
-//     try {
-//         const { asset_id, asset_attribute_ids } = req.body;
-
-//         // 1️⃣ Validate input
-//         if (!asset_id || !Array.isArray(asset_attribute_ids)) {
-//             await logApiResponse(req, "Validation Error", 400, "Invalid request body");
-//             return res.status(400).json({ message: "Invalid request body" });
-//         }
-
-//         let results = [];
-
-//         // 2️⃣ Loop through each attribute and upsert individually
-//         for (const attr of asset_attribute_ids) {
-//             const filter = {
-//                 asset_id: new mongoose.Types.ObjectId(asset_id),
-//                 "asset_attribute_ids.id": attr.id,
-//                 deleted_at: null
-//             };
-
-//             const update = {
-//                 $set: {
-//                     "asset_attribute_ids.$": attr, // update the matching attribute in the array
-//                     updated_at: new Date()
-//                 }
-//             };
-
-//             // 3️⃣ Try updating an existing attribute
-//             let updated = await AssetClassAttribute.findOneAndUpdate(filter, update, {
-//                 new: true
-//             });
-
-//             if (!updated) {
-//                 // 4️⃣ If not found, push new attribute into array
-//                 updated = await AssetClassAttribute.findOneAndUpdate(
-//                     { asset_id: new mongoose.Types.ObjectId(asset_id) },
-//                     {
-//                         $push: { asset_attribute_ids: attr },
-//                         $set: { updated_at: new Date() }
-//                     },
-//                     { new: true, upsert: true }
-//                 );
-//             }
-
-//             results.push(updated);
-//         }
-
-//         // 5️⃣ Final response
-//         await logApiResponse(req, "AssetClassAttribute upserted successfully", 201, results);
-//         res.status(201).json(results);
-
-//     } catch (error) {
-//         console.error("Error in createAssetClassAttribute:", error);
-//         await logApiResponse(req, "Error creating AssetClassAttribute", 400, { message: error.message });
-//         res.status(400).json({ message: error.message });
-//     }
-// };
-
 const createAssetClassAttribute = async (req, res) => {
     try {
         const { asset_id, asset_attribute_ids } = req.body;
-
-        // 1️⃣ Validate input
         if (!asset_id || !Array.isArray(asset_attribute_ids)) {
             await logApiResponse(req, "Validation Error", 400, "Invalid request body");
             return res.status(400).json({ message: "Invalid request body" });
         }
-
         const assetObjectId = new mongoose.Types.ObjectId(asset_id);
-
-        // 2️⃣ Delete existing attributes for this asset_id
         await AssetClassAttribute.deleteMany({ asset_id: assetObjectId });
-
-        // 3️⃣ Insert new record with all attributes
         const newEntry = await AssetClassAttribute.create({
             asset_id: assetObjectId,
             asset_attribute_ids,
             created_at: new Date(),
             updated_at: new Date()
         });
-
-        // 4️⃣ Final response
         await logApiResponse(req, "AssetClassAttribute replaced successfully", 201, newEntry);
         res.status(201).json(newEntry);
 
@@ -155,8 +88,4 @@ const deleteAttributeFromAsset = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-module.exports = {
-    createAssetClassAttribute,
-    getAttributesByAssetId,
-    deleteAttributeFromAsset
-}
+module.exports = { createAssetClassAttribute, getAttributesByAssetId, deleteAttributeFromAsset }
