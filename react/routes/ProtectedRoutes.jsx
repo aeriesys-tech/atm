@@ -15,6 +15,7 @@ import AssetBuilder from "../src/pages/assets/AssetsBuilder";
 import AllAssets from "../src/pages/assets/AllAssets";
 import AddEquipment from "../src/pages/assets/AddEquipment";
 import ProfileSettings from "../src/pages/ProfileSetting";
+import EditEquipment from "../src/pages/assets/EditEquipment";
 const protectedRoutes = [
 	{
 		path: "/dashboard",
@@ -99,6 +100,10 @@ const protectedRoutes = [
 	{
 		path: "/add_equipment",
 		element: <AddEquipment />
+	},
+	{
+		path: "/edit-equipment/:id",
+		element: <EditEquipment />
 	},
 	{
 		path: "profile_setting",

@@ -66,7 +66,7 @@ function Modal({
                 style={{
                     width: "60%",
                     marginTop: "100px",
-                    maxHeight: "calc(100vh - 120px)",
+                    maxHeight: "calc(100vh - 100px)",
                     background: "#fff",
                     borderRadius: "8px",
                     display: "flex",

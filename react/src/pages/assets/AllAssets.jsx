@@ -154,10 +154,9 @@ const AllAssets = () => {
         }
     };
 
-    const handleEdit = (row) => {
-        // Navigate to edit page with equipment ID
-        navigate(`/edit_equipment/${row._id}`);
-    };
+   const handleEdit = (equipment) => {
+    navigate(`/edit-equipment/${equipment._id}`, { state: { equipment } });
+  };
 
     const handleDelete = async (row) => {
         try {

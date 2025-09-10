@@ -8,6 +8,7 @@ import Button from "../../../components/common/Button";
 import Search from "../../../components/common/Search";
 import Dropdown from "../../../components/common/Dropdown";
 import Loader from "../../../components/general/LoaderAndSpinner/Loader";
+import { toast } from "react-toastify";
 
 const User = () => {
   const navigate = useNavigate();
@@ -23,9 +24,9 @@ const User = () => {
   const [search, setSearch] = useState("");
   const debounceTimeoutRef = useRef(null);
   const breadcrumbItems = [
-    { label: 'Configure', href: '#' },
-    { label: 'User Settings', href: '#' },
-    { label: 'Users', href: '#' }
+    { label: "Configure", href: "#" },
+    { label: "User Settings", href: "#" },
+    { label: "Users", href: "#" },
   ];
 
   const headers = [
@@ -47,7 +48,7 @@ const User = () => {
   ) => {
     try {
       setLoading(true);
-       const params = new URLSearchParams();
+      const params = new URLSearchParams();
       params.append("page", page);
       params.append("limit", limit);
       params.append("sortBy", sortField);
@@ -82,9 +83,9 @@ const User = () => {
   };
 
   useEffect(() => {
-    fetchUsers(currentPage, pageSize, sortBy, order,statusFilter,search);
-  }, [currentPage, pageSize, sortBy, order,statusFilter]);
-const handleSearchChange = (e) => {
+    fetchUsers(currentPage, pageSize, sortBy, order, statusFilter, search);
+  }, [currentPage, pageSize, sortBy, order, statusFilter]);
+  const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearch(val);
 
@@ -96,11 +97,15 @@ const handleSearchChange = (e) => {
   const handleSoftDelete = async (row) => {
     try {
       setLoading(true);
-      await axiosWrapper("api/v1/users/deleteUser", {
+      const response = await axiosWrapper("api/v1/users/deleteUser", {
         method: "POST",
         data: { id: row._id },
       });
-      fetchUsers(currentPage, pageSize, sortBy, order,statusFilter);
+      toast.success(response?.message || "User deleted successfully", {
+        autoClose: 3000,
+      });
+
+      fetchUsers(currentPage, pageSize, sortBy, order, statusFilter);
     } catch (error) {
       // console.error("Soft delete failed:", error.message || error);
     } finally {
@@ -108,7 +113,9 @@ const handleSearchChange = (e) => {
     }
   };
   const handlePermanentDeleteUser = async (row) => {
-    const confirmDelete = window.confirm("Are you sure you want to permanently delete this user?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to permanently delete this user?"
+    );
     if (!confirmDelete) return;
 
     try {
@@ -119,14 +126,14 @@ const handleSearchChange = (e) => {
         data: { id: row._id },
       });
 
-      if (response?.message) {
-        alert(response.message); // shows: "user permanently deleted"
-      }
+      toast.success(response?.message || "User deleted successfully", {
+        autoClose: 3000,
+      });
 
       fetchUsers(); // refresh the user list
     } catch (error) {
       // console.error("Permanent delete failed:", error.message || error);
-      alert("Error deleting user:",error.message );
+      alert("Error deleting user:", error.message);
     } finally {
       setLoading(false);
     }
@@ -145,7 +152,13 @@ const handleSearchChange = (e) => {
           <Loader />
         </div>
       )}
-      <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
+      <div
+        className="pt-3"
+        style={{
+          opacity: loading ? 0.5 : 1,
+          pointerEvents: loading ? "none" : "auto",
+        }}
+      >
         <Breadcrumb title="Users" items={breadcrumbItems} />
 
         {/* 👇 Replaced Navbar with UI + navigation logic */}
@@ -153,7 +166,7 @@ const handleSearchChange = (e) => {
           <div className="d-flex gap-4">
             <div className="search-container">
               <img src={search2} alt="Search" />
-              <Search value={search} onChange={handleSearchChange}/>
+              <Search value={search} onChange={handleSearchChange} />
             </div>
           </div>
 
@@ -162,7 +175,7 @@ const handleSearchChange = (e) => {
               label="All"
               options={[
                 { label: "Active", value: "active" },
-                { label: "Inactive", value: "inactive" }
+                { label: "Inactive", value: "inactive" },
               ]}
               onChange={(e) => setStatusFilter(e.target.value)}
             />
@@ -180,7 +193,6 @@ const handleSearchChange = (e) => {
           onEdit={(row) =>
             navigate(`/users/edit/${row._id}`, { state: { user: row } })
           }
-
           onToggleStatus={handleSoftDelete}
           onDelete={handlePermanentDeleteUser}
           paginationProps={{
