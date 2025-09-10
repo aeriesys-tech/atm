@@ -10,7 +10,7 @@ import search2 from "../../../src/assets/icons/search2.svg";
 import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
 import { toast } from "react-toastify";
-
+import plusIcon from "../../../src/assets/icons/plus1.svg"
 const RoleGroup = () => {
     const [roles, setRoles] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
@@ -270,7 +270,7 @@ const RoleGroup = () => {
         <>
             <div className="tb-responsive templatebuilder-body position-relative">
                 {loading && (
-                    <div className="loader-overlay d-flex justify-content-center align-items-center">
+                    <div className="">
                         <Loader />
                     </div>
                 )}
@@ -297,7 +297,7 @@ const RoleGroup = () => {
                                     setCurrentPage(1);
                                 }}
                             />
-                            <Button name="Add Role Group" onClick={() => setAddModalOpen(true)} />
+                            <Button name="Add Role Group" icon={plusIcon} onClick={() => setAddModalOpen(true)} />
                         </div>
                     </div>
 

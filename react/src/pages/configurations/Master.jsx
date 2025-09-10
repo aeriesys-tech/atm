@@ -13,6 +13,8 @@ import Loader from "../../components/general/LoaderAndSpinner/Loader";
 import deleteicon from "../../../src/assets/icons/trash.svg";
 import closeIcon from "../../../src/assets/icons/close.svg";
 import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg"
+
 const Master = () => {
   const breadcrumbItems = [
     { label: "Configure", href: "#" },
@@ -552,7 +554,7 @@ const Master = () => {
             />
 
             <Button
-              name="Add Master"
+              name="Add Master" icon={plusIcon}
               onClick={() => {
                 setIsEditMode(false);
                 setEditingMasterId(null);

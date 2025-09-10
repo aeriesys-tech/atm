@@ -1021,8 +1021,7 @@ const handleSaveNodeData = () => {
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                  <div>
+                        <div>
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
@@ -1035,6 +1034,8 @@ const handleSaveNodeData = () => {
                       }}
                     />
                   </div>
+                  </div>
+              
                 </>
               )}
             </div>

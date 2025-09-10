@@ -13,6 +13,8 @@ import Modal from "../../components/common/Modal";
 import lucide_download from "../../assets/icons/lucide_download.svg";
 import close from "../../assets/icons/close.svg";
 import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg"
+
 const MasterDetail = () => {
   const { masterId } = useParams();
 
@@ -436,8 +438,12 @@ const MasterDetail = () => {
             <Button name="Bulk Upload" onClick={handleOpenUploadModal} />
 
             <Button
-              name={`Add ${master?.master?.master_name || "Master"}`}
-              onClick={() => setShowModal(true)}
+              name={`Add ${master?.master?.master_name || "Master"}`} icon={plusIcon}
+              onClick={() => {
+                setFormValues({});
+                setFormErrors({});
+                setShowModal(true);
+              }}
             />
             {showModal && (
               <Modal

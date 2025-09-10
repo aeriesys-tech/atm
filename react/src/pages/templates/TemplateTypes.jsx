@@ -9,6 +9,8 @@ import search2 from "../../assets/icons/search2.svg";
 import Search from "../../components/common/Search";
 import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
+import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg"
 
 const TemplateTypes = () => {
   const { id: templateTypeId } = useParams();
@@ -115,6 +117,12 @@ const TemplateTypes = () => {
           id: row._id,
         },
       });
+       toast.success(
+        response?.message || "Template deleted successfully",
+        {
+          autoClose: 3000,
+        }
+      );
       fetchTemplateTypes(currentPage, pageSize, sortBy, order, statusFilter, search);
     } catch (error) {
       alert(error?.response?.data?.message || "Failed to update template status");
@@ -130,6 +138,12 @@ const TemplateTypes = () => {
         method: "POST",
         data: { id: row._id },
       });
+       toast.success(
+        response?.message || "Template deleted successfully",
+        {
+          autoClose: 3000,
+        }
+      );
       fetchTemplateTypes();
     } catch (error) {
       console.error("Failed to delete template:", error.message || error);
@@ -140,7 +154,7 @@ const TemplateTypes = () => {
   return (
     <div className="tb-responsive templatebuilder-body position-relative">
       {loading && (
-        <div className="loader-overlay d-flex justify-content-center align-items-center">
+        <div className="">
           <Loader />
         </div>
       )}
@@ -170,7 +184,7 @@ const TemplateTypes = () => {
               }}
             />
             <Button
-              name="Create New Template"
+              name="Create New Template" icon={plusIcon}
               onClick={() =>
                 navigate("/template_add", {
                   state: {

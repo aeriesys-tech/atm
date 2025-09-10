@@ -10,6 +10,8 @@ import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
 import search2 from "../../../src/assets/icons/search2.svg";
 import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg"
+
 const Role = () => {
   const [roles, setRoles] = useState([]);
   const [roleGroups, setRoleGroups] = useState([]);
@@ -307,7 +309,7 @@ const handleAddInputChange = (e) => {
   return (
     <div className="tb-responsive templatebuilder-body position-relative">
       {loading && (
-        <div className="loader-overlay d-flex justify-content-center align-items-center">
+        <div className="">
           <Loader />
         </div>
       )}
@@ -339,7 +341,7 @@ const handleAddInputChange = (e) => {
               }}
             />
             <Button
-              name="Add Role"
+              name="Add Role" icon={plusIcon}
               onClick={() => setAddModalOpen(true)}
             />
           </div>

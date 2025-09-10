@@ -183,7 +183,7 @@ const Notification = () => {
     return (
         <div className="tb-responsive templatebuilder-body position-relative">
             {loading && (
-                <div className="loader-overlay d-flex justify-content-center align-items-center">
+                <div className="">
                     <Loader />
                 </div>
             )}
@@ -205,7 +205,7 @@ const Notification = () => {
                             ]}
                             onChange={(e) => setSelectedUserId(e.target.value)}
                         />
-                        <Button name="Read All" onClick={readAllNotifications} />
+                        <Button name="Read All"  onClick={readAllNotifications} />
                     </div>
                 </div>
                 <Table

@@ -10,6 +10,7 @@ import Search from "../../components/common/Search";
 import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
 import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg"
 
 const Department = () => {
     const [departments, setDepartments] = useState([]);
@@ -252,7 +253,7 @@ const [addModalOpen, setAddModalOpen] = useState(false);
     return (
         <div className="tb-responsive templatebuilder-body position-relative">
             {loading && (
-                <div className="loader-overlay d-flex justify-content-center align-items-center">
+                <div className="">
                     <Loader />
                 </div>
             )}
@@ -276,7 +277,7 @@ const [addModalOpen, setAddModalOpen] = useState(false);
               }}
             />
             <Button
-              name="Add Department"
+              name="Add Department" icon={plusIcon}
               onClick={() => setAddModalOpen(true)}
             />
           </div>

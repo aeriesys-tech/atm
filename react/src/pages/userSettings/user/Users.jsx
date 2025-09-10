@@ -9,6 +9,7 @@ import Search from "../../../components/common/Search";
 import Dropdown from "../../../components/common/Dropdown";
 import Loader from "../../../components/general/LoaderAndSpinner/Loader";
 import { toast } from "react-toastify";
+import plusIcon from "../../../../src/assets/icons/plus1.svg"
 
 const User = () => {
   const navigate = useNavigate();
@@ -180,7 +181,7 @@ const User = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             />
 
-            <Button name="Add User" onClick={() => navigate("/users/add")} />
+            <Button name="Add User" icon={plusIcon} onClick={() => navigate("/users/add")} />
           </div>
         </div>
 

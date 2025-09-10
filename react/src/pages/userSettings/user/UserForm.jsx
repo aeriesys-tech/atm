@@ -6,6 +6,7 @@ import Dropdown from "../../../components/common/Dropdown";
 import passicon from "../../../assets/icons/Component 26.svg";
 import backIcon from "../../../assets/icons/arrow-Vector.svg";
 import { toast } from "react-toastify";
+import Loader from "../../../components/general/LoaderAndSpinner/Loader";
 const UserForm = ({ mode }) => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -27,7 +28,7 @@ const UserForm = ({ mode }) => {
   const [errors, setErrors] = useState({});
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
-
+const [loading,setLoading]=useState(false);
   // Fetch dropdown options and user data if in edit mode
   useEffect(() => {
     fetchRoles();
@@ -104,7 +105,7 @@ const UserForm = ({ mode }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+setLoading(true)
     const formData = new FormData();
     for (let key in form) {
       if (form[key]) formData.append(key, form[key]);
@@ -135,10 +136,18 @@ const UserForm = ({ mode }) => {
       setErrors(apiErrors);
       toast.error(err?.response?.data?.message);
     }
+    finally{
+        setLoading(false)
+    }
   };
 
   return (
     <div className="">
+        {loading && (
+        <div className="">
+          <Loader />
+        </div>
+      )}
       <div className="pt-4 pb-1">
         <div className="d-flex align-items-center gap-2">
           {" "}

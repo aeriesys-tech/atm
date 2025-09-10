@@ -8,7 +8,7 @@ function Button({ name, onClick, icon, className = "btn-bg", type = "button", di
             disabled={disabled}
             onClick={onClick}
         >
-            {icon && <span className={icon}></span>}
+            {icon && <span className='me-2'><img src={icon} alt="" /></span>}
             {name}
             {type !== "submit" && ( // Only show arrow for non-submit buttons
                 <span className="arrow-white">
