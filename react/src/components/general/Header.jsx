@@ -236,7 +236,7 @@ function Header() {
                             <img src={settings} className="settings" />)}
 
 
-                        <li className="nav-item dropdown profile-btn" ref={dropdownRef} style={{ position: 'relative', zIndex: 9999 }}>
+                        <li className="nav-item dropdown profile-btn" ref={dropdownRef} style={{ position: 'relative', zIndex: 8999 }}>
                             <div
                                 className="nav-link d-flex gap-btwn"
                                 onClick={() => setShowProfileMenu(!showProfileMenu)}

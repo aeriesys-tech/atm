@@ -156,7 +156,7 @@ const RoleGroup = () => {
       });
 
       console.log(res);
-      toast.success("Role group created successfully", { autoClose: 3000 });
+      toast.success(res?.message, { autoClose: 3000 });
       onSuccess();
       fetchRoles();
     } catch (err) {
