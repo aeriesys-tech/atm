@@ -6,6 +6,7 @@ const { createNotification } = require('../utils/notification');
 
 const createSpecification = async (req, res) => {
     const { asset_id, template_id, field_name, field_type, field_value, display_name, required, is_unique } = req.body;
+
     try {
         const existingUnique = await specification.findOne({
             asset_id,
@@ -13,30 +14,25 @@ const createSpecification = async (req, res) => {
             field_name,
             is_unique: true
         });
+
         if (existingUnique) {
-            return res.status(400).json({
-                message: "The given data was invalid",
-                errors: {
-                    field_name: `Field name '${field_name}' is already marked unique for this template and asset. Cannot create duplicate.`
-                }
-            });
+            const errors = {
+                field_name: `Field name '${field_name}' is already marked unique for this template and asset. Cannot create duplicate.`
+            };
+            await logApiResponse(req, "Duplicate unique field", 400, errors);
+            return res.status(400).json({ message: "The given data was invalid", errors });
         }
         if (is_unique === true) {
-            const duplicate = await specification.findOne({
-                asset_id,
-                template_id,
-                field_name
-            });
+            const duplicate = await specification.findOne({ asset_id, template_id, field_name });
             if (duplicate) {
-                return res.status(400).json({
-                    message: "The given data was invalid",
-                    errors: {
-                        field_name: `Field name '${field_name}' already exists for this template and asset.`
-                    }
-                });
+                const errors = {
+                    field_name: `Field name '${field_name}' already exists for this template and asset.`
+                };
+                await logApiResponse(req, "Duplicate field", 400, errors);
+                return res.status(400).json({ message: "The given data was invalid", errors });
             }
         }
-        const newSpecification = new specification({
+        const newSpecification = await specification.create({
             asset_id,
             template_id,
             field_name,
@@ -46,9 +42,10 @@ const createSpecification = async (req, res) => {
             required,
             is_unique: !!is_unique
         });
-        const savedSpecification = await newSpecification.save();
-        await logApiResponse(req, "Specification created successfully", 201, savedSpecification);
-        return res.status(201).send(savedSpecification);
+        const message = `Specification "${field_name}" created successfully`;
+        await logApiResponse(req, message, 201, newSpecification);
+        await createNotification(req, 'Specification', newSpecification._id, message, 'master');
+        return res.status(201).json({ message, data: newSpecification });
     } catch (error) {
         console.error("Failed to create Specification:", error);
         let validationErrors = {};
@@ -71,9 +68,9 @@ const createSpecification = async (req, res) => {
 };
 
 
+
 const updateSpecification = async (req, res) => {
     const { _id, asset_id, template_id, field_name, is_unique, default: isDefault } = req.body;
-    let validationErrors = {};
 
     if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
         return res.status(400).json({
@@ -83,22 +80,7 @@ const updateSpecification = async (req, res) => {
     }
 
     try {
-        const existingUnique = await specification.findOne({
-            asset_id,
-            template_id,
-            field_name,
-            is_unique: true,
-            _id: { $ne: _id }
-        });
-
-        if (existingUnique) {
-            return res.status(400).json({
-                message: "The given data was invalid",
-                errors: {
-                    field_name: `Field name '${field_name}' is already marked unique for this template and asset. Cannot update to duplicate.`
-                }
-            });
-        }
+        // 1️⃣ Check uniqueness for is_unique
         if (is_unique === true) {
             const duplicate = await specification.findOne({
                 asset_id,
@@ -116,6 +98,8 @@ const updateSpecification = async (req, res) => {
                 });
             }
         }
+
+        // 2️⃣ Check uniqueness for default
         if (isDefault === true || isDefault === "true") {
             const existingDefault = await specification.findOne({
                 asset_id,
@@ -135,30 +119,60 @@ const updateSpecification = async (req, res) => {
             }
         }
 
+        // 3️⃣ Get existing specification for snapshot
+        const existingSpec = await specification.findById(_id);
+        if (!existingSpec) {
+            await logApiResponse(req, "Specification not found", 404, {});
+            return res.status(404).json({ message: "Specification not found" });
+        }
+
+        const beforeUpdate = {
+            asset_id: existingSpec.asset_id,
+            template_id: existingSpec.template_id,
+            field_name: existingSpec.field_name,
+            is_unique: existingSpec.is_unique,
+            default: existingSpec.default
+        };
+
+        // 4️⃣ Update specification
         const updatedSpecification = await specification.findByIdAndUpdate(
             _id,
             req.body,
             { new: true, runValidators: true }
         );
 
-        if (!updatedSpecification) {
-            await logApiResponse(req, "Specification not found", 404, {});
-            return res.status(404).json({ message: "Specification not found" });
-        }
+        const afterUpdate = {
+            asset_id: updatedSpecification.asset_id,
+            template_id: updatedSpecification.template_id,
+            field_name: updatedSpecification.field_name,
+            is_unique: updatedSpecification.is_unique,
+            default: updatedSpecification.default
+        };
 
+        // 5️⃣ Create notification
+        const message = `Specification "${updatedSpecification.field_name}" updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
+        await createNotification(req, 'Specification', _id, message, 'master');
+
+        // 6️⃣ Log API response
         await logApiResponse(req, "Specification updated successfully", 200, updatedSpecification);
-        return res.status(200).json(updatedSpecification);
+
+        return res.status(200).json({
+            message: "Specification updated successfully",
+            data: updatedSpecification
+        });
 
     } catch (error) {
         console.error("Failed to update Specification:", error);
+        let validationErrors = {};
 
         if (error.name === "ValidationError") {
             Object.keys(error.errors).forEach(key => {
                 validationErrors[key] = error.errors[key].message;
             });
         }
+
         if (error.code === 11000) {
-            Object.keys(error.keyPattern).forEach(key => {
+            Object.keys(error.keyPattern || {}).forEach(key => {
                 validationErrors[key] = `'${error.keyValue[key]}' already exists. ${key} must be unique.`;
             });
         }
@@ -170,8 +184,6 @@ const updateSpecification = async (req, res) => {
         });
     }
 };
-
-
 
 const getSpecifications = async (req, res) => {
     try {
@@ -311,23 +323,39 @@ const destroySpecification = async (req, res) => {
     try {
         const { id } = req.body;
 
+        // 1️⃣ Validate ID
         if (!id) {
-            return logApiResponse(req, 'Specification ID is required', 400, false, null, res);
+            await logApiResponse(req, 'Specification ID is required', 400, { id: "Required" });
+            return res.status(400).json({ message: 'Specification ID is required', errors: { id: "Required" } });
         }
+
+        // 2️⃣ Check if specification exists
         const spec = await specification.findById(id).lean();
         if (!spec) {
-            return logApiResponse(req, 'Specification not found', 404, false, null, res);
+            await logApiResponse(req, 'Specification not found', 404, { id: "Not Found" });
+            return res.status(404).json({ message: 'Specification not found', errors: { id: "Not Found" } });
         }
+
+        // 3️⃣ Delete specification
         await specification.deleteOne({ _id: id });
+
+        // 4️⃣ Create notification
         const message = `"${spec.field_name}" permanently deleted`;
         await createNotification(req, 'Specification', id, message, 'specification');
-        await logApiResponse(req, message, 200, true, null, res);
+
+        // 5️⃣ Log API response
+        await logApiResponse(req, message, 200, { id });
+
         return res.status(200).json({ message });
+
     } catch (error) {
+        console.error("Failed to delete specification:", error);
         await logApiResponse(req, "Failed to delete specification", 500, { error: error.message });
         return res.status(500).json({ message: "Failed to delete specification", error: error.message });
     }
 };
+
+
 
 module.exports = {
     createSpecification, updateSpecification, getSpecifications, getSpecification, getAssetSpecification, deleteSpecification, paginatedSpecifications, destroySpecification

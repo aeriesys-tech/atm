@@ -7,6 +7,7 @@ const AssetConfiguration = require('../models/assetConfiguration');
 const { logApiResponse } = require('../utils/responseService');
 const templateData = require('../models/templateData');
 const templateMaster = require('../models/templateMaster');
+const { createNotification } = require('../utils/notification');
 
 const addAssetMaster = async (req, res) => {
 	try {
@@ -21,6 +22,7 @@ const addAssetMaster = async (req, res) => {
 			return res.status(400).json({ message: 'data array is required' });
 		}
 		await AssetMaster.deleteMany({ asset_id, template_id });
+
 		const recordsToInsert = data.map(item => {
 			const record = {
 				asset_id,
@@ -31,6 +33,7 @@ const addAssetMaster = async (req, res) => {
 				updated_at: new Date(),
 				deleted_at: null
 			};
+
 			if (item.node_ids && typeof item.node_ids === 'object') {
 				Object.entries(item.node_ids).forEach(([key, value]) => {
 					record[key] = value;
@@ -38,21 +41,27 @@ const addAssetMaster = async (req, res) => {
 			}
 			return record;
 		});
-		await AssetMaster.insertMany(recordsToInsert);
+		const insertedRecords = await AssetMaster.insertMany(recordsToInsert);
 		await AssetConfiguration.findOneAndUpdate(
 			{ asset_id, template_id },
 			{ $setOnInsert: { order: null, row_limit: null } },
 			{ upsert: true, new: true }
 		);
+		const message = `Asset Masters for asset "${asset_id}" replaced successfully`;
+
+		await createNotification(req, 'Asset Master', asset_id, message, 'master');
+		await logApiResponse(req, message, 201, insertedRecords);
+
 		return res.status(201).json({
-			message: 'Asset Masters replaced successfully',
-			count: recordsToInsert.length,
-			data: recordsToInsert
+			message,
+			count: insertedRecords.length,
+			data: insertedRecords
 		});
 
 	} catch (error) {
 		console.error('Error in addAssetMaster:', error);
-		return res.status(500).json({ message: 'Internal Server Error' });
+		await logApiResponse(req, "Failed to add Asset Masters", 500, { error: error.message });
+		return res.status(500).json({ message: 'Internal Server Error', error: error.message });
 	}
 };
 
@@ -305,8 +314,6 @@ const getAssetClassMasters = async (req, res) => {
 				templateDataRecords.find(
 					td => String(td.template_id) === String(asset.template_id)
 				) || {};
-
-			// Remove nested template_master_id from asset
 			const assetObj = { ...asset };
 			delete assetObj.template_master_id;
 

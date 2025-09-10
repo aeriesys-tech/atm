@@ -144,10 +144,9 @@ const getUsers = async (req, res) => {
 };
 
 const getUser = async (req, res) => {
-	const { id } = req.body; // Get the user ID from the URL parameter
+	const { id } = req.body;
 
 	try {
-		// Fetch the user by ID from the database excluding the password field
 		const user = await User.findById(id, '-password')
 			.populate('role_id', 'role_name') // Optionally populate role details
 			.populate('department_id', 'department_name'); // Optionally populate department details

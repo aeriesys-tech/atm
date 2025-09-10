@@ -215,8 +215,6 @@ const deleteRoleGroup = async (req, res) => {
         if (Array.isArray(ids)) {
             const results = await Promise.all(ids.map(toggleSoftDelete));
             const updatedRoleGroups = results.map(r => r.updatedRoleGroup);
-
-            // Optional: You could also batch notification creation here if needed
             await logApiResponse(req, 'Role Groups updated successfully', 200, updatedRoleGroups);
             return res.status(200).json({ message: 'Role Groups updated successfully', data: updatedRoleGroups });
         }
@@ -268,13 +266,4 @@ const destroyRoleGroup = async (req, res) => {
 
 
 
-module.exports = {
-    paginatedRoleGroups,
-    createRoleGroup,
-    updateRoleGroup,
-    getRoleGroups,
-    getRoleGroup,
-    deleteRoleGroup,
-    destroyRoleGroup
-
-}
+module.exports = { paginatedRoleGroups, createRoleGroup, updateRoleGroup, getRoleGroups, getRoleGroup, deleteRoleGroup, destroyRoleGroup }

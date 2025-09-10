@@ -6,50 +6,11 @@ const MasterField = require('../models/masterField');
 const { logApiResponse } = require('../utils/responseService');
 const TemplateParameterType = require('../models/templateParameterType');
 const template = require('../models/template');
+const { createNotification } = require('../utils/notification');
 
-// Create a new TemplateType
+
 const createTemplateType = async (req, res) => {
     try {
-        const { parameter_type_ids, template_type_code, template_type_name, order, status, deleted_at } = req.body;
-        const parameterTypes = await ParameterType.find({
-            '_id': { $in: parameter_type_ids }
-        });
-
-        if (parameterTypes.length !== parameter_type_ids.length) {
-            await logApiResponse(req, 'One or more parameter_type_ids are invalid', 400, { parameter_type_ids });
-            return res.status(400).json({ message: 'One or more parameter_type_ids are invalid' });
-        }
-
-        // Check if the template type code already exists
-        const existingTemplateType = await TemplateType.findOne({ template_type_code });
-        if (existingTemplateType) {
-            await logApiResponse(req, 'Template type code already exists', 400, { template_type_code });
-            return res.status(400).json({ message: 'Template type code already exists' });
-        }
-        // Create a new TemplateType instance
-        const newTemplateType = new TemplateType({
-            parameter_type_id: parameter_type_ids,
-            template_type_code,
-            order,
-            template_type_name,
-            status: status !== undefined ? status : true,
-            deleted_at: deleted_at || null
-        });
-        // Save the new TemplateType to the database
-        const savedTemplateType = await newTemplateType.save();
-
-        await logApiResponse(req, 'Template type created successfully', 201, savedTemplateType);
-        res.status(201).json(savedTemplateType);
-    } catch (error) {
-        await logApiResponse(req, 'Server error', 500, { error });
-        res.status(500).json({ message: 'Server error', error });
-    }
-};
-
-
-const updateTemplateType = async (req, res) => {
-    try {
-        const { id } = req.params;
         const { parameter_type_ids, template_type_code, template_type_name, order, status, deleted_at } = req.body;
 
         // Validate parameter_type_ids
@@ -58,16 +19,84 @@ const updateTemplateType = async (req, res) => {
         });
 
         if (parameterTypes.length !== parameter_type_ids.length) {
-            s
             await logApiResponse(req, 'One or more parameter_type_ids are invalid', 400, { parameter_type_ids });
             return res.status(400).json({ message: 'One or more parameter_type_ids are invalid' });
         }
+
+        // Check for duplicate template_type_code
         const existingTemplateType = await TemplateType.findOne({ template_type_code });
-        if (existingTemplateType && existingTemplateType._id.toString() !== id) {
+        if (existingTemplateType) {
             await logApiResponse(req, 'Template type code already exists', 400, { template_type_code });
             return res.status(400).json({ message: 'Template type code already exists' });
         }
 
+        // Create new TemplateType
+        const newTemplateType = new TemplateType({
+            parameter_type_id: parameter_type_ids,
+            template_type_code,
+            order,
+            template_type_name,
+            status: status !== undefined ? status : true,
+            deleted_at: deleted_at || null
+        });
+
+        const savedTemplateType = await newTemplateType.save();
+
+        // Log and create notification
+        const message = `Template Type "${template_type_name}" created successfully`;
+        await logApiResponse(req, message, 201, savedTemplateType);
+        await createNotification(req, 'Template Type', savedTemplateType._id, message, 'master');
+
+        res.status(201).json({
+            message,
+            data: savedTemplateType
+        });
+
+    } catch (error) {
+        console.error('Error creating Template Type:', error);
+        await logApiResponse(req, 'Server error', 500, { error: error.message });
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+
+
+const updateTemplateType = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { parameter_type_ids, template_type_code, template_type_name, order, status, deleted_at } = req.body;
+
+        // 1️⃣ Validate parameter_type_ids
+        const parameterTypes = await ParameterType.find({ '_id': { $in: parameter_type_ids } });
+        if (parameterTypes.length !== parameter_type_ids.length) {
+            await logApiResponse(req, 'One or more parameter_type_ids are invalid', 400, { parameter_type_ids });
+            return res.status(400).json({ message: 'One or more parameter_type_ids are invalid', errors: { parameter_type_ids } });
+        }
+
+        // 2️⃣ Validate template_type_code uniqueness
+        const existingTemplateTypeCode = await TemplateType.findOne({ template_type_code });
+        if (existingTemplateTypeCode && existingTemplateTypeCode._id.toString() !== id) {
+            await logApiResponse(req, 'Template type code already exists', 400, { template_type_code });
+            return res.status(400).json({ message: 'Template type code already exists', errors: { template_type_code } });
+        }
+
+        // 3️⃣ Fetch existing TemplateType for before snapshot
+        const existingTemplateType = await TemplateType.findById(id);
+        if (!existingTemplateType) {
+            await logApiResponse(req, 'TemplateType not found', 404, { id });
+            return res.status(404).json({ message: 'TemplateType not found', errors: { id } });
+        }
+
+        const beforeUpdate = {
+            parameter_type_ids: existingTemplateType.parameter_type_id,
+            template_type_code: existingTemplateType.template_type_code,
+            template_type_name: existingTemplateType.template_type_name,
+            order: existingTemplateType.order,
+            status: existingTemplateType.status,
+            deleted_at: existingTemplateType.deleted_at
+        };
+
+        // 4️⃣ Update TemplateType
         const updatedTemplateType = await TemplateType.findByIdAndUpdate(
             id,
             {
@@ -75,25 +104,44 @@ const updateTemplateType = async (req, res) => {
                 template_type_code,
                 template_type_name,
                 order,
-                status: status !== undefined ? status : true,
-                deleted_at: deleted_at || null,
+                status: status !== undefined ? status : existingTemplateType.status,
+                deleted_at: deleted_at || existingTemplateType.deleted_at,
                 updated_at: new Date()
             },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
-        if (!updatedTemplateType) {
-            await logApiResponse(req, 'TemplateType not found', 404, { id });
-            return res.status(404).json({ message: 'TemplateType not found' });
-        }
+        // 5️⃣ Capture after snapshot
+        const afterUpdate = {
+            parameter_type_ids: updatedTemplateType.parameter_type_id,
+            template_type_code: updatedTemplateType.template_type_code,
+            template_type_name: updatedTemplateType.template_type_name,
+            order: updatedTemplateType.order,
+            status: updatedTemplateType.status,
+            deleted_at: updatedTemplateType.deleted_at
+        };
 
+        // 6️⃣ Create notification
+        const message = `Template Type "${updatedTemplateType.template_type_name}" updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
+        await createNotification(req, 'Template Type', id, message, 'master');
+
+        // 7️⃣ Log API response
         await logApiResponse(req, 'Template type updated successfully', 200, updatedTemplateType);
-        res.status(200).json(updatedTemplateType);
+
+        return res.status(200).json({
+            message: 'Template type updated successfully',
+            data: updatedTemplateType
+        });
+
     } catch (error) {
-        await logApiResponse(req, 'Server error', 500, { error });
-        res.status(500).json({ message: 'Server error', error });
+        console.error('Error updating TemplateType:', error);
+
+        await logApiResponse(req, 'Server error', 500, { error: error.message });
+        return res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+
 
 const getTemplateTypes = async (req, res) => {
     try {
@@ -435,13 +483,6 @@ const getAllTemplatesByTypes = async (req, res) => {
 
 
 module.exports = {
-    createTemplateType,
-    updateTemplateType,
-    getTemplateTypes,
-    getTemplateType,
-    deleteTemplateType,
-    paginatedTemplateTypes,
-    getTemplateTypeMaster,
-    getAllTemplateTypes,
-    getAllTemplatesByTypes
+    createTemplateType, updateTemplateType, getTemplateTypes, getTemplateType, deleteTemplateType, paginatedTemplateTypes,
+    getTemplateTypeMaster, getAllTemplateTypes, getAllTemplatesByTypes
 }

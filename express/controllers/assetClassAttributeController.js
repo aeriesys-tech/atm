@@ -2,6 +2,7 @@ const AssetClassAttribute = require('../models/assetClassAttribute');
 const AssetAttribute = require('../models/assetAttribute');
 const { logApiResponse } = require('../utils/responseService');
 const mongoose = require('mongoose');
+const { createNotification } = require('../utils/notification');
 
 const createAssetClassAttribute = async (req, res) => {
     try {
@@ -10,23 +11,32 @@ const createAssetClassAttribute = async (req, res) => {
             await logApiResponse(req, "Validation Error", 400, "Invalid request body");
             return res.status(400).json({ message: "Invalid request body" });
         }
+
         const assetObjectId = new mongoose.Types.ObjectId(asset_id);
         await AssetClassAttribute.deleteMany({ asset_id: assetObjectId });
+
         const newEntry = await AssetClassAttribute.create({
             asset_id: assetObjectId,
             asset_attribute_ids,
             created_at: new Date(),
             updated_at: new Date()
         });
-        await logApiResponse(req, "AssetClassAttribute replaced successfully", 201, newEntry);
-        res.status(201).json(newEntry);
+        const message = `Asset Class Attributes for asset "${asset_id}" created successfully`;
+        await createNotification(req, 'Asset Class Attribute', newEntry._id, message, 'master');
+        await logApiResponse(req, message, 201, newEntry);
+
+        return res.status(201).json({
+            message,
+            data: newEntry
+        });
 
     } catch (error) {
         console.error("Error in createAssetClassAttribute:", error);
         await logApiResponse(req, "Error creating AssetClassAttribute", 400, { message: error.message });
-        res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: error.message });
     }
 };
+
 
 const getAttributesByAssetId = async (req, res) => {
     try {
@@ -72,20 +82,27 @@ const getAttributesByAssetId = async (req, res) => {
 
 const deleteAttributeFromAsset = async (req, res) => {
     const { assetId, attributeId } = req.params;
+
     try {
         const updateResult = await AssetClassAttribute.updateOne(
             { asset_id: assetId },
             { $pull: { asset_attribute_ids: attributeId } }
         );
+
         if (updateResult.modifiedCount === 0) {
-            await logApiResponse(req, { message: 'No asset found or attribute not in asset' }, 404, { message: 'No asset found or attribute not in asset' });
+            await logApiResponse(req, "No asset found or attribute not in asset", 404, { assetId, attributeId });
             return res.status(404).json({ message: 'No asset found or attribute not in asset' });
         }
-        await logApiResponse(req, { message: 'Attribute removed from asset successfully' }, 200, { message: 'Attribute removed from asset successfully' });
-        res.status(200).json({ message: 'Attribute removed from asset successfully' });
+        const message = `Attribute ID "${attributeId}" removed from Asset ID "${assetId}" successfully`;
+        await createNotification(req, 'Asset Attribute', attributeId, message, 'master');
+        await logApiResponse(req, message, 200, { assetId, attributeId });
+
+        return res.status(200).json({ message });
     } catch (error) {
-        await logApiResponse(req, { message: error.message }, 500, { message: error.message });
-        res.status(500).json({ message: error.message });
+        console.error("Error removing attribute from asset:", error);
+        await logApiResponse(req, "Server error", 500, { error: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
+
 module.exports = { createAssetClassAttribute, getAttributesByAssetId, deleteAttributeFromAsset }

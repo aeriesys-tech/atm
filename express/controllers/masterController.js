@@ -13,176 +13,11 @@ const SchemaDefinitions = mongoose.model('SchemaDefinition');
 const { logApiResponse } = require('../utils/responseService');
 const { createNotification } = require('../utils/notification');
 
-// const createMaster = async (req, res) => {
-//     let savedMaster = null;
-
-//     try {
-//         const { masterData, masterFieldData } = req.body;
-//         const { model_name } = masterData;
-
-//         let validationErrors = { master: {}, masterFields: [] };
-
-//         // Master field validations
-//         if (!masterData.master_name) validationErrors.master.master_name = "Master name is required";
-//         if (!masterData.parameter_type_id || !mongoose.Types.ObjectId.isValid(masterData.parameter_type_id)) {
-//             validationErrors.master.parameter_type_id = "Parameter type ID is required and must be valid";
-//         }
-//         if (!masterData.display_name_singular) validationErrors.master.display_name_singular = "Display name (singular) is required";
-//         if (!masterData.display_name_plural) validationErrors.master.display_name_plural = "Display name (plural) is required";
-//         if (!model_name) validationErrors.master.model_name = "Model name is required";
-
-//         if (!Array.isArray(masterFieldData) || masterFieldData.length === 0) {
-//             validationErrors.masterFields.push({ message: "Master field data is required" });
-//         } else {
-//             masterFieldData.forEach((field, index) => {
-//                 let fieldErrors = {};
-//                 if (!field.field_name) fieldErrors.field_name = "Field name is required";
-//                 if (!field.field_type) fieldErrors.field_type = "Field type is required";
-//                 if (!field.display_name) fieldErrors.display_name = "Display name is required";
-//                 if (!field.order) fieldErrors.order = "Order is required";
-//                 if (!field.tooltip) fieldErrors.tooltip = "Tooltip is required";
-//                 if (field.required === undefined) fieldErrors.required = "Required status is required";
-//                 if (field.default === undefined) fieldErrors.default = "Default value is required";
-//                 if (field.is_unique === undefined) fieldErrors.is_unique = "Unique value is required";
-//                 if (Object.keys(fieldErrors).length > 0) {
-//                     validationErrors.masterFields.push({ field: `Field ${index + 1}`, errors: fieldErrors });
-//                 }
-//             });
-//         }
-
-//         if (Object.keys(validationErrors.master).length > 0 || validationErrors.masterFields.length > 0) {
-//             await logApiResponse(req, "Validation Error", 400, validationErrors);
-//             return res.status(400).json({ message: "Validation Error", errors: validationErrors });
-//         }
-
-//         const existingMaster = await Master.findOne({ master_name: masterData.master_name });
-//         if (existingMaster) {
-//             const duplicateError = { master_name: "A master with this name already exists" };
-//             await logApiResponse(req, "Duplicate Key Error", 409, { master: duplicateError });
-//             return res.status(409).json({ message: "Duplicate Key Error", errors: { master: duplicateError } });
-//         }
-
-//         // Create master
-//         const master = new Master(masterData);
-//         savedMaster = await master.save();
-
-//         // Insert master fields
-//         const masterFieldEntries = masterFieldData.map(field => ({
-//             ...field,
-//             master_id: savedMaster._id
-//         }));
-
-//         let savedMasterFields;
-//         try {
-//             savedMasterFields = await MasterField.insertMany(masterFieldEntries);
-//         } catch (insertError) {
-//             if (insertError.code === 11000) {
-//                 const duplicateKey = Object.keys(insertError.keyPattern || {})[0];
-//                 const duplicateValue = insertError.keyValue?.[duplicateKey];
-//                 const errorMessage = `${duplicateKey} "${duplicateValue}" already exists. Please use a unique value.`;
-//                 await Master.findByIdAndDelete(savedMaster._id);
-//                 await logApiResponse(req, "Duplicate Key Error", 409, {
-//                     masterFields: { [duplicateKey]: errorMessage }
-//                 });
-//                 return res.status(409).json({
-//                     message: "Duplicate Key Error",
-//                     errors: {
-//                         masterFields: { [duplicateKey]: errorMessage }
-//                     }
-//                 });
-//             }
-//             throw insertError;
-//         }
-
-//         // Build schema for dynamic model
-//         let schemaDefinition = {};
-//         masterFieldData.forEach(field => {
-//             const isDefaultTrue = field.default === true || field.default === 'true';
-//             if (!typeMapping[field.field_type]) {
-//                 throw new Error(`Invalid type: ${field.field_type} for field: ${field.field_name}`);
-//             }
-//             schemaDefinition[field.field_name] = {
-//                 type: typeMapping[field.field_type],
-//                 required: field.required,
-//                 default: field.default || undefined,
-//                 unique: field.is_unique || isDefaultTrue || undefined,
-//                 index: true
-//             };
-//         });
-
-//         schemaDefinition.status = { type: Boolean, required: true, default: true };
-//         schemaDefinition.created_at = { type: Date, default: Date.now };
-//         schemaDefinition.updated_at = { type: Date, default: Date.now };
-//         schemaDefinition.deleted_at = { type: Date, default: null };
-
-//         const dynamicSchema = new mongoose.Schema(schemaDefinition, {
-//             versionKey: false,
-//             strict: false,
-//             collection: model_name
-//         });
-
-//         if (!mongoose.models[model_name]) {
-//             mongoose.model(model_name, dynamicSchema);
-//         }
-
-//         await SchemaDefinitionModel.findOneAndUpdate(
-//             { collectionName: model_name },
-//             { schemaDefinition },
-//             { upsert: true, new: true }
-//         );
-
-//         const message = `Master "${masterData.master_name}" created successfully`;
-//         await createNotification(req, 'Master', savedMaster._id, message, 'master');
-//         await logApiResponse(req, message, 201, {
-//             masterId: savedMaster._id,
-//             master: savedMaster,
-//             masterFields: savedMasterFields
-//         });
-
-//         return res.status(201).json({
-//             message,
-//             masterId: savedMaster._id,
-//             master: savedMaster,
-//             masterFields: savedMasterFields
-//         });
-
-//     } catch (error) {
-//         console.error('Error during master creation:', error);
-
-//         if (savedMaster?._id) {
-//             await Master.findByIdAndDelete(savedMaster._id);
-//         }
-
-//         if (error.name === 'ValidationError') {
-//             const errors = {};
-//             Object.keys(error.errors).forEach(key => {
-//                 errors[key] = error.errors[key].message;
-//             });
-//             await logApiResponse(req, "Validation Error", 400, { master: errors });
-//             return res.status(400).json({ message: "Validation Error", errors: { master: errors } });
-//         }
-
-//         if (error.code === 11000) {
-//             const errors = { master_name: "A master with this name already exists" };
-//             await logApiResponse(req, "Duplicate Key Error", 409, { master: errors });
-//             return res.status(409).json({ message: "Duplicate Key Error", errors: { master: errors } });
-//         }
-
-//         await logApiResponse(req, "Internal Server Error", 500, { error: error.message });
-//         return res.status(500).json({
-//             message: "Internal Server Error",
-//             errors: { message: "An unexpected error occurred" }
-//         });
-//     }
-// };
-
 const createMaster = async (req, res) => {
     try {
         const { masterData, masterFieldData } = req.body;
         delete masterData._id;
         masterFieldData.forEach(f => delete f._id);
-
-
         const fieldNameSet = new Set();
         for (let i = 0; i < masterFieldData.length; i++) {
             const field = masterFieldData[i];
@@ -207,21 +42,13 @@ const createMaster = async (req, res) => {
                 }
             });
         }
-
-
         const newMaster = await Master.create(masterData);
-
-
         const fieldsWithMaster = masterFieldData.map(field => ({
             ...field,
             master_id: newMaster._id,
         }));
-
         await MasterField.insertMany(fieldsWithMaster);
-
         const modelName = masterData.model_name;
-
-
         const schemaDefinition = {};
         fieldsWithMaster.forEach(field => {
             schemaDefinition[field.field_name] = {
@@ -243,12 +70,10 @@ const createMaster = async (req, res) => {
             });
             DynamicModel = mongoose.model(modelName, dynamicSchema);
         }
-
         for (const field of fieldsWithMaster) {
             const isDefault = field.default === true || field.default === 'true';
             if (isDefault) {
                 const fieldName = field.field_name;
-
                 const existingDefault = await DynamicModel.findOne({
                     [fieldName]: true
                 });
@@ -352,84 +177,6 @@ async function updateDynamicSchema(collectionName, masterFieldData) {
     );
 }
 
-// const updateMaster = async (req, res) => {
-//     const { id, masterData, masterFieldData } = req.body;
-
-//     try {
-//         let master = await Master.findById(id).lean();
-//         if (!master) {
-//             const notFoundError = { id: "Master with provided ID does not exist" };
-//             await logApiResponse(req, "Master not found", 404, notFoundError);
-//             return res.status(404).json({
-//                 message: "Master not found",
-//                 errors: notFoundError
-//             });
-//         }
-
-//         const existingMaster = await Master.findOne({
-//             master_name: masterData.master_name,
-//             _id: { $ne: id }
-//         });
-//         if (existingMaster) {
-//             const duplicateError = {
-//                 "masterData.master_name": `'${masterData.master_name}' already exists. master_name must be unique.`
-//             };
-//             await logApiResponse(req, "Duplicate Key Error", 409, duplicateError);
-//             return res.status(409).json({
-//                 message: "Duplicate Key Error",
-//                 errors: duplicateError
-//             });
-//         }
-//         const fieldNameSet = new Set();
-//         for (let i = 0; i < masterFieldData.length; i++) {
-//             const field = masterFieldData[i];
-//             if (fieldNameSet.has(field.field_name)) {
-//                 return res.status(400).json({
-//                     message: "The given data was invalid",
-//                     errors: {
-//                         [`masterFieldData[${i}].field_name`]: `Field name '${field.field_name}' already exists. Please use a unique name.`
-//                     }
-//                 });
-//             }
-//             fieldNameSet.add(field.field_name);
-//         }
-
-//         const before = { ...master }; // store before update
-//         await Master.findByIdAndUpdate(id, masterData, { new: true });
-//         const after = await Master.findById(id).lean(); // after update
-
-//         await MasterField.deleteMany({ master_id: id });
-//         const newMasterFields = masterFieldData.map(field => ({ ...field, master_id: id }));
-//         await MasterField.insertMany(newMasterFields);
-
-//         await updateDynamicSchema(after.model_name, masterFieldData);
-
-//         const successMessage = `Master "${after.master_name}" updated successfully.`;
-
-//         await createNotification(req, "Master", id, successMessage, "master", { before, after });
-//         await logApiResponse(req, successMessage, 200, {
-//             before,
-//             after,
-//             master: after,
-//             masterFields: newMasterFields
-//         });
-
-//         return res.status(200).json({
-//             message: successMessage,
-//             master: after,
-//             masterFields: newMasterFields
-//         });
-//     } catch (error) {
-//         console.error("Error updating master:", error);
-//         await logApiResponse(req, "Internal Server Error", 500, { message: "An unexpected error occurred" });
-//         return res.status(500).json({
-//             message: "Internal Server Error",
-//             errors: {
-//                 message: "An unexpected error occurred"
-//             }
-//         });
-//     }
-// };
 
 const updateMaster = async (req, res) => {
     const { id, masterData, masterFieldData } = req.body;
@@ -473,31 +220,16 @@ const updateMaster = async (req, res) => {
             }
             fieldNameSet.add(field.field_name);
         }
-
-        // Store "before" state
         const beforeUpdate = { ...master };
-
-        // Update master
         await Master.findByIdAndUpdate(id, masterData, { new: true });
         const afterUpdate = await Master.findById(id).lean();
-
-        // Replace master fields
         await MasterField.deleteMany({ master_id: id });
         const newMasterFields = masterFieldData.map(field => ({ ...field, master_id: id }));
         await MasterField.insertMany(newMasterFields);
-
-        // Update dynamic schema
         await updateDynamicSchema(afterUpdate.model_name, masterFieldData);
-
-        // Prepare message like updateRole API
         const message = `Master updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
-
-        // Notification in the same style as updateRole
         await createNotification(req, 'Master', id, message, 'master');
-
-        // Log API response
         await logApiResponse(req, "Master updated successfully", 200, afterUpdate);
-
         return res.status(200).json({
             message: "Master updated successfully",
             master: afterUpdate,
@@ -520,6 +252,7 @@ const updateMaster = async (req, res) => {
 const insertDynamicData = async (req, res) => {
     const { id } = req.body;
     const inputData = req.body;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
             message: "Invalid Master ID",
@@ -536,8 +269,6 @@ const insertDynamicData = async (req, res) => {
                 errors: { id: "Invalid or missing master configuration" },
             });
         }
-
-        // Get the collection name from the master model
         const master = await Master.findById(id);
         if (!master) {
             return res.status(404).json({
@@ -546,7 +277,7 @@ const insertDynamicData = async (req, res) => {
             });
         }
 
-        const collectionName = master.model_name; // Assuming `model_name` holds the collection name
+        const collectionName = master.model_name;
         const DynamicModel = await getDynamicModel(collectionName);
 
         if (!DynamicModel) {
@@ -555,37 +286,47 @@ const insertDynamicData = async (req, res) => {
                 errors: { id: "Model generation failed" },
             });
         }
-
-        // Perform unique checks for fields with `default: true`
+        for (const field of masterFields) {
+            if (field.unique && !field.is_required) {
+                try {
+                    await DynamicModel.collection.createIndex(
+                        { [field.field_name]: 1 },
+                        {
+                            unique: true,
+                            partialFilterExpression: { [field.field_name]: { $exists: true, $ne: "" } },
+                        }
+                    );
+                } catch (indexErr) {
+                    if (indexErr.codeName !== "IndexOptionsConflict") {
+                        console.error("Index creation error:", indexErr);
+                    }
+                }
+            }
+        }
         const duplicateErrors = {};
         for (const field of masterFields) {
             const fieldName = field.field_name;
             const fieldValue = inputData[fieldName];
-
-            if (fieldValue) {
-                // Check for duplicates in the target collection
+            if (fieldValue && String(fieldValue).trim() !== "") {
                 const existingDocument = await DynamicModel.findOne({ [fieldName]: fieldValue });
-
                 if (existingDocument) {
                     duplicateErrors[fieldName] = `${field.display_name} (${fieldValue}) already exists.`;
                 }
             }
         }
-
-        // If duplicates found, return error
         if (Object.keys(duplicateErrors).length > 0) {
             return res.status(400).json({
                 message: "Duplicate fields found",
                 errors: duplicateErrors,
             });
         }
-
-        // Insert the new document if no duplicates
         const newDocument = new DynamicModel(inputData);
         const savedDocument = await newDocument.save();
+
         const message = `${collectionName} document added successfully`;
         await createNotification(req, collectionName, newDocument._id, message, 'master');
         await logApiResponse(req, "Document added successfully", 201, newDocument);
+
         res.status(201).json({
             message: "Document added successfully",
             data: savedDocument,
@@ -599,6 +340,7 @@ const insertDynamicData = async (req, res) => {
         });
     }
 };
+
 
 const updateDynamicData = async (req, res) => {
     const { masterId, docId } = req.body;
@@ -625,8 +367,6 @@ const updateDynamicData = async (req, res) => {
                 errors: modelError
             });
         }
-
-        // Fetch master fields for uniqueness validation
         const masterFields = await MasterField.find({ master_id: masterId, default: true });
 
         if (!masterFields || masterFields.length === 0) {
@@ -635,8 +375,6 @@ const updateDynamicData = async (req, res) => {
                 errors: { masterId: "Invalid or missing master configuration" },
             });
         }
-
-        // Perform duplicate validation
         const duplicateErrors = {};
         for (const field of masterFields) {
             const fieldName = field.field_name;
@@ -661,8 +399,6 @@ const updateDynamicData = async (req, res) => {
                 errors: duplicateErrors
             });
         }
-
-        // Clean and sanitize input data
         const cleanedData = {};
         for (const key in inputData) {
             if (typeof inputData[key] === 'string') {
@@ -745,13 +481,11 @@ const deleteMaster = async (req, res) => {
 
             let message = '';
             if (master.deleted_at) {
-                // Restore
                 master.deleted_at = null;
                 master.status = true;
                 await MasterField.updateMany({ master_id: masterId }, { deleted_at: null, status: true });
                 message = `Master "${master.master_name}" is activated successfully`;
             } else {
-                // Soft delete
                 const now = new Date();
                 master.deleted_at = now;
                 master.status = false;
@@ -856,8 +590,7 @@ const paginatedMasters = async (req, res) => {
 
 const getAllSchemaDefinitions = async (req, res) => {
     try {
-        // Fetch the 'collectionName' field along with '_id' from each document
-        const schemaDefinitions = await SchemaDefinitionModel.find({}).select('collectionName');  // Including the '_id' field
+        const schemaDefinitions = await SchemaDefinitionModel.find({}).select('collectionName');
         res.status(200).json(schemaDefinitions);
     } catch (error) {
         console.error('Failed to retrieve schema definitions:', error);
@@ -868,13 +601,11 @@ const getAllSchemaDefinitions = async (req, res) => {
 const getCollectionData = async (req, res) => {
     const { masterId } = req.params;
     try {
-        // Fetch master with parameter type populated to get the name
         const master = await Master.findById(masterId)
-            .populate('parameter_type_id', 'parameter_type_name') // Assuming 'parameter_type_name' is the field you want from ParameterType
+            .populate('parameter_type_id', 'parameter_type_name')
             .lean();
 
         if (!master) {
-            // Log the API response for master not found
             await logApiResponse(req, "Master not found.", 404, {});
             return res.status(404).json({ message: "Master not found." });
         }
@@ -885,7 +616,6 @@ const getCollectionData = async (req, res) => {
         const Model = await getDynamicModel(collectionName);
 
         if (!Model) {
-            // Log the API response for collection not found
             await logApiResponse(req, "Collection not found.", 404, {});
             return res.status(404).json({ message: "Collection not found." });
         }
@@ -901,13 +631,10 @@ const getCollectionData = async (req, res) => {
             },
             data
         };
-
-        // Log the successful API response
         await logApiResponse(req, "Data fetched successfully.", 200, response);
         res.status(200).json(response);
     } catch (error) {
         console.error('Error fetching data from collection:', error);
-        // Log the error response
         await logApiResponse(req, "Failed to fetch data from the collection.", 500, { error: error.toString() });
         res.status(500).json({ message: "Failed to fetch data from the collection.", error: error.toString() });
     }
@@ -924,8 +651,6 @@ const getMasters = async (req, res) => {
         res.status(200).json(masters);
     } catch (error) {
         console.error('Failed to retrieve masters and master fields:', error);
-
-        // Log the error response
         await logApiResponse(req, "Failed to retrieve data", 500, { error: error.toString() });
 
         res.status(500).json({ message: "Failed to retrieve data", error: error.toString() });
@@ -948,8 +673,6 @@ const deleteDynamicData = async (req, res) => {
             await logApiResponse(req, "Dynamic model could not be found.", 404, {});
             return res.status(404).json({ message: "Dynamic model could not be found." });
         }
-
-        // Soft delete/restore toggle function
         const toggleSoftDelete = async (documentId) => {
             const isUsedInTemplate = await TemplateMaster.findOne({ document_id: documentId });
             if (isUsedInTemplate) {
@@ -979,8 +702,6 @@ const deleteDynamicData = async (req, res) => {
 
             return updatedDoc;
         };
-
-        // Handle multiple documents
         if (docIds && Array.isArray(docIds)) {
             const promises = docIds.map(toggleSoftDelete);
             const updatedDocuments = await Promise.all(promises);
@@ -990,8 +711,6 @@ const deleteDynamicData = async (req, res) => {
                 message: 'Documents soft delete/restore toggled successfully.',
                 data: updatedDocuments
             });
-
-            // Handle single document
         } else if (docId) {
             const updatedDocument = await toggleSoftDelete(docId);
 
@@ -1020,7 +739,6 @@ const destroyDynamicData = async (req, res) => {
     const { masterId, docId, docIds } = req.body;
 
     try {
-        // Validate masterId
         if (!masterId) {
             return logApiResponse(req, 'Master ID is required', 400, false, null, res);
         }
@@ -1035,14 +753,10 @@ const destroyDynamicData = async (req, res) => {
         if (!DynamicModel) {
             return logApiResponse(req, 'Dynamic model could not be found.', 404, false, null, res);
         }
-
-        // Determine IDs to delete
         const idsToDelete = docIds && Array.isArray(docIds) ? docIds : docId ? [docId] : null;
         if (!idsToDelete || idsToDelete.length === 0) {
             return logApiResponse(req, 'No document ID(s) provided', 400, false, null, res);
         }
-
-        // Check for template dependencies
         const templatesUsingDocs = await TemplateMaster.find({ document_id: { $in: idsToDelete } });
         if (templatesUsingDocs.length > 0) {
             return logApiResponse(
@@ -1054,16 +768,10 @@ const destroyDynamicData = async (req, res) => {
                 res
             );
         }
-
-        // Fetch documents before deletion for notification purposes
         const docsToDelete = await DynamicModel.find({ _id: { $in: idsToDelete } }).lean();
-
-        // Delete documents
         await DynamicModel.deleteMany({ _id: { $in: idsToDelete } });
-
-        // Create notifications for each deleted document
         for (const doc of docsToDelete) {
-            const title = doc?.name || doc?.title || doc?._id; // Try to get a meaningful name
+            const title = doc?.name || doc?.title || doc?._id;
             const message = `${collectionName} document "${title}" permanently deleted`;
             await createNotification(req, collectionName, doc._id, message, 'master');
         }
@@ -1280,17 +988,24 @@ const uploadExcel = async (req, res) => {
 
         if (!modelName) {
             await logApiResponse(req, 'Model configuration not found', 404, {});
-            return res.status(404).json({ message: 'Model configuration not found. Please check the master ID and try again.' });
+            return res.status(404).json({
+                message: 'Model configuration not found. Please check the master ID and try again.'
+            });
         }
     } catch (error) {
         await logApiResponse(req, 'Model configuration not found', 404, { error: error.toString() });
-        return res.status(404).json({ message: 'Model configuration not found. Please check the master ID and try again.', error: error.toString() });
+        return res.status(404).json({
+            message: 'Model configuration not found. Please check the master ID and try again.',
+            error: error.toString()
+        });
     }
 
     const Model = mongoose.models[modelName] ? mongoose.model(modelName) : null;
     if (!Model) {
         await logApiResponse(req, 'Model not found', 404, {});
-        return res.status(404).json({ message: 'Model not found for the provided master ID. Please check the master ID and try again.' });
+        return res.status(404).json({
+            message: 'Model not found for the provided master ID. Please check the master ID and try again.'
+        });
     }
 
     try {
@@ -1300,25 +1015,38 @@ const uploadExcel = async (req, res) => {
         const headers = [];
         const updates = [];
 
+        // Extract headers
         worksheet.getRow(1).eachCell((cell, colNumber) => {
-            headers[colNumber - 1] = cell.value; // Store headers indexed by column number
+            headers[colNumber - 1] = cell.value;
         });
 
+        // Extract data rows
         worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
             if (rowNumber === 1) return; // Skip header row
             const rowData = {};
             row.eachCell((cell, colNumber) => {
                 const header = headers[colNumber - 1];
                 if (header) {
-                    rowData[header] = cell.value;
+                    let value = cell.value;
+                    if (typeof value === "object" && value !== null) {
+                        if (value.text) value = value.text;
+                        else if (value.result) value = value.result;
+                        else value = String(value);
+                    }
+
+                    // Convert undefined to null for safety
+                    rowData[header] = value !== undefined ? value : null;
                 }
             });
             updates.push(rowData);
         });
 
-        await Model.insertMany(updates);
+        // ✅ Insert as plain objects (no __v, no metadata)
+        await Model.insertMany(updates, { rawResult: false });
+
         await logApiResponse(req, 'File processed successfully', 200, { updates });
         res.status(200).json({ message: 'File processed successfully', updates });
+
     } catch (error) {
         console.error('Error processing Excel file:', error);
 
@@ -1343,6 +1071,7 @@ const uploadExcel = async (req, res) => {
     }
 };
 
+
 const getAllDynamicData = async (req, res) => {
     const { masterId } = req.body;
     try {
@@ -1365,49 +1094,22 @@ const getAllDynamicData = async (req, res) => {
         }
 
         let results = await DynamicModel.find({});
-
-        // results = results.map(doc => {
-        // 	const docObject = doc.toObject();
-        // 	const orderedDoc = {};
-
-        // 	// Order based on masterFields
-        // 	master.masterFields.sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(field => {
-        // 		if (docObject.hasOwnProperty(field.field_name)) {
-        // 			orderedDoc[field.field_name] = docObject[field.field_name];
-        // 		}
-        // 	});
-
-        // 	// Add remaining fields
-        // 	Object.keys(docObject).forEach(key => {
-        // 		if (!orderedDoc.hasOwnProperty(key)) {
-        // 			orderedDoc[key] = docObject[key];
-        // 		}
-        // 	});
-
-        // 	return orderedDoc;
-        // });
         results = results.map(doc => {
             const docObject = doc.toObject();
             const orderedDoc = {};
-
-            // Sort fields by 'order'
             const sortedFields = master.masterFields.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-            // Use the first field (by order) as the label field
             const labelFieldName = sortedFields[0]?.field_name;
             const labelFieldValue = docObject[labelFieldName] || "Unknown";
 
-            // Add master_column_name at the top
             orderedDoc["master_column_name"] = labelFieldValue;
 
-            // Add ordered fields
             sortedFields.forEach(field => {
                 if (docObject.hasOwnProperty(field.field_name)) {
                     orderedDoc[field.field_name] = docObject[field.field_name];
                 }
             });
 
-            // Add remaining fields
             Object.keys(docObject).forEach(key => {
                 if (!orderedDoc.hasOwnProperty(key)) {
                     orderedDoc[key] = docObject[key];
@@ -1429,14 +1131,11 @@ const getAllDynamicData = async (req, res) => {
 
 const getSvp = async (req, res) => {
     try {
-        // Step 1: Find the parameter type by name
         const parameterType = await ParameterType.findOne({ parameter_type_name: "Variable Parameter" });
 
         if (!parameterType) {
             return res.status(404).json({ message: "Parameter type not found." });
         }
-
-        // Step 2: Get the single matching master
         const master = await Master.findOne({
             parameter_type_id: parameterType._id,
             master_name: "Standard Process Variables"
@@ -1445,8 +1144,6 @@ const getSvp = async (req, res) => {
         if (!master) {
             return res.status(404).json({ message: "Master not found." });
         }
-
-        // Return the master as a single object
         return res.status(200).json(master);
 
     } catch (error) {
@@ -1458,7 +1155,6 @@ const getSvp = async (req, res) => {
 
 const getUsecase = async (req, res) => {
     try {
-        // Step 1: Find the parameter type by name
         const templateType = await TemplateType.findOne({ template_type_name: "Use Case Template" });
 
         if (!templateType) {
@@ -1473,24 +1169,4 @@ const getUsecase = async (req, res) => {
     }
 };
 
-module.exports = {
-    createMaster,
-    updateMaster,
-    insertDynamicData,
-    updateDynamicData,
-    paginatedMasters,
-    getAllSchemaDefinitions,
-    getCollectionData,
-    getMasters,
-    deleteMaster,
-    deleteDynamicData,
-    getPaginatedDynamicData,
-    downloadExcel,
-    uploadExcel,
-    getAllDynamicData,
-    getSvp, getUsecase,
-    destroyMaster,
-    destroyDynamicData
-
-
-}
+module.exports = { createMaster, updateMaster, insertDynamicData, updateDynamicData, paginatedMasters, getAllSchemaDefinitions, getCollectionData, getMasters, deleteMaster, deleteDynamicData, getPaginatedDynamicData, downloadExcel, uploadExcel, getAllDynamicData, getSvp, getUsecase, destroyMaster, destroyDynamicData }
