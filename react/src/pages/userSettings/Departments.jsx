@@ -267,7 +267,10 @@ const [addModalOpen, setAddModalOpen] = useState(false);
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              searchable={false}
+              value={statusFilter}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}

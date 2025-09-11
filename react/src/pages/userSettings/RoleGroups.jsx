@@ -288,7 +288,10 @@ const RoleGroup = () => {
                         <div className="d-flex gap-3">
                             <Dropdown
                                 label="All"
+                                value={statusFilter}
+                                searchable={false}
                                 options={[
+                                  { label: "All", value: "" },
                                     { label: "Active", value: "active" },
                                     { label: "Inactive", value: "inactive" },
                                 ]}

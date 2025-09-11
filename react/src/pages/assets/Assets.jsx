@@ -10,7 +10,7 @@ import Search from "../../components/common/Search";
 import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
 import { toast } from "react-toastify";
-import plusIcon from "../../../src/assets/icons/plus1.svg"
+import plusIcon from "../../../src/assets/icons/plus1.svg";
 
 const AssetName = () => {
   const { id: assetTypeId } = useParams();
@@ -144,12 +144,9 @@ const AssetName = () => {
         method: "POST",
         data: { id: row._id },
       });
-      toast.success(
-        response?.message || "Asset deleted successfully",
-        {
-          autoClose: 3000,
-        }
-      );
+      toast.success(response?.message || "Asset deleted successfully", {
+        autoClose: 3000,
+      });
       fetchassetTypes();
     } catch (error) {
       // console.error("Failed to delete asset:", error.message || error);
@@ -158,12 +155,12 @@ const AssetName = () => {
   };
 
   return (
-    <div className="tb-responsive assetbuilder-body position-relative">
-      {loading && (
-        <div className="">
-          <Loader />
-        </div>
-      )}
+  <div className="tb-responsive assetbuilder-body position-relative">
+            {loading && (
+                <div className="loader-overlay d-flex justify-content-center align-items-center">
+                    <Loader />
+                </div>
+            )}
       <div
         className="pt-3"
         style={{
@@ -183,7 +180,10 @@ const AssetName = () => {
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              searchable={false}
+              value={statusFilter}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}
@@ -193,7 +193,8 @@ const AssetName = () => {
               }}
             />
             <Button
-              name="CREATE NEW ASSET CLASS" icon={plusIcon}
+              name="CREATE NEW ASSET CLASS"
+              icon={plusIcon}
               onClick={() =>
                 navigate("/asset_add", {
                   state: {

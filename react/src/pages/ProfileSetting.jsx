@@ -241,7 +241,7 @@ const ProfileSettings = () => {
                 <form onSubmit={handleSubmit}>
                     <div className="addEuipment-form">
                         <div className="row">
-                            <div className="col d-flex flex-column addEuipment-form-col">
+                            <div className="col-6">
                                 <InputField
                                     label="Full Name"
                                     name="name"
@@ -253,7 +253,7 @@ const ProfileSettings = () => {
                                     error={errors.name}
                                 />
                             </div>
-                            <div className="col d-flex flex-column addEuipment-form-col">
+                            <div className="col-6">
                                 <InputField
                                     label="Email"
                                     name="email"
@@ -266,7 +266,7 @@ const ProfileSettings = () => {
                             </div>
                         </div>
                         <div className="row">
-                            <div className="col d-flex flex-column addEuipment-form-col">
+                            <div className="col-6">
                                 <InputField
                                     label="Phone Number"
                                     name="mobile"
@@ -279,7 +279,7 @@ const ProfileSettings = () => {
                                     error={errors.mobile}
                                 />
                             </div>
-                            <div className="col d-flex flex-column addEuipment-form-col">
+                            <div className="col-6">
                                 <InputField
                                     label="Profile Picture"
                                     name="profilePic"

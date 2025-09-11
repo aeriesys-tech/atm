@@ -12,7 +12,7 @@ import Button from "../../components/common/Button";
 import { toast } from "react-toastify";
 import InputField from "../../components/common/InputField";
 import closeIcon from "../../assets/icons/close.svg";
-import plusIcon from "../../../src/assets/icons/plus1.svg"
+import plusIcon from "../../../src/assets/icons/plus1.svg";
 
 const AssetAttribute = () => {
   const { id: templateTypeId } = useParams();
@@ -370,12 +370,12 @@ const AssetAttribute = () => {
   };
 
   return (
-    <div className="tb-responsive templatebuilder-body position-relative">
-      {loading && (
-        <div className="">
-          <Loader />
-        </div>
-      )}
+   <div className="tb-responsive assetbuilder-body position-relative">
+            {loading && (
+                <div className="loader-overlay d-flex justify-content-center align-items-center">
+                    <Loader />
+                </div>
+            )}
       <div
         className="pt-3"
         style={{
@@ -395,7 +395,10 @@ const AssetAttribute = () => {
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              value={statusFilter}
+              searchable={false}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}
@@ -405,15 +408,16 @@ const AssetAttribute = () => {
               }}
             />
             <Button
-              name="Add Asset Attribute" icon={plusIcon}
+              name="Add Asset Attribute"
+              icon={plusIcon}
               onClick={() => {
-                 setAddFormData({
-                          field_name: "",
-                          display_name: "",
-                          field_type: "",
-                          field_value: "",
-                          required: "false",
-                        });
+                setAddFormData({
+                  field_name: "",
+                  display_name: "",
+                  field_type: "",
+                  field_value: "",
+                  required: "false",
+                });
                 setAddErrors({});
                 setAddModalOpen(true);
               }}

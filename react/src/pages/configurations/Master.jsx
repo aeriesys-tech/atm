@@ -543,7 +543,10 @@ const Master = () => {
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              value={statusFilter}
+              searchable={false}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}
@@ -690,7 +693,7 @@ const Master = () => {
                     );
                   })}
 
-                  <div className=" d-flex justify-content-between align-items-center mb-3 mt-3">
+                  <div className=" d-flex justify-content-between align-items-center mb-0 mt-3">
                     <h6 className="m-0">Master Fields</h6>
                     <Button
                       name="+ Add Field"
@@ -701,7 +704,7 @@ const Master = () => {
                   <div className="asset-table">
                     <div
                       className="table-responsive "
-                      style={{ overflowX: "auto" }}
+                      style={{ overflowX: "auto", minHeight: "250px", overflowY: "auto" }}
                     >
                       <table className="table table-bordered table-striped align-middle table-text">
                         <thead className="table-head align-middle">
@@ -723,9 +726,10 @@ const Master = () => {
                             <tr key={index}>
                               <td>{index + 1}</td>
 
-                              <td className="pt-0 pb-4">
+                              <td className="pt-0 pb-1">
                                 <Dropdown
                                   name="field_type"
+                                  searchable={false}
                                   options={[
                                     { label: "String", value: "String" },
                                     { label: "Number", value: "Number" },

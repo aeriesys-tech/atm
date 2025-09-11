@@ -6,6 +6,7 @@ import TemplateBuilderWrapper from '../../components/dragflowprovider/FlowProvid
 import Modal from '../../components/common/Modal';
 import Table from '../../components/common/Table';
 import Loader from '../../components/general/LoaderAndSpinner/Loader';
+import closeIcon from "../../../src/assets/icons/close.svg"
 const AssetBuilder = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -527,7 +528,7 @@ const AssetBuilder = () => {
         },
     ];
     return (
-        <div>
+     <div className="tb-responsive assetbuilder-body position-relative">
             {loading && (
                 <div className="loader-overlay d-flex justify-content-center align-items-center">
                     <Loader />
@@ -728,7 +729,7 @@ const AssetBuilder = () => {
                                 <h4>{"Specifications"}</h4>
                                 <a onClick={() => setShowViewSpecModal(false)} style={{ cursor: "pointer" }}>
                                     <img
-                                        src="src/assets/icons/close.svg"
+                                        src={closeIcon}
                                         width="28px"
                                         height="28px"
                                         alt="Close"

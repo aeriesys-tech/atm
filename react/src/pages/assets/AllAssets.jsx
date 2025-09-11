@@ -11,7 +11,7 @@ import downloadicon from "../../assets/icons/lucide_download.svg"
 import axiosWrapper from "../../../services/AxiosWrapper";
 import { toast } from "react-toastify";
 import plusIcon from "../../../src/assets/icons/plus1.svg"
-
+import downloadIcon from "../../assets/icons/lucide_download_white.svg"
 const AllAssets = () => {
     const [assets, setAssets] = useState([]);
     const [equipments, setEquipments] = useState([]);
@@ -325,7 +325,7 @@ const AllAssets = () => {
                             <Button
                                 name="Download"
                                 onClick={downloadExcel}
-                                icon="download-icon"
+                                icon={downloadIcon}
                                 disabled={!selectedAssetId}
                             />
                         )}

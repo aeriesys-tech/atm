@@ -15,6 +15,7 @@ import axiosWrapper from "../../../services/AxiosWrapper";
 import Loader from "../general/LoaderAndSpinner/Loader";
 import Select, { components } from 'react-select'
 import Pagination from "../general/Pagination";
+import closeIcon from "../../../src/assets/icons/close.svg"
 import { matchPath, useLocation } from "react-router";
 const initialNodes = [];
 const initialEdges = [];
@@ -818,7 +819,7 @@ const handleSaveNodeData = () => {
               <h4>{masterData?.master?.display_name_singular || "Loading..."}</h4>
               <a onClick={() => setIsModalOpen(false)} style={{ cursor: "pointer" }}>
                 <img
-                  src="src/assets/icons/close.svg"
+                  src={closeIcon}
                   width="28px"
                   height="28px"
                   alt="Close"

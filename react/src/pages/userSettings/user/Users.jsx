@@ -9,7 +9,7 @@ import Search from "../../../components/common/Search";
 import Dropdown from "../../../components/common/Dropdown";
 import Loader from "../../../components/general/LoaderAndSpinner/Loader";
 import { toast } from "react-toastify";
-import plusIcon from "../../../../src/assets/icons/plus1.svg"
+import plusIcon from "../../../../src/assets/icons/plus1.svg";
 
 const User = () => {
   const navigate = useNavigate();
@@ -174,14 +174,21 @@ const User = () => {
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              searchable={false}
+              value={statusFilter}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}
               onChange={(e) => setStatusFilter(e.target.value)}
             />
 
-            <Button name="Add User" icon={plusIcon} onClick={() => navigate("/users/add")} />
+            <Button
+              name="Add User"
+              icon={plusIcon}
+              onClick={() => navigate("/users/add")}
+            />
           </div>
         </div>
 
