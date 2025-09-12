@@ -9,7 +9,9 @@ import Table from "../../components/common/Table";
 import search2 from "../../assets/icons/search2.svg";
 import downloadicon from "../../assets/icons/lucide_download.svg"
 import axiosWrapper from "../../../services/AxiosWrapper";
-
+import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg"
+import downloadIcon from "../../assets/icons/lucide_download_white.svg"
 const AllAssets = () => {
     const [assets, setAssets] = useState([]);
     const [equipments, setEquipments] = useState([]);
@@ -147,8 +149,10 @@ const AllAssets = () => {
                 method: 'POST',
                 data: { id: row._id },
             });
+            toast.success(response?.message || "Equipment deleted successfully");
+
             fetchEquipments(currentPage, pageSize, sortBy, order, search, selectedAssetId);
-            toast.success('Equipment status updated successfully');
+            // toast.success('Equipment status updated successfully');
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Failed to update equipment status');
         }
@@ -167,8 +171,8 @@ const AllAssets = () => {
                 method: 'POST',
                 data: { equipmentId: row._id },
             });
+            toast.success(response?.message || "Equipment deleted successfully");
             fetchEquipments(currentPage, pageSize, sortBy, order, search, selectedAssetId);
-            toast.success('Equipment deleted successfully');
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Failed to delete equipment');
         }
@@ -321,14 +325,13 @@ const AllAssets = () => {
                             <Button
                                 name="Download"
                                 onClick={downloadExcel}
-                                icon="download-icon"
+                                icon={downloadIcon}
                                 disabled={!selectedAssetId}
                             />
                         )}
                         <Button
-                            name="ADD EQUIPMENT"
+                            name="ADD EQUIPMENT" icon={plusIcon}
                             onClick={() => navigate('/add_equipment')}
-                            icon="plus-icon"
                         />
                     </div>
                 </div>

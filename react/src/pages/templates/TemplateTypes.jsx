@@ -9,6 +9,8 @@ import search2 from "../../assets/icons/search2.svg";
 import Search from "../../components/common/Search";
 import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
+import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg";
 
 const TemplateTypes = () => {
   const { id: templateTypeId } = useParams();
@@ -89,7 +91,14 @@ const TemplateTypes = () => {
   };
 
   useEffect(() => {
-    fetchTemplateTypes(currentPage, pageSize, sortBy, order, statusFilter, search);
+    fetchTemplateTypes(
+      currentPage,
+      pageSize,
+      sortBy,
+      order,
+      statusFilter,
+      search
+    );
   }, [currentPage, pageSize, sortBy, order, statusFilter, templateTypeId]);
 
   const handleSearchChange = (e) => {
@@ -115,20 +124,37 @@ const TemplateTypes = () => {
           id: row._id,
         },
       });
-      fetchTemplateTypes(currentPage, pageSize, sortBy, order, statusFilter, search);
+      toast.success(response?.message || "Template deleted successfully", {
+        autoClose: 3000,
+      });
+      fetchTemplateTypes(
+        currentPage,
+        pageSize,
+        sortBy,
+        order,
+        statusFilter,
+        search
+      );
     } catch (error) {
-      alert(error?.response?.data?.message || "Failed to update template status");
+      alert(
+        error?.response?.data?.message || "Failed to update template status"
+      );
     }
   };
 
   const handleDelete = async (row) => {
     try {
-      const confirmDelete = window.confirm("Are you sure you want to permanently delete this template?");
+      const confirmDelete = window.confirm(
+        "Are you sure you want to permanently delete this template?"
+      );
       if (!confirmDelete) return;
 
       const response = await axiosWrapper("api/v1/templates/destroyTemplate", {
         method: "POST",
         data: { id: row._id },
+      });
+      toast.success(response?.message || "Template deleted successfully", {
+        autoClose: 3000,
       });
       fetchTemplateTypes();
     } catch (error) {
@@ -140,11 +166,17 @@ const TemplateTypes = () => {
   return (
     <div className="tb-responsive templatebuilder-body position-relative">
       {loading && (
-        <div className="loader-overlay d-flex justify-content-center align-items-center">
+        <div className="">
           <Loader />
         </div>
       )}
-      <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
+      <div
+        className="pt-3"
+        style={{
+          opacity: loading ? 0.5 : 1,
+          pointerEvents: loading ? "none" : "auto",
+        }}
+      >
         <Breadcrumb
           title={templateTypeDetails?.template_type_name || "Template Types"}
           items={breadcrumbItems}
@@ -160,7 +192,10 @@ const TemplateTypes = () => {
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              searchable={false}
+              value={statusFilter}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}
@@ -171,6 +206,7 @@ const TemplateTypes = () => {
             />
             <Button
               name="Create New Template"
+              icon={plusIcon}
               onClick={() =>
                 navigate("/template_add", {
                   state: {
@@ -195,7 +231,7 @@ const TemplateTypes = () => {
               state: {
                 templateCode: row.template_code,
                 templateName: row.template_name,
-                structure: row.structure, 
+                structure: row.structure,
                 templateTypeId: templateTypeId,
                 templateTypeName: templateTypeDetails?.template_type_name,
               },
@@ -206,7 +242,7 @@ const TemplateTypes = () => {
               state: {
                 templateCode: row.template_code,
                 templateName: row.template_name,
-                structure: row.structure, 
+                structure: row.structure,
                 template_data: row.template_data,
                 templateTypeId: templateTypeId,
                 templateTypeName: templateTypeDetails?.template_type_name,

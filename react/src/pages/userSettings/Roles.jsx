@@ -10,6 +10,8 @@ import Dropdown from "../../components/common/Dropdown";
 import Button from "../../components/common/Button";
 import search2 from "../../../src/assets/icons/search2.svg";
 import { toast } from "react-toastify";
+import plusIcon from "../../../src/assets/icons/plus1.svg";
+
 const Role = () => {
   const [roles, setRoles] = useState([]);
   const [roleGroups, setRoleGroups] = useState([]);
@@ -20,26 +22,26 @@ const Role = () => {
   const [sortBy, setSortBy] = useState("role_code");
   const [order, setOrder] = useState("asc");
   const [totalItems, setTotalItems] = useState(0);
- const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [editErrors, setEditErrors] = useState({});
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
-// 🔹 Add these states at the top with your other useStates
-const [addFormData, setAddFormData] = useState({
-  role_code: "",
-  role_name: "",
-  role_group_id: "",
-});
-const [addErrors, setAddErrors] = useState({});
+  // 🔹 Add these states at the top with your other useStates
+  const [addFormData, setAddFormData] = useState({
+    role_code: "",
+    role_name: "",
+    role_group_id: "",
+  });
+  const [addErrors, setAddErrors] = useState({});
 
-// 🔹 Handle input changes for Add Modal
-const handleAddInputChange = (e) => {
-  const { name, value } = e.target;
-  setAddFormData((prev) => ({ ...prev, [name]: value }));
-};
+  // 🔹 Handle input changes for Add Modal
+  const handleAddInputChange = (e) => {
+    const { name, value } = e.target;
+    setAddFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const debounceTimeoutRef = useRef(null);
   const breadcrumbItems = [
@@ -138,6 +140,16 @@ const handleAddInputChange = (e) => {
   };
   const roleFields = [
     {
+      label: "Role Group",
+      name: "role_group_id",
+      type: "dropdown",
+      required: true,
+      options: roleGroups?.map((group) => ({
+        label: group.role_group_name,
+        value: group._id,
+      })),
+    },
+    {
       label: "Role Code",
       name: "role_code",
       type: "text",
@@ -151,16 +163,7 @@ const handleAddInputChange = (e) => {
       placeholder: "Enter role name",
       required: true,
     },
-    {
-      label: "Role Group",
-      name: "role_group_id",
-      type: "dropdown",
-      required: true,
-      options: roleGroups?.map((group) => ({
-        label: group.role_group_name,
-        value: group._id,
-      })),
-    },
+    
   ];
 
   const handleRoleSubmit = async (formData, setErrors, onSuccess) => {
@@ -172,7 +175,7 @@ const handleAddInputChange = (e) => {
         role_name: formData.role_name,
       };
 
-      const response=await axiosWrapper("api/v1/roles/createRole", {
+      const response = await axiosWrapper("api/v1/roles/createRole", {
         method: "POST",
         data: payload,
       });
@@ -222,7 +225,7 @@ const handleAddInputChange = (e) => {
         status: formData.status ?? true,
       };
 
-      const response=await axiosWrapper("api/v1/roles/updateRole", {
+      const response = await axiosWrapper("api/v1/roles/updateRole", {
         method: "POST",
         data: payload,
       });
@@ -284,15 +287,15 @@ const handleAddInputChange = (e) => {
         data: { id: row._id },
       });
 
-   toast.success(response?.message || "Role deleted successfully", {
-           autoClose: 3000,
-         });
+      toast.success(response?.message || "Role deleted successfully", {
+        autoClose: 3000,
+      });
       fetchRoles();
     } catch (error) {
       // console.error("Failed to delete role permanently:", error.message || error);
       toast.error(err?.message?.message || "Failed to delete role group", {
-             autoClose: 3000,
-           });
+        autoClose: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -307,7 +310,7 @@ const handleAddInputChange = (e) => {
   return (
     <div className="tb-responsive templatebuilder-body position-relative">
       {loading && (
-        <div className="loader-overlay d-flex justify-content-center align-items-center">
+        <div className="">
           <Loader />
         </div>
       )}
@@ -329,7 +332,10 @@ const handleAddInputChange = (e) => {
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              value={statusFilter}
+              searchable={false}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}
@@ -340,32 +346,41 @@ const handleAddInputChange = (e) => {
             />
             <Button
               name="Add Role"
+              icon={plusIcon}
               onClick={() => setAddModalOpen(true)}
             />
           </div>
         </div>
-         {addModalOpen && (
-  <Modal
-    title="Add Role"
-    fields={roleFields}
-    values={addFormData}
-    errors={addErrors}
-    onChange={handleAddInputChange}
-    onSubmit={() =>
-      handleRoleSubmit(addFormData, setAddErrors, () => {
-        setAddModalOpen(false);
-        setAddFormData({ role_code: "", role_name: "", role_group_id: "" }); // ✅ reset correctly
-        setAddErrors({});
-      })
-    }
-    onClose={() => {
-      setAddModalOpen(false);
-      setAddFormData({ role_code: "", role_name: "", role_group_id: "" }); // ✅ reset correctly
-      setAddErrors({});
-    }}
-    submitButtonLabel="ADD"
-  />
-)}
+        {addModalOpen && (
+          <Modal
+            title="Add Role"
+            fields={roleFields}
+            values={addFormData}
+            errors={addErrors}
+            onChange={handleAddInputChange}
+            onSubmit={() =>
+              handleRoleSubmit(addFormData, setAddErrors, () => {
+                setAddModalOpen(false);
+                setAddFormData({
+                  role_code: "",
+                  role_name: "",
+                  role_group_id: "",
+                }); // ✅ reset correctly
+                setAddErrors({});
+              })
+            }
+            onClose={() => {
+              setAddModalOpen(false);
+              setAddFormData({
+                role_code: "",
+                role_name: "",
+                role_group_id: "",
+              }); // ✅ reset correctly
+              setAddErrors({});
+            }}
+            submitButtonLabel="ADD"
+          />
+        )}
 
         <Table
           headers={headers}

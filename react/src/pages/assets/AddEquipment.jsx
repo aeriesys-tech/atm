@@ -561,7 +561,7 @@ const AddEquipment = () => {
     ];
 
     return (
-        <div>
+ <div className="tb-responsive assetbuilder-body position-relative">
             {loading && (
                 <div className="loader-overlay d-flex justify-content-center align-items-center">
                     <Loader />

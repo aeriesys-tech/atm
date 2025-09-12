@@ -37,6 +37,7 @@ const TemplateBuilderWrapper = ({
 const isAssetViewMode = isAsset && isViewMode;
  const isTemplateViewMode = !isAsset && isViewMode;
    const isEffectiveEditMode = isEditMode && !isViewMode;
+   const breadcrumbRoot = isAsset ? "Assets" : "Templates";
   return (
     <div className="tb-responsive templatebuilder-body">
       <div className="pt-3">
@@ -51,7 +52,7 @@ const isAssetViewMode = isAsset && isViewMode;
 
           <ol className="breadcrumb template-breadcrumb">
             <li className="breadcrumb-item">
-              <a href="#">Templates</a>
+              <a href="" onClick={(e) => e.preventDefault()}>{breadcrumbRoot}</a>
             </li>
             <li className="breadcrumb-item active" aria-current="page">
               {templateTypeName || "Template Type"}

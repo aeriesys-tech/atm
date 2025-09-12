@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import TemplateBuilderWrapper from '../../components/dragflowprovider/FlowProvider';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import axiosWrapper from '../../../services/AxiosWrapper';
+import { toast } from 'react-toastify';
 
 const TemplateBuilder = () => {
   const location = useLocation();
@@ -215,15 +216,23 @@ const handleStructureChange = (newStructure) => {
         template_name: templateNameState,
         structure: structureString,
       };
-      await axiosWrapper("api/v1/templates/createTemplate", {
+      const response=await axiosWrapper("api/v1/templates/createTemplate", {
         method: "POST",
         data: payload,
       });
-      alert("Template saved successfully!");
+       toast.success(
+        response?.message || "Template Created successfully",
+        {
+          autoClose: 3000,
+        }
+      );
       navigate(`/template/${templateTypeId}`);
     } catch (error) {
       console.error("Error saving template:", error);
-      alert("Error saving template. Check console.");
+       toast.error(error?.message?.message || "Failed to Template", {
+        autoClose: 3000,
+      });
+      // alert(error?.message?.message);
     } finally {
       setLoading(false);
     }
@@ -243,15 +252,24 @@ const handleStructureChange = (newStructure) => {
         template_name: templateNameState,
         structure: structureString,
       };
-      await axiosWrapper("api/v1/templates/updateTemplate", {
+      const response =await axiosWrapper("api/v1/templates/updateTemplate", {
         method: "POST",
         data: payload,
       });
-      alert("Template updated successfully!");
+      // alert("Template updated successfully!");
+       toast.success(
+        response?.message || "Template updated successfully",
+        {
+          autoClose: 3000,
+        }
+      );
       navigate(`/template/${templateTypeId}`);
     } catch (error) {
       console.error("Error updating template:", error);
-      alert("Error updating template. Check console.");
+       toast.error(err?.message?.message || "Failed to Template", {
+        autoClose: 3000,
+      });
+      // alert("Error updating template. Check console.");
     }
   };
 

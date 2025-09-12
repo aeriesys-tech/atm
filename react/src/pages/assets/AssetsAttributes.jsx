@@ -12,6 +12,7 @@ import Button from "../../components/common/Button";
 import { toast } from "react-toastify";
 import InputField from "../../components/common/InputField";
 import closeIcon from "../../assets/icons/close.svg";
+import plusIcon from "../../../src/assets/icons/plus1.svg";
 
 const AssetAttribute = () => {
   const { id: templateTypeId } = useParams();
@@ -307,13 +308,24 @@ const AssetAttribute = () => {
   const handleToggleStatus = async (row) => {
     try {
       setLoading(true);
-      await axiosWrapper("api/v1/asset-attributes/deleteAssetAttribute", {
-        method: "POST",
-        data: { id: row._id },
-      });
+      const response = await axiosWrapper(
+        "api/v1/asset-attributes/deleteAssetAttribute",
+        {
+          method: "POST",
+          data: { id: row._id },
+        }
+      );
+      toast.success(
+        response?.message || "Asset Attribute deleted successfully",
+        {
+          autoClose: 3000,
+        }
+      );
       fetchAssetAttributes(currentPage, pageSize, sortBy, order, statusFilter);
     } catch (err) {
-      alert(err?.message?.message);
+      toast.error(err?.message?.message || "Failed to Asset Attribute", {
+        autoClose: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -328,13 +340,24 @@ const AssetAttribute = () => {
 
     try {
       setLoading(true);
-      await axiosWrapper("api/v1/asset-attributes/destroyAssetAttribute", {
-        method: "POST",
-        data: { id: row._id },
-      });
+      const response = await axiosWrapper(
+        "api/v1/asset-attributes/destroyAssetAttribute",
+        {
+          method: "POST",
+          data: { id: row._id },
+        }
+      );
+      toast.success(
+        response?.message || "Asset Attribute updated successfully",
+        {
+          autoClose: 3000,
+        }
+      );
       fetchAssetAttributes();
     } catch (error) {
-      alert(error?.message?.message);
+      toast.error(err?.message?.message || "Failed to Asset Attribute", {
+        autoClose: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -347,12 +370,12 @@ const AssetAttribute = () => {
   };
 
   return (
-    <div className="tb-responsive templatebuilder-body position-relative">
-      {loading && (
-        <div className="loader-overlay d-flex justify-content-center align-items-center">
-          <Loader />
-        </div>
-      )}
+   <div className="tb-responsive assetbuilder-body position-relative">
+            {loading && (
+                <div className="loader-overlay d-flex justify-content-center align-items-center">
+                    <Loader />
+                </div>
+            )}
       <div
         className="pt-3"
         style={{
@@ -372,7 +395,10 @@ const AssetAttribute = () => {
           <div className="d-flex gap-3">
             <Dropdown
               label="All"
+              value={statusFilter}
+              searchable={false}
               options={[
+                { label: "All", value: "" },
                 { label: "Active", value: "active" },
                 { label: "Inactive", value: "inactive" },
               ]}
@@ -383,8 +409,18 @@ const AssetAttribute = () => {
             />
             <Button
               name="Add Asset Attribute"
-              onClick={() => {setAddErrors({})
-                setAddModalOpen(true);}}
+              icon={plusIcon}
+              onClick={() => {
+                setAddFormData({
+                  field_name: "",
+                  display_name: "",
+                  field_type: "",
+                  field_value: "",
+                  required: "false",
+                });
+                setAddErrors({});
+                setAddModalOpen(true);
+              }}
             />
           </div>
         </div>
@@ -565,7 +601,7 @@ const AssetAttribute = () => {
                               ? editErrors[field.name]
                               : addErrors[field.name]
                           }
-                           disabled={field.disabled === true}
+                          disabled={field.disabled === true}
                         />
                       )}
                     </div>
@@ -578,10 +614,33 @@ const AssetAttribute = () => {
                     name="DISCARD"
                     className="discard-btn"
                     onClick={() => {
-                      setAddModalOpen(false);
-                      setEditModalOpen(false);
+                      if (addModalOpen) {
+                        // Reset Add form values
+                        setAddFormData({
+                          field_name: "",
+                          display_name: "",
+                          field_type: "",
+                          field_value: "",
+                          required: "false",
+                        });
+                        setAddErrors({});
+                      }
+                      if (editModalOpen) {
+                        // Reset Edit form values
+                        setEditFormData({
+                          id: "",
+                          field_name: "",
+                          display_name: "",
+                          field_type: "",
+                          field_value: "",
+                          required: "false",
+                          status: true,
+                        });
+                        setEditErrors({});
+                      }
                     }}
                   />
+
                   <Button
                     name={editModalOpen ? "UPDATE" : "ADD"}
                     type="submit"

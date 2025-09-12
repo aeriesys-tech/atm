@@ -30,7 +30,9 @@ const Notification = () => {
 
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
-
+ const breadcrumbItems = [
+        { label: 'Notification', href: '/notifications' },
+    ];
     const headers = [
         { label: "#", key: "index", sortable: true },
         { label: "Module", key: "module_name", sortable: true },
@@ -181,14 +183,14 @@ const Notification = () => {
     };
 
     return (
-        <div className="tb-responsive templatebuilder-body position-relative">
+     <div className="tb-responsive assetbuilder-body position-relative">
             {loading && (
                 <div className="loader-overlay d-flex justify-content-center align-items-center">
                     <Loader />
                 </div>
             )}
             <div className="pt-3" style={{ opacity: loading ? 0.5 : 1, pointerEvents: loading ? "none" : "auto" }}>
-                <Breadcrumb title="Notifications" items={[]} />
+                <Breadcrumb title="Notifications" items={breadcrumbItems} />
                 <div className="navbar-3 mt-0 d-flex justify-content-between">
                     <div className="d-flex gap-4">
                         <div className="search-container">
@@ -205,7 +207,7 @@ const Notification = () => {
                             ]}
                             onChange={(e) => setSelectedUserId(e.target.value)}
                         />
-                        <Button name="Read All" onClick={readAllNotifications} />
+                        <Button name="Read All"  onClick={readAllNotifications} />
                     </div>
                 </div>
                 <Table

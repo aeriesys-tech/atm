@@ -13,7 +13,8 @@ function Breadcrumb({ title = '', items = [] }) {
                             key={index}
                             className="breadcrumb-item"
                         >
-                            <a href={item.href || '#'}>{item.label}</a>
+                                
+                            <a href={item.href || '#'  } onClick={(e) => e.preventDefault()} >{item.label}</a>
                         </li>
                     );
                 })}

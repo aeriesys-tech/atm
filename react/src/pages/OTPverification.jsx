@@ -62,7 +62,6 @@ function OtpVerification() {
 			sessionStorage.setItem("user", JSON.stringify(data.user));
 			sessionStorage.setItem("role", JSON.stringify(data.role));
 			sessionStorage.setItem("email", data.user.email);
-			console.log(JSON.stringify(data.user))
 			dispatch(setUser({
 				token: data.token,
 				user: JSON.stringify(data.user),
