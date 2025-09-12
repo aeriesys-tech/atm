@@ -69,7 +69,6 @@ const paginateNotifications = async (req, res) => {
     }
 };
 
-
 const createNotificationUser = async (req, res) => {
     const { id } = req.body;
     const user_id = req.user._id;
@@ -170,12 +169,4 @@ const readAllNotifications = async (req, res) => {
     }
 };
 
-module.exports = {
-    paginateNotifications,
-    getNotification,
-    countUnreadNotifications,
-    createNotificationUser,
-    readAllNotifications,
-    getNotificationUsers
-
-}
+module.exports = { paginateNotifications, getNotification, countUnreadNotifications, createNotificationUser, readAllNotifications, getNotificationUsers }

@@ -12,8 +12,9 @@ const ExcelJS = require('exceljs');
 const templateMaster = require('../models/templateMaster');
 const templateData = require('../models/templateData');
 const assetMaster = require('../models/assetMaster');
+// const templateType = require('../models/templateType');
 const templateType = require('../models/templateType');
-const templateType = require('../models/templateType');
+const { createNotification } = require('../utils/notification');
 
 // const paginatedEquipments = async (req, res) => {
 //     const { page = 1, limit = 10, sortBy = 'equipment_code', order = 'asc', search = '', status } = req.query;
@@ -116,7 +117,7 @@ const paginatedEquipments = async (req, res) => {
         // Use string type for Cosmos DB
         const assetIdQuery = String(asset_id);
 
-        // 1️⃣ Fetch asset class attributes
+        //  Fetch asset class attributes
         const assetClassAttributes = await assetClassAttribute.findOne({ asset_id: assetIdQuery });
         if (!assetClassAttributes) {
             await logApiResponse(req, "Asset class attributes not found for the given asset_id", 404, {});
@@ -195,65 +196,60 @@ const paginatedEquipments = async (req, res) => {
     }
 };
 
-const addEquipment = async (req, res) => {
-    try {
-        const { templates, attributes, ...otherFields } = req.body;
+// const addEquipment = async (req, res) => {
+//     try {
+//         const { templates, attributes, ...otherFields } = req.body;
 
-        // Transform attributes to label:value
-        const transformedAttributes = {};
-        if (attributes) {
-            for (const key in attributes) {
-                const attr = attributes[key];
-                if (attr && attr.label !== undefined && attr.value !== undefined) {
-                    transformedAttributes[attr.label] = attr.value;
-                }
-            }
-        }
-        // Flatten templates: store as a single object instead of array
-        let templatesObject = {};
-        if (Array.isArray(templates) && templates.length > 0) {
-            templatesObject = templates[0]; // take the first template object
-        }
+//         // Transform attributes into key:value pairs
+//         const transformedAttributes = {};
+//         if (attributes) {
+//             for (const key in attributes) {
+//                 const attr = attributes[key];
+//                 if (attr && attr.label !== undefined && attr.value !== undefined) {
+//                     transformedAttributes[attr.label] = attr.value;
+//                 }
+//             }
+//         }
 
-        // Merge all fields
-        const equipmentData = {
-            ...otherFields,             // dynamic fields like equipment_code, equipment_name, etc.
-            ...transformedAttributes,   // flattened attributes
-            templates: templatesObject
-        };
+//         // Take the first template if provided
+//         let templatesObject = {};
+//         if (Array.isArray(templates) && templates.length > 0) {
+//             templatesObject = templates[0];
+//         }
 
-        // Save to database
-        const newEquipment = new Equipment(equipmentData);
-        await newEquipment.save();
+//         const equipmentData = {
+//             ...otherFields,
+//             ...transformedAttributes,
+//             templates: templatesObject
+//         };
 
-        res.status(201).json({
-            message: "Equipment added successfully",
-            data: newEquipment
-        });
+//         // Create and save new equipment
+//         const newEquipment = await Equipment.create(equipmentData);
 
-        await logApiResponse(
-            req,
-            "Equipment added successfully",
-            201,
-            JSON.parse(JSON.stringify(newEquipment))
-        );
+//         // Success message
+//         const message = "Equipment added successfully";
 
-    } catch (error) {
-        console.error("Error adding equipment:", error);
+//         // Log + Notification
+//         await logApiResponse(req, message, 201, newEquipment);
+//         await createNotification(req, 'Equipment', newEquipment._id, message, 'master');
 
-        await logApiResponse(
-            req,
-            "Error adding equipment",
-            500,
-            { error: error.message }
-        );
+//         return res.status(201).json({
+//             message,
+//             data: newEquipment
+//         });
 
-        res.status(500).json({
-            message: "Internal Server Error",
-            error: error.message
-        });
-    }
-};
+//     } catch (error) {
+//         console.error("Error adding equipment:", error);
+
+//         await logApiResponse(req, "Error adding equipment", 500, { error: error.message });
+
+//         return res.status(500).json({
+//             message: "Internal Server Error",
+//             error: error.message
+//         });
+//     }
+// };
+
 
 // const updateEquipment = async (req, res) => {
 //     try {
@@ -289,11 +285,72 @@ const addEquipment = async (req, res) => {
 //     }
 // };
 
+
+const addEquipment = async (req, res) => {
+    try {
+        const { templates, attributes, ...otherFields } = req.body;
+
+        // 🔹 Flatten attributes into root fields using their label
+        const flattenedAttributes = {};
+        if (attributes) {
+            for (const key in attributes) {
+                const attr = attributes[key];
+                if (attr && attr.label && attr.value !== undefined) {
+                    flattenedAttributes[attr.label] = attr.value;
+                }
+            }
+        }
+
+        // 🔹 Keep templates as array
+        let templatesArray = [];
+        if (Array.isArray(templates) && templates.length > 0) {
+            templatesArray = templates.map(t => ({
+                template_id: t.template_id,
+                rows: Array.isArray(t.rows) ? [...t.rows] : []
+            }));
+        }
+
+        // 🔹 Final data to insert
+        const equipmentData = {
+            ...otherFields,
+            ...flattenedAttributes,  // ✅ attributes stored by label
+            templates: templatesArray
+        };
+
+        // 🔹 Save equipment
+        const newEquipment = await Equipment.create(equipmentData);
+
+        const message = "Equipment added successfully"; 
+        await logApiResponse(req, message, 201, newEquipment);
+        await createNotification(req, 'Equipment', newEquipment._id, message, 'master');
+
+        return res.status(201).json({
+            message,
+            data: newEquipment
+        });
+
+    } catch (error) {
+        console.error("Error adding equipment:", error);
+
+        await logApiResponse(req, "Error adding equipment", 500, { error: error.message });
+
+        return res.status(500).json({
+            message: "Internal Server Error",
+            error: error.message
+        });
+    }
+};
+
+
 const updateEquipment = async (req, res) => {
     try {
         const { equipmentId, templates, attributes, ...otherFields } = req.body;
-
-        // Transform attributes to { label: value }
+        const existingEquipment = await Equipment.findById(equipmentId);
+        if (!existingEquipment) {
+            const errors = { equipmentId: "Equipment not found" };
+            await logApiResponse(req, "Equipment not found", 404, errors);
+            return res.status(404).json({ message: "Equipment not found", errors });
+        }
         const transformedAttributes = {};
         if (attributes) {
             for (const key in attributes) {
@@ -301,61 +358,48 @@ const updateEquipment = async (req, res) => {
                 if (attr && attr.label !== undefined && attr.value !== undefined) {
                     transformedAttributes[attr.label] = attr.value;
                 } else {
-                    // If payload is just { fieldId: value }
                     transformedAttributes[key] = attributes[key];
                 }
             }
         }
-
-        // Keep all templates instead of just the first
-        let templatesArray = [];
-        if (Array.isArray(templates) && templates.length > 0) {
-            templatesArray = templates;
-        }
-
+        const templatesArray = Array.isArray(templates) ? templates : [];
+        const beforeUpdate = { ...existingEquipment.toObject() };
         const updatedData = {
-            ...otherFields,             // dynamic fields like equipment_code, equipment_name, etc.
-            ...transformedAttributes,   // flattened attributes
-            templates: templatesArray   // ✅ fixed to keep array
+            ...otherFields,
+            ...transformedAttributes,
+            templates: templatesArray,
+            updated_at: new Date()
         };
-
         const updatedEquipment = await Equipment.findByIdAndUpdate(
             equipmentId,
             updatedData,
-            { new: true }
+            { new: true, runValidators: true }
         );
+        const afterUpdate = { ...updatedEquipment.toObject() };
+        const message = `Equipment "${updatedEquipment.equipment_name || updatedEquipment._id}" updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
+        await createNotification(req, 'Equipment', equipmentId, message, 'master');
 
-        if (!updatedEquipment) {
-            await logApiResponse(req, "Not Found: Equipment not found", 404, {});
-            return res.status(404).json({ message: "Not Found: Equipment not found" });
-        }
 
-        res.status(200).json({
+        await logApiResponse(req, "Equipment updated successfully", 200, updatedEquipment);
+
+        return res.status(200).json({
             message: "Equipment updated successfully",
             data: updatedEquipment
         });
 
-        await logApiResponse(
-            req,
-            "Equipment updated successfully",
-            200,
-            JSON.parse(JSON.stringify(updatedEquipment))
-        );
-
     } catch (error) {
-        console.error("Error editing equipment:", {
-            error: error.message,
-            stack: error.stack
-        });
+        console.error("Error editing equipment:", error);
 
         await logApiResponse(req, "Error editing equipment", 500, { error: error.message });
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Internal Server Error",
             error: error.message
         });
     }
 };
+
+
 
 
 
@@ -398,14 +442,10 @@ const deleteEquipment = async (req, res) => {
 const getAllEquipment = async (req, res) => {
     try {
         const equipments = await Equipment.find({}).lean();
-
-        // Send response
         res.status(200).json({
             message: "Successfully retrieved all equipment",
             data: equipments
         });
-
-        // Log safely
         await logApiResponse(req, "Successfully retrieved all equipment", 200, equipments);
 
     } catch (error) {
@@ -413,8 +453,6 @@ const getAllEquipment = async (req, res) => {
             error: error.message,
             stack: error.stack
         });
-
-        // Log safely
         await logApiResponse(req, "Error fetching all equipment", 500, { error: error.message });
 
         res.status(500).json({

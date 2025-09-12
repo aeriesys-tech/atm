@@ -338,17 +338,6 @@ const destroyDataSourceConfiguration = async (req, res) => {
     }
 };
 
-
-
-
-
 module.exports = {
-    paginatedDataSourceConfigurations,
-    createDataSourceConfiguration,
-    updateDataSourceConfiguration,
-    getDataSourceConfigurations,
-    getDataSourceConfiguration,
-    deleteDataSourceConfiguration,
-    destroyDataSourceConfiguration
-
+    paginatedDataSourceConfigurations, createDataSourceConfiguration, updateDataSourceConfiguration, getDataSourceConfigurations, getDataSourceConfiguration, deleteDataSourceConfiguration, destroyDataSourceConfiguration
 }

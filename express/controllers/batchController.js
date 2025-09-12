@@ -9,21 +9,13 @@ const { responseService, logApiResponse } = require('../utils/responseService');
 
 const createBatch = async (req, res) => {
 	const { no_of_tags, no_of_attributes, data, master, batch_type } = req.body;
-
 	try {
 		const lastBatch = await Batch.findOne().sort({ batch_no: -1 }).lean();
 		const nextBatchNo = lastBatch ? lastBatch.batch_no + 1 : 1;
 		const fileName = req.file ? req.file.filename : null;
 
 		const newBatch = new Batch({
-			batch_no: nextBatchNo,
-			no_of_tags,
-			no_of_attributes,
-			data,
-			master,
-			batch_type,
-			file: fileName,
-			user_id: "6870f12f8f0cb7fa8e74a472"
+			batch_no: nextBatchNo, no_of_tags, no_of_attributes, data, master, batch_type, file: fileName, user_id: "6870f12f8f0cb7fa8e74a472"
 		});
 		await newBatch.save();
 		return responseService.success(req, res, "Batch created successfully", newBatch, 201);
@@ -34,7 +26,6 @@ const createBatch = async (req, res) => {
 		}, 500);
 	}
 };
-
 
 const updateBatch = async (req, res) => {
 	const { batch_id, no_of_tags, no_of_attributes, data, master, batch_type } = req.body;
@@ -94,7 +85,6 @@ const deleteBatch = async (req, res) => {
 
 const viewBatch = async (req, res) => {
 	const { batch_id } = req.body;
-
 	if (!batch_id || !mongoose.Types.ObjectId.isValid(batch_id)) {
 		return responseService.error(req, res, "Validation Error", {
 			batch_id: "Invalid or missing Batch ID"
@@ -114,11 +104,9 @@ const viewBatch = async (req, res) => {
 			}, 400);
 		}
 		let fileContent = null;
-		// if the batch has a file and is a 'direct' upload, read the file
 		if (batch.batch_type === 'direct' && batch.file) {
 			const uploadsDir = path.join(__dirname, '..', 'uploads');
 			const files = fs.readdirSync(uploadsDir);
-			// const matchedFile = files.find(file => file.endsWith(`-${batch.file}`));
 			const matchedFile = files.find(file => file === batch.file);
 
 			if (matchedFile) {
@@ -168,73 +156,6 @@ const getBatches = async (req, res) => {
 	}
 };
 
-
-// const uploadExcel = async (req, res) => {
-// 	try {
-// 		const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
-// 		const workbook = xlsx.readFile(filePath);
-// 		const sheet = workbook.Sheets[workbook.SheetNames[0]];
-// 		const data = xlsx.utils.sheet_to_json(sheet, { defval: "" });
-// 		console.log("111111111111");
-// 		// Step 1: Extract and filter valid variables
-// 		const variableDocs = data
-// 			.filter(row => row["Variable Code"] && row["Variable Description"]) // basic validity
-// 			.map(row => ({
-// 				variable_code: row["Variable Code"],
-// 				variable_description: row["Variable Description"],
-// 				uom: row["UoM"],
-// 				ds_tag_id: row["DS Tag ID"],
-// 				ds_tag_code: row["DS Tag Code"],
-// 				min: Number(row["Minimum"]),
-// 				max: Number(row["Maximum"]),
-// 				lcl: Number(row["LCL"]),
-// 				ucl: Number(row["UCL"]),
-// 				flatline_length: Number(row["Flatline Length"]),
-// 				status: false,
-// 			}));
-// 		console.log("22222222222222");
-// 		// Step 2: Don't create anything if no valid variables
-// 		if (variableDocs.length === 0) {
-// 			fs.unlinkSync(filePath); // optional cleanup
-// 			return responseService.error(req, res, "Excel contains no valid variables", {}, 400);
-// 		}
-// 		console.log("3333333333333333");
-// 		// Step 3: Create batch
-// 		const lastBatch = await Batch.findOne().sort({ batch_no: -1 }).lean();
-// 		const nextBatchNo = lastBatch ? lastBatch.batch_no + 1 : 1;
-// 		const existingBatch = await Batch.findOne({ file: req.file.filename });
-// 		if (existingBatch) {
-// 			console.log("batchExistsssssssssss", existingBatch);
-// 		}
-// 		console.log("4444444444444444444");
-// 		const batch = await Batch.create({
-// 			batch_no: nextBatchNo,
-// 			no_of_tags: variableDocs.length,
-// 			no_of_attributes: 8,
-// 			batch_type: 'direct',
-// 			file: req.file.filename,
-// 			user_id: "6870f12f8f0cb7fa8e74a472",
-// 		});
-
-// 		// Step 4: Add batch_id to each variable and save
-// 		variableDocs.forEach(v => v.batch_id = batch._id);
-// 		const createdVariables = await Variable.insertMany(variableDocs);
-
-// 		return responseService.success(req, res, "Excel uploaded and data saved successfully", {
-// 			batch,
-// 			total_variables: createdVariables.length,
-// 			variables: createdVariables
-// 		}, 201);
-
-// 	} catch (error) {
-// 		console.error("Excel Upload Error:", error);
-// 		return responseService.error(req, res, "Internal Server Error", {
-// 			message: "Failed to process Excel file"
-// 		}, 500);
-// 	}
-// };
-
-
 const uploadExcel = async (req, res) => {
 	try {
 		const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
@@ -242,7 +163,6 @@ const uploadExcel = async (req, res) => {
 		const sheet = workbook.Sheets[workbook.SheetNames[0]];
 		const data = xlsx.utils.sheet_to_json(sheet, { defval: "" });
 
-		// Required headers
 		const requiredHeaders = [
 			"Variable Code",
 			"Variable Description",
@@ -256,7 +176,6 @@ const uploadExcel = async (req, res) => {
 			"Flatline Length"
 		];
 
-		// Step 1: Validate data for every row
 		for (let [index, row] of data.entries()) {
 			const missing = requiredHeaders.filter(h => !row[h] && row[h] !== 0);
 			if (missing.length > 0) {
@@ -264,14 +183,12 @@ const uploadExcel = async (req, res) => {
 				return responseService.error(
 					req,
 					res,
-					`Missing required values in row ${index + 2}`, // Excel row number (header + 1-based index)
+					`Missing required values in row ${index + 2}`,
 					{ missing },
 					400
 				);
 			}
 		}
-
-		// Step 2: Map rows into documents
 		const variableDocs = data.map(row => ({
 			variable_code: row["Variable Code"],
 			variable_description: row["Variable Description"],
@@ -285,8 +202,6 @@ const uploadExcel = async (req, res) => {
 			flatline_length: Number(row["Flatline Length"]),
 			status: false,
 		}));
-
-		// Step 3: Create batch
 		const lastBatch = await Batch.findOne().sort({ batch_no: -1 }).lean();
 		const nextBatchNo = lastBatch ? lastBatch.batch_no + 1 : 1;
 
@@ -298,8 +213,6 @@ const uploadExcel = async (req, res) => {
 			file: req.file.originalname,
 			user_id: "6870f12f8f0cb7fa8e74a472",
 		});
-
-		// Step 4: Insert or update variables
 		let created = [];
 		let updated = [];
 
@@ -316,8 +229,6 @@ const uploadExcel = async (req, res) => {
 				created.push(newVar.variable_code);
 			}
 		}
-
-		// Step 5: Response
 		return responseService.success(req, res, "Excel processed successfully", {
 			batch,
 			created_count: created.length,
@@ -336,7 +247,6 @@ const uploadExcel = async (req, res) => {
 
 const paginateBatches = async (req, res) => {
 	try {
-		// Support both body and query params
 		const {
 			page = 1,
 			limit = 10,
@@ -360,10 +270,7 @@ const paginateBatches = async (req, res) => {
 			.skip((Number(page) - 1) * Number(limit))
 			.limit(Number(limit));
 
-		return responseService.success(
-			req,
-			res,
-			"Batches fetched successfully",
+		return responseService.success(req, res, "Batches fetched successfully",
 			{
 				data: batches,
 				pagination: {
@@ -371,31 +278,15 @@ const paginateBatches = async (req, res) => {
 					totalItems: total,
 					totalPages: Math.ceil(total / Number(limit))
 				}
-			},
-			200
-		);
+			}, 200);
 	} catch (error) {
 		console.error("Error in paginateBatches:", error);
-		return responseService.error(
-			req,
-			res,
-			"Internal Server Error",
-			{ message: "Something went wrong" },
-			500
-		);
+		return responseService.error(req, res, "Internal Server Error", { message: "Something went wrong" }, 500);
 	}
 };
 
 
-module.exports = {
-	createBatch,
-	updateBatch,
-	deleteBatch,
-	viewBatch,
-	getBatches,
-	uploadExcel,
-	paginateBatches
-};
+module.exports = { createBatch, updateBatch, deleteBatch, viewBatch, getBatches, uploadExcel, paginateBatches };
 
 
 // const uploadExcel = async (req, res) => {

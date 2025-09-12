@@ -103,7 +103,6 @@ const createDepartment = async (req, res) => {
 const updateDepartment = async (req, res) => {
     try {
         const { id, department_code, department_name, status, deleted_at } = req.body;
-
         const existingDepartment = await Department.findById(id);
         if (!existingDepartment) {
             await logApiResponse(req, "Department not found", 404, { id: "Department not found" });
@@ -264,15 +263,4 @@ const destroyDepartment = async (req, res) => {
     }
 };
 
-
-
-module.exports = {
-    paginatedDepartments,
-    createDepartment,
-    updateDepartment,
-    getDepartments,
-    getDepartment,
-    deleteDepartment,
-    destroyDepartment
-
-}
+module.exports = { paginatedDepartments, createDepartment, updateDepartment, getDepartments, getDepartment, deleteDepartment, destroyDepartment }
