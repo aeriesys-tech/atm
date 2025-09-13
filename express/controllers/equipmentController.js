@@ -320,7 +320,7 @@ const addEquipment = async (req, res) => {
         // 🔹 Save equipment
         const newEquipment = await Equipment.create(equipmentData);
 
-        const message = "Equipment added successfully"; 
+        const message = "Equipment added successfully";
         await logApiResponse(req, message, 201, newEquipment);
         await createNotification(req, 'Equipment', newEquipment._id, message, 'master');
 
@@ -340,7 +340,6 @@ const addEquipment = async (req, res) => {
         });
     }
 };
-
 
 const updateEquipment = async (req, res) => {
     try {

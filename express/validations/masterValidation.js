@@ -46,8 +46,21 @@ const add_master_validation = (req, res, next) => {
 
         body('masterFieldData.*.is_unique', 'Field unique is required')
             .isBoolean().withMessage("unique must be a boolean"),
+
+        // ✅ Custom validation: ensure at least one default is true
+        body('masterFieldData').custom((fields) => {
+            if (!Array.isArray(fields)) {
+                throw new Error("masterFieldData must be an array");
+            }
+            const hasDefault = fields.some(f => f.default === true);
+            if (!hasDefault) {
+                throw new Error("At least one master field must be set as default");
+            }
+            return true;
+        }),
     ])(req, res, next);
 };
+
 
 const update_master_validation = (req, res, next) => {
     return Validate([

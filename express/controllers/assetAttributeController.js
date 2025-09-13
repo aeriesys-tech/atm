@@ -193,7 +193,7 @@ const toggleSoftDeleteAssetAttribute = async (req, res) => {
 
             const updatedAttribute = await attribute.save();
 
-            const action = wasDeleted ? 'restored' : 'soft-deleted';
+            const action = wasDeleted ? 'activated' : 'inactivated';
             const message = `Asset attribute "${updatedAttribute.display_name}" has been ${action} successfully`;
 
             // ✅ Create notification for single toggle

@@ -13,11 +13,142 @@ const SchemaDefinitions = mongoose.model('SchemaDefinition');
 const { logApiResponse } = require('../utils/responseService');
 const { createNotification } = require('../utils/notification');
 
+// const createMaster = async (req, res) => {
+//     try {
+//         const { masterData, masterFieldData } = req.body;
+//         delete masterData._id;
+//         masterFieldData.forEach(f => delete f._id);
+//         const fieldNameSet = new Set();
+//         for (let i = 0; i < masterFieldData.length; i++) {
+//             const field = masterFieldData[i];
+//             if (fieldNameSet.has(field.field_name)) {
+//                 return res.status(400).json({
+//                     message: 'The given data was invalid',
+//                     errors: {
+//                         [`masterFieldData[${i}].field_name`]: `Field name '${field.field_name}' already exists. Please use a unique name.`
+//                     }
+//                 });
+//             }
+//             fieldNameSet.add(field.field_name);
+//         }
+
+
+//         const existingMaster = await Master.findOne({ master_name: masterData.master_name });
+//         if (existingMaster) {
+//             return res.status(400).json({
+//                 message: 'The given data was invalid',
+//                 errors: {
+//                     [`masterData.master_name`]: `Master name '${masterData.master_name}' already exists.`
+//                 }
+//             });
+//         }
+//         const newMaster = await Master.create(masterData);
+//         const fieldsWithMaster = masterFieldData.map(field => ({
+//             ...field,
+//             master_id: newMaster._id,
+//         }));
+//         await MasterField.insertMany(fieldsWithMaster);
+//         const modelName = masterData.model_name;
+//         const schemaDefinition = {};
+//         fieldsWithMaster.forEach(field => {
+//             schemaDefinition[field.field_name] = {
+//                 type: String,
+//                 required: field.required,
+//                 unique: field.is_unique,
+//                 default: field.default === true || field.default === 'true' ? true : undefined
+//             };
+//         });
+
+//         let DynamicModel;
+//         if (mongoose.models[modelName]) {
+//             DynamicModel = mongoose.model(modelName);
+//         } else {
+//             const dynamicSchema = new mongoose.Schema(schemaDefinition, {
+//                 versionKey: false,
+//                 strict: false,
+//                 collection: modelName
+//             });
+//             DynamicModel = mongoose.model(modelName, dynamicSchema);
+//         }
+//         for (const field of fieldsWithMaster) {
+//             const isDefault = field.default === true || field.default === 'true';
+//             if (isDefault) {
+//                 const fieldName = field.field_name;
+//                 const existingDefault = await DynamicModel.findOne({
+//                     [fieldName]: true
+//                 });
+
+//                 if (existingDefault) {
+//                     return res.status(400).json({
+//                         message: 'The given data was invalid',
+//                         errors: {
+//                             [`masterFieldData.${fieldName}`]: `A record already has '${fieldName}' set as default (true).`
+//                         }
+//                     });
+//                 }
+//             }
+//         }
+
+//         return res.status(201).json({
+//             message: 'Master and fields created successfully',
+//             master: newMaster
+//         });
+
+//     } catch (error) {
+//         console.error('Error during master creation:', error);
+
+//         if (error.code === 11000 && error.keyPattern && error.keyValue) {
+//             const duplicatedField = Object.keys(error.keyPattern)[0];
+//             const duplicatedValue = error.keyValue[duplicatedField];
+
+
+//             const fieldIndex = masterFieldData.findIndex(f => f[duplicatedField] === duplicatedValue);
+//             if (fieldIndex !== -1) {
+//                 return res.status(400).json({
+//                     message: 'The given data was invalid',
+//                     errors: {
+//                         [`masterFieldData[${fieldIndex}].${duplicatedField}`]:
+//                             `'${duplicatedValue}' already exists. Please use a unique value.`
+//                     }
+//                 });
+//             }
+//             return res.status(400).json({
+//                 message: 'The given data was invalid',
+//                 errors: {
+//                     [`masterData.${duplicatedField}`]:
+//                         `'${duplicatedValue}' already exists. ${duplicatedField} must be unique.`
+//                 }
+//             });
+//         }
+//         if (error.name === 'ValidationError') {
+//             const formattedErrors = {};
+//             for (const field in error.errors) {
+//                 if (field.includes('.')) {
+//                     formattedErrors[field] = error.errors[field].message;
+//                 } else {
+//                     formattedErrors[`masterData.${field}`] = error.errors[field].message;
+//                 }
+//             }
+//             return res.status(400).json({
+//                 message: 'The given data was invalid',
+//                 errors: formattedErrors
+//             });
+//         }
+
+//         return res.status(500).json({
+//             message: 'Server error during master creation',
+//             error: error.message
+//         });
+//     }
+// };
+
+
 const createMaster = async (req, res) => {
     try {
         const { masterData, masterFieldData } = req.body;
         delete masterData._id;
         masterFieldData.forEach(f => delete f._id);
+
         const fieldNameSet = new Set();
         for (let i = 0; i < masterFieldData.length; i++) {
             const field = masterFieldData[i];
@@ -32,6 +163,15 @@ const createMaster = async (req, res) => {
             fieldNameSet.add(field.field_name);
         }
 
+        // ✅ Ensure at least one default field
+        const hasDefaultField = masterFieldData.some(
+            (field) => field.default === true || field.default === 'true'
+        );
+        if (!hasDefaultField) {
+            return res.status(400).json({
+                message: 'At least one master field must be set as default.'
+            });
+        }
 
         const existingMaster = await Master.findOne({ master_name: masterData.master_name });
         if (existingMaster) {
@@ -42,12 +182,14 @@ const createMaster = async (req, res) => {
                 }
             });
         }
+
         const newMaster = await Master.create(masterData);
         const fieldsWithMaster = masterFieldData.map(field => ({
             ...field,
             master_id: newMaster._id,
         }));
         await MasterField.insertMany(fieldsWithMaster);
+
         const modelName = masterData.model_name;
         const schemaDefinition = {};
         fieldsWithMaster.forEach(field => {
@@ -70,6 +212,8 @@ const createMaster = async (req, res) => {
             });
             DynamicModel = mongoose.model(modelName, dynamicSchema);
         }
+
+        // ✅ Ensure only one record has default true for each default field
         for (const field of fieldsWithMaster) {
             const isDefault = field.default === true || field.default === 'true';
             if (isDefault) {
@@ -101,7 +245,6 @@ const createMaster = async (req, res) => {
             const duplicatedField = Object.keys(error.keyPattern)[0];
             const duplicatedValue = error.keyValue[duplicatedField];
 
-
             const fieldIndex = masterFieldData.findIndex(f => f[duplicatedField] === duplicatedValue);
             if (fieldIndex !== -1) {
                 return res.status(400).json({
@@ -120,6 +263,7 @@ const createMaster = async (req, res) => {
                 }
             });
         }
+
         if (error.name === 'ValidationError') {
             const formattedErrors = {};
             for (const field in error.errors) {
@@ -251,7 +395,7 @@ const updateMaster = async (req, res) => {
 
 const insertDynamicData = async (req, res) => {
     const { id } = req.body;
-    const inputData = req.body;
+    const inputData = { ...req.body }; // clone to avoid mutating req.body directly
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
@@ -269,6 +413,7 @@ const insertDynamicData = async (req, res) => {
                 errors: { id: "Invalid or missing master configuration" },
             });
         }
+
         const master = await Master.findById(id);
         if (!master) {
             return res.status(404).json({
@@ -286,6 +431,8 @@ const insertDynamicData = async (req, res) => {
                 errors: { id: "Model generation failed" },
             });
         }
+
+        // Ensure unique indexes for fields with unique + not required
         for (const field of masterFields) {
             if (field.unique && !field.is_required) {
                 try {
@@ -303,6 +450,8 @@ const insertDynamicData = async (req, res) => {
                 }
             }
         }
+
+        // Check for duplicates
         const duplicateErrors = {};
         for (const field of masterFields) {
             const fieldName = field.field_name;
@@ -320,26 +469,37 @@ const insertDynamicData = async (req, res) => {
                 errors: duplicateErrors,
             });
         }
+
+        // ✅ Normalize empty / missing values → null
+        for (const field of masterFields) {
+            const fieldName = field.field_name;
+            if (inputData[fieldName] === "" || inputData[fieldName] === undefined) {
+                // force null instead of falling back to schema default (like 1)
+                inputData[fieldName] = null;
+            }
+        }
+
         const newDocument = new DynamicModel(inputData);
         const savedDocument = await newDocument.save();
 
-        const message = `${collectionName} document added successfully`;
+        const message = `${collectionName} data added successfully`;
         await createNotification(req, collectionName, newDocument._id, message, 'master');
-        await logApiResponse(req, "Document added successfully", 201, newDocument);
+        await logApiResponse(req, "Data added successfully", 201, newDocument);
 
         res.status(201).json({
-            message: "Document added successfully",
+            message: "Data added successfully",
             data: savedDocument,
         });
     } catch (error) {
-        console.error("Error inserting document:", error);
-        await logApiResponse(req, "Error inserting document", 500, { error: error.message });
+        console.error("Error inserting data:", error);
+        await logApiResponse(req, "Error inserting data", 500, { error: error.message });
         res.status(500).json({
             message: "Internal Server Error",
             errors: { message: error.message },
         });
     }
 };
+
 
 
 const updateDynamicData = async (req, res) => {
@@ -426,14 +586,14 @@ const updateDynamicData = async (req, res) => {
             runValidators: true
         });
 
-        const message = `Document updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(updatedDoc)}`;
-        await createNotification(req, 'Document', docId, message, 'master');
+        const message = `Data updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(updatedDoc)}`;
+        await createNotification(req, 'Data', docId, message, 'master');
 
         const { docId: _docId, masterId: _masterId, ...filteredDoc } = updatedDoc.toObject();
 
-        await logApiResponse(req, "Document updated successfully", 200, filteredDoc);
+        await logApiResponse(req, "Data updated successfully", 200, filteredDoc);
         res.status(200).json({
-            message: "Document updated successfully.",
+            message: "Data updated successfully.",
             data: filteredDoc
         });
 
@@ -681,7 +841,7 @@ const deleteDynamicData = async (req, res) => {
 
             const document = await DynamicModel.findById(documentId);
             if (!document) {
-                throw new Error(`Document with ID ${documentId} not found in the dynamic collection.`);
+                throw new Error(`Data with ID ${documentId} not found in the dynamic collection.`);
             }
 
             let action;
@@ -697,8 +857,8 @@ const deleteDynamicData = async (req, res) => {
 
             const updatedDoc = await document.save();
 
-            const message = `Document "${collectionName}" with ID ${documentId} has been ${action} successfully.`;
-            await createNotification(req, 'Document', documentId, message, 'master');
+            const message = `Data "${collectionName}" with ID ${documentId} has been ${action} successfully.`;
+            await createNotification(req, 'Data', documentId, message, 'master');
 
             return updatedDoc;
         };
@@ -706,17 +866,17 @@ const deleteDynamicData = async (req, res) => {
             const promises = docIds.map(toggleSoftDelete);
             const updatedDocuments = await Promise.all(promises);
 
-            await logApiResponse(req, 'Documents soft delete/restore toggled successfully.', 200, updatedDocuments);
+            await logApiResponse(req, 'Data soft delete/restore toggled successfully.', 200, updatedDocuments);
             return res.status(200).json({
-                message: 'Documents soft delete/restore toggled successfully.',
+                message: 'Data soft delete/restore toggled successfully.',
                 data: updatedDocuments
             });
         } else if (docId) {
             const updatedDocument = await toggleSoftDelete(docId);
 
             const message = updatedDocument.deleted_at
-                ? 'Document soft deleted successfully.'
-                : 'Document restored successfully.';
+                ? 'Data is inactivated successfully.'
+                : 'Data is activated successfully.';
 
             await logApiResponse(req, message, 200, updatedDocument);
             return res.status(200).json({
@@ -761,7 +921,7 @@ const destroyDynamicData = async (req, res) => {
         if (templatesUsingDocs.length > 0) {
             return logApiResponse(
                 req,
-                'One or more documents are used in templates and cannot be deleted permanently.',
+                'One or more data are used in templates and cannot be deleted permanently.',
                 400,
                 false,
                 null,
@@ -772,13 +932,13 @@ const destroyDynamicData = async (req, res) => {
         await DynamicModel.deleteMany({ _id: { $in: idsToDelete } });
         for (const doc of docsToDelete) {
             const title = doc?.name || doc?.title || doc?._id;
-            const message = `${collectionName} document "${title}" permanently deleted`;
+            const message = `${collectionName} data "${title}" permanently deleted`;
             await createNotification(req, collectionName, doc._id, message, 'master');
         }
 
         await logApiResponse(
             req,
-            'Documents permanently deleted',
+            'Data permanently deleted',
             200,
             true,
             null,
@@ -787,12 +947,12 @@ const destroyDynamicData = async (req, res) => {
 
         return res.status(200).json({
             message: idsToDelete.length > 1
-                ? 'Documents permanently deleted'
-                : 'Document permanently deleted'
+                ? 'Data permanently deleted'
+                : 'Data permanently deleted'
         });
     } catch (error) {
-        console.error('Error permanently deleting document(s):', error);
-        await logApiResponse(req, 'Error deleting documents permanently', 500, { error: error.message });
+        console.error('Error permanently deleting data(s):', error);
+        await logApiResponse(req, 'Error deleting datas permanently', 500, { error: error.message });
         return res.status(500).json({
             message: 'Error deleting documents permanently',
             error: error.message

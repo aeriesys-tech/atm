@@ -128,6 +128,7 @@ const createTemplate = async (req, res) => {
 
         res.status(201).json({ message, data: savedTemplate });
 
+
     } catch (error) {
         console.error('Create Template Error:', error);
         await logApiResponse(req, 'Server error', 500, { error: error.message });
@@ -281,8 +282,10 @@ const updateTemplate = async (req, res) => {
         const message = `Template "${updatedTemplate.template_name}" updated successfully.\nBefore: ${JSON.stringify(beforeUpdate)}\nAfter: ${JSON.stringify(afterUpdate)}`;
         await createNotification(req, 'Template', updatedTemplate._id, message, 'template');
         await logApiResponse(req, message, 200, updatedTemplate);
-
-        return res.status(200).json({ message, data: updatedTemplate });
+        return res.status(200).json({
+            message: "Template updated successfully",
+            data: updatedTemplate,
+        });
 
     } catch (error) {
         console.error('Error updating template:', error);
