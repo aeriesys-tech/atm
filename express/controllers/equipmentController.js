@@ -465,67 +465,94 @@ const getAllEquipment = async (req, res) => {
 const downloadExcel = async (req, res) => {
     try {
         const { asset_id } = req.body;
-        console.log(asset_id);
+        console.log('--- Asset ID ---', asset_id);
 
-
-        const assetClassAttributes = await assetClassAttribute.findOne({ asset_id: asset_id });
+        // Fetch asset class attributes
+        const assetClassAttributes = await assetClassAttribute.findOne({ asset_id }).lean();
+        console.log('--- Asset Class Attributes ---', JSON.stringify(assetClassAttributes, null, 2));
 
         if (!assetClassAttributes) {
-            return res.status(404).json({
-                message: "Asset class attributes not found for the given asset_id"
-            });
+            console.log('No asset class attributes found');
+            return res.status(404).json({ message: "Asset class attributes not found" });
         }
 
-        const assetAttributeIds = assetClassAttributes.asset_attribute_ids.map(attr => attr.id);
-        const fieldDefinitions = await assetAttribute.find({ _id: { $in: assetAttributeIds } }).select('field_name display_name');
+        // Fetch attribute definitions
+        const attributeIds = assetClassAttributes.asset_attribute_ids.map(a => a.id);
+        console.log('--- Attribute IDs ---', attributeIds);
 
-        const searchQuery = { asset_id: asset_id };
+        const fieldDefinitions = await assetAttribute
+            .find({ _id: { $in: attributeIds } })
+            .select('field_name display_name')
+            .lean();
+        console.log('--- Field Definitions ---', JSON.stringify(fieldDefinitions, null, 2));
 
-
-        const equipments = await Equipment.find(searchQuery);
-
-        // Create a mapping of asset attribute IDs to their order
+        // Sort attributes by order
         const orderMapping = assetClassAttributes.asset_attribute_ids.reduce((acc, curr) => {
             acc[curr.id.toString()] = curr.order;
             return acc;
         }, {});
+        console.log('--- Order Mapping ---', orderMapping);
 
-        // Sort the field definitions based on the order from AssetClassAttribute
-        const sortedAssetAttributes = fieldDefinitions
-            .map(field => ({
-                field_name: field.field_name,
-                display_name: field.display_name,
-                order: orderMapping[field._id.toString()] || Infinity
+        const sortedAttributes = fieldDefinitions
+            .map(attr => ({
+                _id: attr._id,
+                field_name: attr.field_name,
+                display_name: attr.display_name,
+                order: orderMapping[attr._id.toString()] || Infinity
             }))
-            .sort((a, b) => a.order - b.order)
-            .map(({ field_name, display_name }) => ({ field_name, display_name }));
+            .sort((a, b) => a.order - b.order);
+        console.log('--- Sorted Attributes ---', JSON.stringify(sortedAttributes, null, 2));
 
-        // Create a new workbook and worksheet
+        // Fetch equipments
+        const equipments = await Equipment.find({ asset_id }).lean();
+        console.log('--- Equipments ---', JSON.stringify(equipments, null, 2));
+
+        if (!equipments.length) console.log('No equipments found');
+
+        // Create workbook
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Equipments');
 
-        // Add headers based on the sorted asset attributes
-        const headers = sortedAssetAttributes.map(attr => attr.display_name);
-        worksheet.columns = headers.map(header => ({ header, width: 30 }));
+        // Add headers
+        worksheet.columns = sortedAttributes.map(attr => ({ header: attr.display_name, width: 20 }));
+        worksheet.getRow(1).font = { bold: true };
+        console.log('--- Excel Headers ---', worksheet.columns.map(c => c.header));
 
-        // Add rows to the worksheet using the equipment data
-        equipments.forEach(equipment => {
-            const row = sortedAssetAttributes.map(attr => equipment[attr.field_name] || ''); // Ensure it handles missing fields
+        // Map any mismatched field_name (example: "temp" → "name")
+        const fieldMapping = {
+            temp: 'name' // map old field_name "temp" to actual top-level field "name"
+        };
+
+        // Add rows using top-level fields
+        equipments.forEach((equipment, idx) => {
+            const row = sortedAttributes.map(attr => {
+                const key = fieldMapping[attr.field_name] || attr.field_name;
+                return equipment[key] || '';
+            });
             worksheet.addRow(row);
+            console.log(`--- Row ${idx + 1} ---`, row);
         });
 
-        // Set response headers for file download
+        worksheet.columns.forEach(column => {
+            let maxLength = column.header.length;
+            column.eachCell({ includeEmpty: true }, cell => {
+                const cellLength = cell.value ? cell.value.toString().length : 0;
+                if (cellLength > maxLength) maxLength = cellLength;
+            });
+            column.width = maxLength + 2;
+        });
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=data.xlsx');
-
-        // Write the workbook to a stream
         await workbook.xlsx.write(res);
         res.end();
+        console.log('Excel file sent successfully');
     } catch (error) {
-        console.error('Error generating Excel file:', error);
+        console.error('Error generating Excel:', error);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };
+
+
 
 
 // const downloadEquipmentExcel = async (req, res) => {
