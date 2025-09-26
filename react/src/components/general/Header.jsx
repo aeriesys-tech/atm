@@ -130,7 +130,7 @@ function Header() {
     const getNotificationCount = async () => {
         try {
             const response = await axiosWrapper(`api/v1/notifications/countUnreadNotifications`, { method: "POST" });
-            dispatch(setNotificationCount(response.data));
+            dispatch(setNotificationCount(response?.data));
         } catch (error) {
             console.error("Failed to fetch notification count:", error.message || error);
         }

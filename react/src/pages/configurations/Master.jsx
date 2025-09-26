@@ -704,7 +704,7 @@ const Master = () => {
                   <div className="asset-table">
                     <div
                       className="table-responsive "
-                      style={{ overflowX: "auto", minHeight: "250px", overflowY: "auto" }}
+                      style={{ overflowX: "auto", minHeight: "150px", overflowY: "auto", paddingBottom: "100px", }}
                     >
                       <table className="table table-bordered table-striped align-middle table-text">
                         <thead className="table-head align-middle">
