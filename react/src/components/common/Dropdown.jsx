@@ -9,6 +9,7 @@ function Dropdown({
   error,
   disabled = false,
   searchable = true,
+  onMenuOpen, // New prop to handle menu open event
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +36,7 @@ function Dropdown({
     setSelectedLabel(selected?.label || selected || "");
   }, [value, options]);
 
-   const filteredOptions = searchable
+  const filteredOptions = searchable
     ? options.filter((opt) =>
         (opt.label || opt)
           .toString()
@@ -43,6 +44,13 @@ function Dropdown({
           .includes(searchQuery.toLowerCase())
       )
     : options;
+
+  // Trigger onMenuOpen callback when the dropdown opens
+  useEffect(() => {
+    if (isOpen && onMenuOpen) {
+      onMenuOpen();
+    }
+  }, [isOpen, onMenuOpen]);
 
   return (
     <div style={{ position: "relative", marginBottom: "1rem" }} ref={dropdownRef}>
@@ -60,7 +68,7 @@ function Dropdown({
         style={{
           height: "40px",
           width: "100%",
-          minWidth:"200px",
+          minWidth: "200px",
           borderRadius: "12px",
           cursor: disabled ? "not-allowed" : "pointer",
           padding: "10px",
@@ -94,16 +102,16 @@ function Dropdown({
         >
           {/* Search box */}
           {searchable && (
-          <div style={{ padding: "5px" }} onClick={(e) => e.stopPropagation()}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              ref={searchInputRef}
-            />
-          </div>
+            <div style={{ padding: "5px" }} onClick={(e) => e.stopPropagation()}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                ref={searchInputRef}
+              />
+            </div>
           )}
           {/* Options list with scroll */}
           <div style={{ maxHeight: "150px", overflowY: "auto" }}>
