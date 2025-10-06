@@ -1,49 +1,84 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
+import React from "react";
+import { HashRouter, Route, Routes } from "react-router-dom";
+import Layout from "./layout/Layout";
+import Dashboard from "./pages/Dashboard";
 
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-import ProtectedRoute from "./components/ProtectedRoute";
-import ProtectedLayout from "./components/ProtectedLayout";
-import LoginPage from "./pages/LoginPage";
-import TimeSeriesPage from "./pages/TimeSeriesPage";
-import StaticDataPage from "./pages/StaticDataPage";
-import DataSourcePage from "./pages/DataSourcePage";
+import Jobs from "./pages/Jobs";
+import Attribute from "./pages/configure/Attribute";
+import DQRules from "./pages/configure/DQRules";
+import Database from "./pages/configure/Database";
+import TagConfiguration from "./pages/onetime/TagConfiguration";
+import DBConnection from "./pages/onetime/DBConnection";
+import DQConfiguration from "./pages/onetime/DQConfiguration";
+import PreviewJob from "./pages/onetime/PreviewJob";
+import RecurringTagcofiguration from "./pages/recurring/RecurringTagcofiguration";
+import RecurringDBConnection from "./pages/recurring/RecurringDBConnection";
+import RecurringDQConfiguration from "./pages/recurring/RecurringDQConfiguration";
+import RecurringPreviewJobs from "./pages/recurring/RecurringPreviewJobs";
+import OnetimeJob from "./pages/jobs/OnetimeJob";
+import SceduleJob from "./pages/jobs/";
+import RecurringJob from "./pages/jobs/RecurringJob";
+import Schedulejob from "./pages/jobs/schedulejob";
+import Onetimepreviewjob from "./pages/jobs/Onetimepreviewjob";
+import Schedulepreviewjob from "./pages/jobs/Schedulepreviewjob";
+import Recurringpreviewjob from "./pages/jobs/RecurringPreviewjob";
 
 function App() {
-	return (
-		<HashRouter>
-			<Routes>
-				{/* Public Routes */}
-				<Route path="/login" element={<LoginPage />} />
+  return (
+    <>
+      <HashRouter>
+        <Routes>
+          <Route path="/layout" element={<Layout />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/configure/attribute" element={<Attribute />} />
+          <Route path="/configure/database" element={<Database />} />
+          <Route path="/configure/dqrule" element={<DQRules />} />
 
-				{/* Private Routes with Layout */}
-				<Route
-					path="/"
-					element={
-						<ProtectedRoute>
-							<ProtectedLayout />
-						</ProtectedRoute>
-					}
-				>
-					<Route index element={<TimeSeriesPage />} />
-					<Route path="dq-time-series" element={<TimeSeriesPage />} />
-					<Route path="dq-static" element={<StaticDataPage />} />
-					<Route path="data-source" element={<DataSourcePage />} />
-				</Route>
-			</Routes><ToastContainer
-				position="bottom-right"
-				autoClose={3000}
-				hideProgressBar={false}
-				newestOnTop
-				closeOnClick
-				pauseOnFocusLoss
-				draggable
-				pauseOnHover
-				theme="colored"
-			/>
-		</HashRouter>
-	);
+          {/* One-Time */}
+          <Route path="/tagconfiguration" element={<TagConfiguration />} />
+          <Route path="/dbconnection" element={<DBConnection />} />
+          <Route path="/dqconfiguration" element={<DQConfiguration />} />
+          <Route path="/previewjob" element={<PreviewJob />} />
+
+          {/* Recurring */}
+          <Route
+            path="/recurring-tagconfiguration"
+            element={<RecurringTagcofiguration />}
+          />
+          <Route
+            path="/recurring-dbconnection"
+            element={<RecurringDBConnection />}
+          />
+          <Route
+            path="/recurring-dqconfiguration"
+            element={<RecurringDQConfiguration />}
+          />
+          <Route
+            path="/recurring-previewjobs"
+            element={<RecurringPreviewJobs />}
+          />
+
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/onetimejob" element={<OnetimeJob />} />
+          <Route path="/jobs/schedulejob" element={<Schedulejob />} />
+          <Route path="/jobs/recurringjob" element={<RecurringJob />} />
+          <Route
+            path="/jobs/onetimepreviewjob"
+            element={<Onetimepreviewjob />}
+          />
+          <Route
+            path="/jobs/schedulepreviewjob"
+            element={<Schedulepreviewjob />}
+          />
+           <Route
+            path="/jobs/recurringpreviewjob"
+            element={<Recurringpreviewjob />}
+          />
+         
+        </Routes>
+      </HashRouter>
+    </>
+  );
 }
 
 export default App;

@@ -1,108 +1,75 @@
-import React from "react";
+// components/common/Pagination.jsx
+export default function Pagination({
+  page,
+  totalPages,
+  setPage,
+  perPage,
+  totalItems,
+}) {
+  return (
+    <div className="flex flex-wrap justify-between items-center  text-gray-600">
+      {/* Left: entries info */}
+      <span>
+        {totalItems > 0
+          ? `Showing ${(page - 1) * perPage + 1} to ${Math.min(
+              page * perPage,
+              totalItems
+            )} of ${totalItems} entries`
+          : "No entries available"}
+      </span>
 
-const Pagination = ({
-	currentPage,
-	totalPages,
-	totalItems,
-	itemsPerPage,
-	onPageChange,
-	showInfo = true,
-	className = ""
-}) => {
-	if (totalItems === 0) return null;
+      {/* Right: page navigation */}
+      <div className="flex gap-1 mt-2 md:mt-0">
+        <button
+          onClick={() => setPage(1)}
+          disabled={page === 1}
+          className="px-3 py-0.5 border border-gray-400 rounded-md disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
+        >
+          First
+        </button>
+        <button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={page === 1}
+          className="px-3 py-0.5 border border-gray-400 rounded-md disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
+        >
+          Prev
+        </button>
 
-	const startItem = (currentPage - 1) * itemsPerPage + 1;
-	const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+        {Array.from({ length: totalPages }, (_, idx) => idx + 1)
+          .filter((n) => n === 1 || n === totalPages || Math.abs(page - n) <= 1)
+          .map((n, idx, arr) => (
+            <span key={n}>
+              {idx > 0 && n - arr[idx - 1] > 1 && (
+                <span className="px-2">...</span>
+              )}
+              <button
+                onClick={() => setPage(n)}
+                className={`px-3 py-0.5 rounded-md border ${
+                  page === n
+                    ? "bg-[#8A0000] text-white border-[#8A0000]"
+                    : "hover:bg-gray-100 border-gray-400 cursor-pointer"
+                }`}
+              >
+                {n}
+              </button>
+            </span>
+          ))}
 
-	// Generate only 3 visible page numbers at a time
-	const getPageNumbers = () => {
-		let start = currentPage - 1;
-		let end = currentPage + 1;
-
-		// Adjust for first page edge case
-		if (currentPage === 1) {
-			start = 1;
-			end = Math.min(3, totalPages);
-		}
-
-		// Adjust for last page edge case
-		if (currentPage === totalPages) {
-			end = totalPages;
-			start = Math.max(totalPages - 2, 1);
-		}
-
-		// Ensure we don't go out of range
-		if (start < 1) start = 1;
-		if (end > totalPages) end = totalPages;
-
-		const pages = [];
-		for (let i = start; i <= end; i++) {
-			pages.push(i);
-		}
-		return pages;
-	};
-
-	const pageNumbers = getPageNumbers();
-
-	return (
-		<div className={`flex justify-between items-center text-sm text-gray-500 ${className}`}>
-			{/* Info Section */}
-			{showInfo && (
-				<span>
-					Showing {startItem} to {endItem} of {totalItems} entries
-				</span>
-			)}
-
-			{/* Pagination Controls */}
-			<div className="flex gap-2">
-				<button
-					onClick={() => onPageChange(1)}
-					disabled={currentPage === 1}
-					className="border px-3 py-1 rounded disabled:opacity-50 hover:bg-gray-50 transition-colors"
-				>
-					First
-				</button>
-
-				<button
-					onClick={() => onPageChange(currentPage - 1)}
-					disabled={currentPage === 1}
-					className="border px-3 py-1 rounded disabled:opacity-50 hover:bg-gray-50 transition-colors"
-				>
-					Prev
-				</button>
-
-				{pageNumbers.map((page) => (
-					<button
-						key={page}
-						onClick={() => onPageChange(page)}
-						className={`px-3 py-1 rounded border transition-colors ${
-							currentPage === page
-								? "bg-blue-500 text-white border-blue-500"
-								: "hover:bg-gray-50"
-						}`}
-					>
-						{page}
-					</button>
-				))}
-
-				<button
-					onClick={() => onPageChange(currentPage + 1)}
-					disabled={currentPage === totalPages}
-					className="border px-3 py-1 rounded disabled:opacity-50 hover:bg-gray-50 transition-colors"
-				>
-					Next
-				</button>
-
-				<button
-					onClick={() => onPageChange(totalPages)}
-					disabled={currentPage === totalPages}
-					className="border px-3 py-1 rounded disabled:opacity-50 hover:bg-gray-50 transition-colors"
-				>
-					Last
-				</button>
-			</div>
-		</div>
-	);
-};
-
-export default Pagination;
+        <button
+          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={page === totalPages}
+          className="px-3 py-0.5 border border-gray-400 rounded-md disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
+        >
+          Next
+        </button>
+        <button
+          onClick={() => setPage(totalPages)}
+          disabled={page === totalPages}
+          className="px-3 py-0.5 border border-gray-400 rounded-md disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
+        >
+          Last
+        </button>
+      </div>
+    </div>
+  );
+}

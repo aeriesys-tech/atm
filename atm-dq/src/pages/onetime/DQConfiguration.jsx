@@ -1,0 +1,269 @@
+import React, { useState } from "react";
+import {
+  FiChevronDown,
+  FiChevronUp,
+  FiEdit,
+  FiEye,
+  FiPlus,
+  FiTrash2,
+} from "react-icons/fi";
+import Layout from "../../layout/Layout";
+import Menubar from "../../components/common/Menubar";
+import Dropdown from "../../components/common/Dropdown";
+import Headertext from "../../components/common/Headertext";
+import Button from "../../components/common/Button";
+import SearchBar from "../../components/common/Searchbar";
+import Pagination from "../../components/common/Pagination";
+import Inputform from "../../components/common/Inputform";
+import { Link } from "react-router-dom";
+
+function DQConfiguration() {
+ const [sampleData] = useState([
+     {
+       name: "Row Count",
+       parameter: "Frequency (minutes or hour), cutoff (percentage)",
+     },
+     {
+       name: "flat line",
+       parameter: "window period (minutes or hour), ,tolerance (percentage), cutoff (percentage)",
+     },
+     {
+       name: "Stagnation",
+       parameter: "window period (minutes or hour), ,tolerance (percentage), cutoff (percentage)",
+     },
+     {
+       name: "Outlier",
+       parameter: "cutoff (percentage)",
+     },
+     {
+       name: "Spike Index",
+       parameter: "tolerance (percentage), cutoff (percentage)",
+     },
+     {
+       name: "Saturation",
+       parameter: "cutoff (percentage)",
+     },
+   ]);
+  const header = (
+    <div className="flex items-center justify-between md:px-10 px-4 py-2">
+    <Headertext Text="Create New Jobs - One Time" />
+    </div>
+  );
+  const [sortAsc, setSortAsc] = useState(true);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  const [search, setSearch] = useState("");
+  const [selectedRows, setSelectedRows] = useState(new Set());
+
+  const filteredData = sampleData.filter((item) =>
+    item.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const sortedData = [...filteredData].sort((a, b) =>
+    sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+  );
+
+  const totalPages = Math.ceil(sortedData.length / perPage);
+  const paginatedData = sortedData.slice((page - 1) * perPage, page * perPage);
+
+ ;
+
+  // Selection
+  const toggleRowSelection = (idx) => {
+    setSelectedRows((prev) => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(idx)) newSelected.delete(idx);
+      else newSelected.add(idx);
+      return newSelected;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRows.size === paginatedData.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(paginatedData.map((_, idx) => idx)));
+    }
+  };
+
+  return (
+    <Layout header={header}>
+      <Menubar />
+
+      <section
+        className="flex flex-col h-full"
+        style={{ height: "calc(100vh - 265px)" }}
+      >
+        {/* Top controls */}
+        <div className="flex flex-wrap justify-between items-center gap-3 py-4">
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">Show</span>
+            <Dropdown
+              label={perPage.toString()}
+              width="70px"
+              options={["10", "20", "50", "100"]}
+              value={perPage.toString()}
+              onChange={(value) => {
+                setPerPage(Number(value));
+                setPage(1);
+              }}
+            />
+            <span className="text-gray-500">entries</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {selectedRows.size > 0 && (
+              <button
+                onClick={() => alert("Bulk delete clicked")}
+                className="flex items-center gap-2 bg-red-600 text-white px-3 h-9 rounded-md hover:bg-red-700 transition"
+              >
+                <FiTrash2 className="w-4 h-4" /> Delete ({selectedRows.size})
+              </button>
+            )}
+            <SearchBar
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+             <Link to="/previewjob">
+              <Button text="Submit" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Table container with scroll */}
+        <div className="flex flex-col flex-1 overflow-hidden rounded-md">
+          <div
+            className="overflow-y-auto scrollbar"
+            style={{ maxHeight: "calc(100vh - 430px)" }}
+          >
+            <table className="min-w-[800px] w-full text-left border-collapse table-fixed">
+              <thead className="bg-gray-100 text-gray-600 sticky top-0 z-10">
+                <tr>
+                  <th
+                    className="px-4 py-2 border-b border-gray-200"
+                    style={{ width: "5%" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedRows.size === paginatedData.length &&
+                        paginatedData.length > 0
+                      }
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
+                  <th
+                    className="px-4 py-2 border-b border-gray-200"
+                    style={{ width: "8%" }}
+                  >
+                    SI NO
+                  </th>
+                  <th
+                    className="px-4 py-2 border-b border-gray-200 cursor-pointer"
+                    style={{ width: "25%" }}
+                    onClick={() => setSortAsc(!sortAsc)}
+                  >
+                    <div className="flex items-center gap-1">
+                      DQ Rule {sortAsc ? "↑" : "↓"}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-2 border-b border-gray-200"
+                    style={{ width: "25%" }}
+                  >
+                    Parameter
+                  </th>
+                  <th
+                    className="px-4 py-2 border-b border-gray-200"
+                    style={{ width: "20%" }}
+                  >
+                    Value
+                  </th>
+                
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedData.length > 0 ? (
+                  paginatedData.map((item, idx) => {
+                    const globalIdx = (page - 1) * perPage + idx;
+
+                    // Parsing parameters (same as your logic)
+                    const fixedParamStr = item.parameter.replace(
+                      "tolerance cutoff",
+                      "tolerance, cutoff"
+                    );
+                    const rawParams = fixedParamStr.split(",");
+                    const params = rawParams
+                      .map((p) => p.trim())
+                      .filter(Boolean);
+
+                  
+
+                    return (
+                      <React.Fragment key={globalIdx}>
+                        <tr className="hover:bg-gray-50 border-b border-gray-100">
+                          <td className="px-4 py-2" style={{ width: "5%" }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedRows.has(globalIdx)}
+                              onChange={() => toggleRowSelection(globalIdx)}
+                            />
+                          </td>
+                          <td className="px-4 py-2" style={{ width: "5%" }}>
+                            {globalIdx + 1}
+                          </td>
+                          <td className="px-4 py-2" style={{ width: "25%" }}>
+                            {item.name}
+                          </td>
+                          <td className="px-4 py-2" style={{ width: "25%" }}>
+                            {params[0]}
+                          </td>
+                          <td className="px-4 py-2" style={{ width: "20%" }}>
+                           <Inputform/>
+                          </td>
+                         
+                        </tr>
+                        {params.slice(1).map((param, i) => (
+                          <tr
+                            key={`${globalIdx}-param-${i}`}
+                            className="hover:bg-gray-50 border-b border-gray-100"
+                          >
+                            <td className="px-4 py-2"></td>
+                            <td className="px-4 py-2"></td>
+                            <td className="px-4 py-2"></td>
+                            <td className="px-4 py-2">{param}</td>
+                            <td className="px-4 py-2"><Inputform/></td>
+                           
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center py-6 text-gray-500">
+                      No data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pagination fixed at bottom */}
+        <div className="mt-auto">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            setPage={setPage}
+            perPage={perPage}
+            totalItems={sortedData.length}
+          />
+        </div>
+      </section>
+    </Layout>
+  );
+}
+
+export default DQConfiguration;

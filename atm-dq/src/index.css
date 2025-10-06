@@ -1,14 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @import "tailwindcss";
 
-html {
-	font-family: 'Inter', sans-serif;
-	font-size: 15px;
+
+/* primarty: [#8A0000];
+hover: #a80606; */
+
+
+/* src/index.css or src/App.css */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-body {
-	font-family: inherit;
-	font-size: inherit;
-	color: #1e293b;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #8a0000; /* Your red color */
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #b30000;
+  
 }
