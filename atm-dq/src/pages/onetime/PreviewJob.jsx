@@ -15,7 +15,7 @@ import Downloadfile from "../../components/common/Downloadfile";
 function TagConfiguration() {
   const header = (
     <div className="flex items-center justify-between md:px-10 px-4 py-2">
-      <Headertext Text="Create New Jobs - One Time" />
+      <Headertext Text="Create New Job - One Time" />
     </div>
   );
 

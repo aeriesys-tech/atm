@@ -22,7 +22,7 @@ function RecurringDBConnection() {
   };
   const header = (
     <div className="flex items-center justify-between md:px-10 px-4 py-2">
-      <Headertext Text="Create New Jobs - Recurring" />
+      <Headertext Text="Create New Job - Recurring" />
     </div>
   );
 

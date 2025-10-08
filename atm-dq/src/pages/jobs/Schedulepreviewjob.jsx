@@ -61,7 +61,7 @@ const sampleData = [
   },
 ];
 
-function Schedulepreviewjob({ maxHeight = "calc(100vh - 530px)" }) {
+function Schedulepreviewjob({ maxHeight = "calc(100vh - 450px)" }) {
   const header = (
     <div className="flex items-center justify-between md:px-10 px-4 py-2">
       <Headertext Text="Jobs - Schedule" />
@@ -206,11 +206,6 @@ function Schedulepreviewjob({ maxHeight = "calc(100vh - 530px)" }) {
                 </h2>
                 <div className="flex flex-col gap-2 text-gray-700">
                   <div>
-                    <span className="font-medium text-gray-900">Job No:</span>
-                    <span className="ml-1">EPB</span>
-                  </div>
-
-                  <div>
                     <span className="font-medium text-gray-900">User:</span>
                     <span className="ml-1">Bharatesh</span>
                   </div>
@@ -218,19 +213,20 @@ function Schedulepreviewjob({ maxHeight = "calc(100vh - 530px)" }) {
                     <span className="font-medium text-gray-900">Status:</span>
                     <span className="ml-1">Completed</span>
                   </div>
+                  <div>
+                    <span className="font-medium text-gray-900">
+                      Schedule Date Time:
+                    </span>
+                    <span className="ml-1">27/09/2025 11:34:00 am</span>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col gap-2 text-gray-700">
                 <div>
-                  <span className="font-medium text-gray-900">Schedule Date Time:</span>
-                  <span className="ml-1">27/09/2025 11:34:00 am</span>
-                </div>
-                
-                <div>
                   <span className="font-medium text-gray-900">
                     Job Date Time:
                   </span>
-                   <span className="ml-1">27/09/2025 11:34:00 am</span>
+                  <span className="ml-1">27/09/2025 11:34:00 am</span>
                 </div>
               </div>
 
@@ -239,35 +235,9 @@ function Schedulepreviewjob({ maxHeight = "calc(100vh - 530px)" }) {
           </div>
         </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-          <div>
-            <span className="font-medium text-gray-900">
-              Sampling Interval:
-            </span>
-            <span className="ml-1">Monthly</span>
-          </div>
-          <div>
-            <span className="font-medium text-gray-900">From Date:</span>
-            <span className="ml-1">12/5/2025</span>
-          </div>
-          <div>
-            <span className="font-medium text-gray-900">To Date:</span>
-            <span className="ml-1">12/12/2025</span>
-          </div>
-        </div>
-        <div className="flex flex-col md:flex-row md:justify-end gap-2">
-          {/* Remove Link around this button since it triggers loading */}
-        </div>
-
-        {isLoading && (
-          <div className="flex justify-center items-center h-40">
-            <div className="loader border-4 border-blue-500 border-t-transparent rounded-full w-10 h-10 animate-spin"></div>
-          </div>
-        )}
-
         <div
           className="flex flex-col space-y-4 h-full mt-4"
-          style={{ height: "calc(100vh - 425px)" }}
+          style={{ height: "calc(100vh - 385px)" }}
         >
           {/* Top Controls */}
           <div className="flex flex-wrap justify-between items-center gap-3">
@@ -482,45 +452,6 @@ function Schedulepreviewjob({ maxHeight = "calc(100vh - 530px)" }) {
           </div>
         </div>
       </Layout>
-      <div
-        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300 ease-in-out ${
-          isOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <div
-          className={`bg-white rounded-lg shadow-lg w-full max-w-2xl mx-4 transform transition-transform duration-300 ease-in-out ${
-            isOpen ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}
-        >
-          {/* Header */}
-          <div className="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold"> Schedule Job</h3>
-            <button
-              onClick={closeModal}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <RxCross2 className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Body */}
-
-          <div className="p-4 overflow-y-auto flex gap-2 ">
-            <Inputform label="Select Date" type="date" />
-            <Inputform label="Select Time" type="time" />
-          </div>
-
-          {/* Footer */}
-          <div className="flex justify-end gap-3 p-4 border-t border-gray-200">
-            <Link to="#">
-              <Button text="Cancle" variant="secondary" onClick={closeModal} />
-            </Link>
-            <Button text="Schedule" variant="primary" onClick={closeModal} />
-          </div>
-        </div>
-      </div>
     </>
   );
 }

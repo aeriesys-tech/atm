@@ -47,7 +47,7 @@ function RecurringDQConfiguration() {
   ]);
   const header = (
     <div className="flex items-center justify-between md:px-10 px-4 py-2">
-      <Headertext Text="Create New Jobs - Recurring" />
+      <Headertext Text="Create New Job - Recurring" />
     </div>
   );
   const [sortAsc, setSortAsc] = useState(true);
@@ -111,14 +111,7 @@ function RecurringDQConfiguration() {
           </div>
 
           <div className="flex items-center gap-3">
-            {selectedRows.size > 0 && (
-              <button
-                onClick={() => alert("Bulk delete clicked")}
-                className="flex items-center gap-2 bg-red-600 text-white px-3 h-9 rounded-md hover:bg-red-700 transition"
-              >
-                <FiTrash2 className="w-4 h-4" /> Delete ({selectedRows.size})
-              </button>
-            )}
+           
             <SearchBar
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -130,14 +123,15 @@ function RecurringDQConfiguration() {
         </div>
 
         {/* Table container with scroll */}
-        <div className="flex flex-col flex-1 overflow-hidden rounded-md">
+       <div className="flex flex-col flex-1 overflow-hidden rounded-md">
           <div
             className="overflow-y-auto scrollbar"
-            style={{ maxHeight: "calc(100vh - 430px)" }}
+            style={{ maxHeight: "calc(100vh - 390px)" }}
           >
-             <table className="min-w-[800px] w-full text-left border-collapse table-fixed">
+            <table className="min-w-[800px] w-full text-left border-collapse table-fixed">
               <thead className="bg-gray-100 text-gray-600 sticky top-0 z-10">
                 <tr>
+                  {/* ✅ Select-all checkbox */}
                   <th
                     className="px-4 py-2 border-b border-gray-200"
                     style={{ width: "5%" }}
@@ -149,14 +143,18 @@ function RecurringDQConfiguration() {
                         paginatedData.length > 0
                       }
                       onChange={toggleSelectAll}
+                      className="cursor-pointer"
+                      aria-label="Select all rows"
                     />
                   </th>
+
                   <th
-                    className="px-4 py-2 border-b border-gray-200"
+                    className="px-4 py-2 border-b border-gray-200 cursor-pointer"
                     style={{ width: "8%" }}
                   >
                     SI NO
                   </th>
+
                   <th
                     className="px-4 py-2 border-b border-gray-200 cursor-pointer"
                     style={{ width: "25%" }}
@@ -166,27 +164,30 @@ function RecurringDQConfiguration() {
                       DQ Rule {sortAsc ? "↑" : "↓"}
                     </div>
                   </th>
+
                   <th
                     className="px-4 py-2 border-b border-gray-200"
                     style={{ width: "25%" }}
                   >
                     Parameter
                   </th>
+
                   <th
                     className="px-4 py-2 border-b border-gray-200"
                     style={{ width: "20%" }}
                   >
-                    Value
+                    Threshold
                   </th>
-                
                 </tr>
               </thead>
+
               <tbody>
                 {paginatedData.length > 0 ? (
                   paginatedData.map((item, idx) => {
                     const globalIdx = (page - 1) * perPage + idx;
+                    const isSelected = selectedRows.has(globalIdx);
 
-                    // Parsing parameters (same as your logic)
+                    // Parsing parameters
                     const fixedParamStr = item.parameter.replace(
                       "tolerance cutoff",
                       "tolerance, cutoff"
@@ -196,43 +197,41 @@ function RecurringDQConfiguration() {
                       .map((p) => p.trim())
                       .filter(Boolean);
 
-                   
-
                     return (
                       <React.Fragment key={globalIdx}>
-                        <tr className="hover:bg-gray-50 border-b border-gray-100">
-                          <td className="px-4 py-2" style={{ width: "5%" }}>
+                        <tr
+                         
+                        >
+                          {/* ✅ Checkbox per row */}
+                          <td className="px-4 py-2">
                             <input
                               type="checkbox"
-                              checked={selectedRows.has(globalIdx)}
+                              checked={isSelected}
                               onChange={() => toggleRowSelection(globalIdx)}
+                              className="cursor-pointer"
+                              aria-label={`Select row ${globalIdx + 1}`}
                             />
                           </td>
-                          <td className="px-4 py-2" style={{ width: "5%" }}>
-                            {globalIdx + 1}
+
+                          <td className="px-4 py-2">{globalIdx + 1}</td>
+                          <td className="px-4 py-2">{item.name}</td>
+                          <td className="px-4 py-2">{params[0]}</td>
+                          <td className="px-4 py-2">
+                            <Inputform />
                           </td>
-                          <td className="px-4 py-2" style={{ width: "25%" }}>
-                            {item.name}
-                          </td>
-                          <td className="px-4 py-2" style={{ width: "25%" }}>
-                            {params[0]}
-                          </td>
-                          <td className="px-4 py-2" style={{ width: "20%" }}>
-                            <Inputform/>
-                          </td>
-                         
                         </tr>
+
                         {params.slice(1).map((param, i) => (
                           <tr
-                            key={`${globalIdx}-param-${i}`}
-                            className="hover:bg-gray-50 border-b border-gray-100"
+                            
                           >
                             <td className="px-4 py-2"></td>
                             <td className="px-4 py-2"></td>
                             <td className="px-4 py-2"></td>
                             <td className="px-4 py-2">{param}</td>
-                            <td className="px-4 py-2"><Inputform/></td>
-                            
+                            <td className="px-4 py-2">
+                              <Inputform />
+                            </td>
                           </tr>
                         ))}
                       </React.Fragment>

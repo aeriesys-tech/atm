@@ -16,7 +16,7 @@ const sampleData = [
   {
     data: "CEM",
     master: "Business Unit",
-    Standardpv:"Calciner String",
+    Standardpv: "Calciner String",
     Uom: "ppm",
     min: "105",
     max: "476",
@@ -26,7 +26,7 @@ const sampleData = [
   {
     data: "CEM-CEM",
     master: "Sectors",
-    Standardpv:"Outlet",
+    Standardpv: "Outlet",
     Uom: "degC",
     min: "126",
     max: "482",
@@ -36,7 +36,7 @@ const sampleData = [
   {
     data: "CEM-CEM-C",
     master: "Clusters",
-     Standardpv:"Nox",
+    Standardpv: "Nox",
     Uom: "Sec",
     min: "116",
     max: "492",
@@ -46,7 +46,7 @@ const sampleData = [
   {
     data: "CEM-CEM-C Bela Cement Work",
     master: "Plants",
-     Standardpv:"Motor bearing",
+    Standardpv: "Motor bearing",
     Uom: "Ton",
     min: "150",
     max: "468",
@@ -56,7 +56,7 @@ const sampleData = [
   {
     data: "CEM-CEM-C Bela Cement Work-L1",
     master: "Lines",
-    Standardpv:"Fan bearing",
+    Standardpv: "Fan bearing",
     Uom: "m2/kg",
     min: "138",
     max: "419",
@@ -66,7 +66,7 @@ const sampleData = [
   {
     data: "BLCW-RMD::Raw Mix Design System",
     master: "Equipment",
-    Standardpv:"Splitter",
+    Standardpv: "Splitter",
     Uom: "rpm",
     min: "144",
     max: "478",
@@ -78,7 +78,7 @@ const sampleData = [
 function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
   const header = (
     <div className="flex items-center justify-between md:px-10 px-4 py-2">
-      <Headertext Text="Create New Jobs - One Time" />
+      <Headertext Text="Create New Job - One Time" />
     </div>
   );
 
@@ -184,16 +184,6 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
               </div>
 
               <div className="flex items-center gap-3">
-                {selectedRows.size > 0 && (
-                  <button
-                    onClick={() => alert("Bulk delete clicked")}
-                    className="flex items-center gap-2 bg-red-600 text-white px-3 h-9 rounded-md hover:bg-red-700 transition"
-                  >
-                    <FiTrash2 className="w-4 h-4" /> Delete ({selectedRows.size}
-                    )
-                  </button>
-                )}
-
                 <div>
                   <SearchBar
                     value={search}
@@ -209,8 +199,9 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                 <table className="min-w-[1000px] w-full text-left border-collapse table-fixed">
                   <thead className="bg-gray-100 text-gray-600 sticky top-0 z-10">
                     <tr>
+                      {/* ✅ Select-all checkbox in header */}
                       <th
-                        className="px-4 py-2 border-b border-gray-200"
+                        className="px-4 py-2 border-b border-gray-200 text-center"
                         style={{ width: "5%" }}
                       >
                         <input
@@ -220,12 +211,11 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                             paginatedData.length > 0
                           }
                           onChange={toggleSelectAll}
+                          className="cursor-pointer"
+                          aria-label="Select all rows"
                         />
                       </th>
-                      <th
-                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        style={{ width: "5%" }}
-                      >
+                      <th className="px-4 py-2 border-b border-gray-200 cursor-pointer"  style={{ width: "8%" }}>
                         #
                       </th>
                       <th
@@ -234,8 +224,8 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                         style={{ width: "32%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Variable Code {getSortIcon("data")}
-                        </div>
+                          Variable Code {getSortIcon("data")}{" "}
+                        </div>{" "}
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
@@ -243,44 +233,17 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                         style={{ width: "20%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Description {getSortIcon("master")}
-                        </div>
+                          Description {getSortIcon("master")}{" "}
+                        </div>{" "}
                       </th>
-                       <th
+                      <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
                         onClick={() => handleSort("master")}
-                        style={{ width: "30%" }}
+                        style={{ width: "35%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Standard Process Variable {getSortIcon("master")}
-                        </div>
-                      </th>
-                       <th
-                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
-                        style={{ width: "15%" }}
-                      >
-                        <div className="flex items-center gap-1">
-                          UoM {getSortIcon("master")}
-                        </div>
-                      </th>
-                       <th
-                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
-                        style={{ width: "15%" }}
-                      >
-                        <div className="flex items-center gap-1">
-                          Min {getSortIcon("master")}
-                        </div>
-                      </th>
-                       <th
-                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
-                        style={{ width: "15%" }}
-                      >
-                        <div className="flex items-center gap-1">
-                          Max {getSortIcon("master")}
-                        </div>
+                          Standard Process Variable {getSortIcon("master")}{" "}
+                        </div>{" "}
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
@@ -288,8 +251,8 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                         style={{ width: "15%" }}
                       >
                         <div className="flex items-center gap-1">
-                          UCL {getSortIcon("master")}
-                        </div>
+                          UoM {getSortIcon("master")}{" "}
+                        </div>{" "}
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
@@ -297,8 +260,41 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                         style={{ width: "15%" }}
                       >
                         <div className="flex items-center gap-1">
-                          LCL {getSortIcon("master")}
-                        </div>
+                          Min {getSortIcon("master")}{" "}
+                        </div>{" "}
+                      </th>
+                      <th
+                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
+                        onClick={() => handleSort("master")}
+                        style={{ width: "15%" }}
+                      >
+                        <div className="flex items-center gap-1">
+                          Max {getSortIcon("master")}{" "}
+                        </div>{" "}
+                      </th>
+                      <th
+                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
+                        onClick={() => handleSort("master")}
+                        style={{ width: "15%" }}
+                      >
+                        <div className="flex items-center gap-1">
+                          UCL {getSortIcon("master")}{" "}
+                        </div>{" "}
+                      </th>
+                      <th
+                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
+                        onClick={() => handleSort("master")}
+                        style={{ width: "15%" }}
+                      >
+                        <div className="flex items-center gap-1">
+                          LCL {getSortIcon("master")}{" "}
+                        </div>{" "}
+                      </th>
+                      <th
+                        className="px-4 py-2 text-center border-b border-gray-200 cursor-pointer"
+                        style={{ width: "15%" }}
+                      >
+                        Action{" "}
                       </th>
                     </tr>
                   </thead>
@@ -307,44 +303,37 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                     {paginatedData.length > 0 ? (
                       paginatedData.map((item, idx) => {
                         const globalIdx = (page - 1) * perPage + idx;
+                        const isSelected = selectedRows.has(globalIdx);
+
                         return (
                           <tr
-                            key={globalIdx}
-                            className="hover:bg-gray-50 border-b border-gray-100"
+                           
                           >
-                            <td className="px-4 py-2" style={{ width: "5%" }}>
+                            {/* ✅ Checkbox per row */}
+                            <td className="px-4 py-2 text-center">
                               <input
                                 type="checkbox"
-                                checked={selectedRows.has(idx)}
-                                onChange={() => toggleRowSelection(idx)}
+                                checked={isSelected}
+                                onChange={() => toggleRowSelection(globalIdx)}
+                                className="cursor-pointer"
+                                aria-label={`Select row ${idx + 1}`}
                               />
                             </td>
-                            <td className="px-4 py-2" style={{ width: "5%" }}>
-                              {idx + 1}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "25%" }}>
-                              {item.data}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "15%" }}>
-                              {item.master}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "15%" }}>
-                              {item.Standardpv}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "15%" }}>
-                              {item.Uom}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "15%" }}>
-                              {item.min}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "15%" }}>
-                              {item.max}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "15%" }}>
-                              {item.ucl}
-                            </td>
-                            <td className="px-4 py-2" style={{ width: "15%" }}>
-                              {item.lcl}
+
+                            <td className="px-4 py-2">{idx + 1}</td>
+                            <td className="px-4 py-2">{item.data}</td>
+                            <td className="px-4 py-2">{item.master}</td>
+                            <td className="px-4 py-2">{item.Standardpv}</td>
+                            <td className="px-4 py-2">{item.Uom}</td>
+                            <td className="px-4 py-2">{item.min}</td>
+                            <td className="px-4 py-2">{item.max}</td>
+                            <td className="px-4 py-2">{item.ucl}</td>
+                            <td className="px-4 py-2">{item.lcl}</td>
+
+                            <td className="px-4 py-2 text-center">
+                              <button className="text-blue-500 hover:text-blue-700 cursor-pointer">
+                                <FiEdit className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
                         );
@@ -352,7 +341,7 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                     ) : (
                       <tr>
                         <td
-                          colSpan="8"
+                          colSpan="10"
                           className="text-center py-6 text-gray-500"
                         >
                           No data available

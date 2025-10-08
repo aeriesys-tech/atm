@@ -11,7 +11,7 @@ const SimpleDropdown = ({
   value,
   width = "100%",
   placeholder = "Select Data Sources",
-  isMulti = false, // <-- NEW PROP
+  isMulti = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [internalSelected, setInternalSelected] = useState(
@@ -37,7 +37,6 @@ const SimpleDropdown = ({
       newValue = Array.from(selectedSet);
     } else {
       newValue = option;
-      setIsOpen(false);
     }
 
     if (!isControlled) {
@@ -46,6 +45,9 @@ const SimpleDropdown = ({
 
     onSelect?.(newValue);
     onChange?.(newValue);
+
+    // Close dropdown after selection (for both single and multi-select)
+    setIsOpen(false);
   };
 
   // Close dropdown on outside click
@@ -80,11 +82,11 @@ const SimpleDropdown = ({
 
   // Helper for display
   const renderSelectedText = () => {
-    // if (isMulti) {
-    //   if (!selected || selected.length === 0) return placeholder;
-    //   // return selected.join(", ");
-    // }
-    return  placeholder;
+    if (isMulti) {
+      if (!selected || selected.length === 0) return placeholder;
+      return selected.join(", ");
+    }
+    return selected || placeholder;
   };
 
   const isOptionSelected = (option) => {

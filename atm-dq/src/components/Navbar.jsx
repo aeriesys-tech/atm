@@ -51,7 +51,7 @@ export default function Navbar() {
       icon: <IoIosListBox className="w-4.5 h-4.5 text-[#8A0000]" />,
       subMenu: [
         {
-          name: "One-Time",
+          name: "Job Histroy",
           to: "/jobs/onetimejob",
         },
         {
@@ -178,7 +178,7 @@ export default function Navbar() {
                   {/* Dropdown Submenu */}
                   {(menu.name === "Configure" && isConfigureOpen) ||
                   (menu.name === "Jobs" && isJobsOpen) ? (
-                    <div className="absolute bg-white mt-6 left-[-14px] rounded shadow-md z-50 w-48 border border-gray-200">
+                    <div className="absolute bg-white mt-5.5 left-[-14px] rounded shadow-md z-50 w-48 border border-gray-200">
                       {menu.subMenu.map((sub) => (
                         <Link
                           key={sub.name}
@@ -270,7 +270,7 @@ export default function Navbar() {
 
             {/* Profile Dropdown */}
             {isDropdownOpen && (
-              <div className="absolute right-0 top-14 w-48 bg-white border border-gray-200 rounded shadow-md z-50">
+              <div className="absolute right-0 top-13 w-48 bg-white border border-gray-200 rounded shadow-md z-50">
                 <Link
                   to="#"
                   className="flex gap-2 items-center px-4 py-2 text-gray-700 hover:bg-[#fff5f5]"
