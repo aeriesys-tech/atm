@@ -71,9 +71,7 @@ function Schedulepreviewjob({ maxHeight = "calc(100vh - 450px)" }) {
     </div>
   );
 
-  const [isOpen, setIsOpen] = useState(false);
-  const openModal = () => setIsOpen(true);
-  const closeModal = () => setIsOpen(false);
+ 
 
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -96,18 +94,7 @@ function Schedulepreviewjob({ maxHeight = "calc(100vh - 450px)" }) {
     return sortConfig.direction === "asc" ? "↑" : "↓";
   };
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [showTable, setShowTable] = useState(false);
 
-  const handleShowTableWithLoading = () => {
-    setIsLoading(true);
-    setShowTable(false);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowTable(true);
-    }, 500); // 2 seconds loading simulation
-  };
 
   const filteredData = sampleData.filter(
     (item) =>
@@ -151,9 +138,7 @@ function Schedulepreviewjob({ maxHeight = "calc(100vh - 450px)" }) {
     }
   };
 
-  const [samplingValue, setSamplingValue] = useState("10");
-  const [fromDate, setFromDate] = useState("2025-10-10T08:00");
-  const [toDate, setToDate] = useState("2025-10-21T18:00");
+
   return (
     <>
       <Layout header={header}>

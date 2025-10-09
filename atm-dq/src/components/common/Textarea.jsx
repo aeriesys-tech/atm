@@ -1,7 +1,7 @@
 // components/Textarea.js
 import React from 'react';
 
-const Textarea = ({ label, value, onChange, placeholder, rows = 4, name, id }) => {
+const Textarea = ({ label, value, onChange, placeholder, rows = 1, name, id }) => {
   return (
     <div className="w-full">
       {label && (

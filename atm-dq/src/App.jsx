@@ -14,14 +14,17 @@ import PreviewJob from "./pages/onetime/PreviewJob";
 import RecurringTagcofiguration from "./pages/recurring/RecurringTagcofiguration";
 import RecurringDBConnection from "./pages/recurring/RecurringDBConnection";
 import RecurringDQConfiguration from "./pages/recurring/RecurringDQConfiguration";
-import RecurringPreviewJobs from "./pages/recurring/RecurringPreviewJobs";
+
 import OnetimeJob from "./pages/jobs/OnetimeJob";
-import SceduleJob from "./pages/jobs/";
 import RecurringJob from "./pages/jobs/RecurringJob";
-import Schedulejob from "./pages/jobs/schedulejob";
+
 import Onetimepreviewjob from "./pages/jobs/Onetimepreviewjob";
 import Schedulepreviewjob from "./pages/jobs/Schedulepreviewjob";
-import Recurringpreviewjob from "./pages/jobs/RecurringPreviewjob";
+import Schedulejob from "./pages/jobs/Schedulejob";
+import RecurringPreviewJobs from "./pages/recurring/RecurringPreviewJobs";
+import Recurringpreviewjob from "./pages/jobs/Recurringpreviewjob";
+import Histroy from "./pages/jobs/Histroy";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -70,11 +73,12 @@ function App() {
             path="/jobs/schedulepreviewjob"
             element={<Schedulepreviewjob />}
           />
-           <Route
+          <Route
             path="/jobs/recurringpreviewjob"
             element={<Recurringpreviewjob />}
           />
-         
+          <Route path="/jobs/history" element={<Histroy />} />
+          <Route path="/profile" element={<Profile/>}/>
         </Routes>
       </HashRouter>
     </>

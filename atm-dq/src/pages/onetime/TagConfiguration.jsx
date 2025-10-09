@@ -215,7 +215,10 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                           aria-label="Select all rows"
                         />
                       </th>
-                      <th className="px-4 py-2 border-b border-gray-200 cursor-pointer"  style={{ width: "8%" }}>
+                      <th
+                        className="px-4 py-2 border-b border-gray-200 cursor-pointer"
+                        style={{ width: "8%" }}
+                      >
                         #
                       </th>
                       <th
@@ -224,8 +227,8 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                         style={{ width: "32%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Variable Code {getSortIcon("data")}{" "}
-                        </div>{" "}
+                          Variable Code {getSortIcon("data")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
@@ -233,68 +236,68 @@ function TagConfiguration({ maxHeight = "calc(100vh - 430px)" }) {
                         style={{ width: "20%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Description {getSortIcon("master")}{" "}
-                        </div>{" "}
+                          Description {getSortIcon("master")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
+                        onClick={() => handleSort("Standardpv")}
                         style={{ width: "35%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Standard Process Variable {getSortIcon("master")}{" "}
-                        </div>{" "}
+                          Standard Process Variable {getSortIcon("Standardpv")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
+                        onClick={() => handleSort("Uom")}
                         style={{ width: "15%" }}
                       >
                         <div className="flex items-center gap-1">
-                          UoM {getSortIcon("master")}{" "}
-                        </div>{" "}
+                          UoM {getSortIcon("Uom")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
+                        onClick={() => handleSort("min")}
                         style={{ width: "15%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Min {getSortIcon("master")}{" "}
-                        </div>{" "}
+                          Min {getSortIcon("min")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
+                        onClick={() => handleSort("max")}
                         style={{ width: "15%" }}
                       >
                         <div className="flex items-center gap-1">
-                          Max {getSortIcon("master")}{" "}
-                        </div>{" "}
+                          Max {getSortIcon("max")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
+                        onClick={() => handleSort("ucl")}
                         style={{ width: "15%" }}
                       >
                         <div className="flex items-center gap-1">
-                          UCL {getSortIcon("master")}{" "}
-                        </div>{" "}
+                          UCL {getSortIcon("ucl")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                        onClick={() => handleSort("master")}
+                        onClick={() => handleSort("lcl")}
                         style={{ width: "15%" }}
                       >
                         <div className="flex items-center gap-1">
-                          LCL {getSortIcon("master")}{" "}
-                        </div>{" "}
+                          LCL {getSortIcon("lcl")}
+                        </div>
                       </th>
                       <th
                         className="px-4 py-2 text-center border-b border-gray-200 cursor-pointer"
                         style={{ width: "15%" }}
                       >
-                        Action{" "}
+                        Action
                       </th>
                     </tr>
                   </thead>

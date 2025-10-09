@@ -272,7 +272,7 @@ export default function Navbar() {
             {isDropdownOpen && (
               <div className="absolute right-0 top-13 w-48 bg-white border border-gray-200 rounded shadow-md z-50">
                 <Link
-                  to="#"
+                  to="/profile"
                   className="flex gap-2 items-center px-4 py-2 text-gray-700 hover:bg-[#fff5f5]"
                 >
                   <BsPersonFill className="w-4 h-4 text-[#8A0000]" />

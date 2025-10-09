@@ -6,6 +6,7 @@ const variantClasses = {
   secondary: "border border-[#FF9B45] hover:bg-[#FF9B45] hover:text-white duration-300",
   bluebtn: "bg-blue-500 text-white hover:bg-blue-700",
   outline: "border border-gray-200 hover:bg-blue-100 duration-300",
+  
 };
 
 const Button = ({

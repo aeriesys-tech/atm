@@ -5,9 +5,9 @@ function TextBox({
   type = "text",
   name,
   value,
-  
   placeholder,
   onChange,
+  onKeyDown, // <-- Add this
   icon,
   required = false,
   error = "",
@@ -36,6 +36,7 @@ function TextBox({
           name={name}
           value={value}
           onChange={onChange}
+          onKeyDown={onKeyDown} // <-- Forward onKeyDown here
           placeholder={placeholder}
           required={required}
           className="w-full outline-none bg-transparent text-gray-800 placeholder-gray-400"

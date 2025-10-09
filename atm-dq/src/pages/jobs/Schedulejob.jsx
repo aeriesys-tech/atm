@@ -1,9 +1,6 @@
 import React, { useState } from "react";
-
 import { FiEdit, FiPlus, FiTrash2 } from "react-icons/fi";
-
 import { Link, NavLink, useNavigate } from "react-router-dom";
-
 import Layout from "../../layout/Layout";
 import Headertext from "../../components/common/Headertext";
 import Button from "../../components/common/Button";
@@ -16,7 +13,7 @@ import { RxCross2 } from "react-icons/rx";
 // Dummy data generators
 const users = ["Bharatesh"];
 const intervals = ["10 Sec", "1 Min", "30 Sec"];
-const statuses = ["scheduled"];
+
 
 const sampleData = Array.from({ length: 20 }, (_, idx) => {
 	const jobDate = new Date(2025, 9, 8, 10, 0);
@@ -26,7 +23,7 @@ const sampleData = Array.from({ length: 20 }, (_, idx) => {
 
 	return {
 		id: idx + 1,
-		status: "scheduled",
+		status: "Scheduled",
 		planDateTime: jobDate.toLocaleString(),
 		scheduledate: jobDate.toLocaleString(),
 		interval: intervals[Math.floor(Math.random() * intervals.length)],
@@ -40,6 +37,7 @@ function Schedulejob() {
 	const [isOpen, setIsOpen] = useState(false);
 	const openModal = () => setIsOpen(true);
 	const closeModal = () => setIsOpen(false);
+	const getStatusClass = (status) => "bg-green-100 text-green-800"; 
 
 	const header = (
 		<div className="flex flex-col md:px-10 px-4 py-2">
@@ -85,7 +83,11 @@ function Schedulejob() {
 		(item) =>
 			item.status.toLowerCase().includes(search.toLowerCase()) ||
 			String(item.id).includes(search) ||
-			item.planDateTime.toLowerCase().includes(search.toLowerCase())
+			item.planDateTime.toLowerCase().includes(search.toLowerCase())||
+			item.interval.toLowerCase().includes(search.toLowerCase())||
+			item.fromDate.toLowerCase().includes(search.toLowerCase())||
+			item.toDate.toLowerCase().includes(search.toLowerCase())||
+			item.user.toLowerCase().includes(search.toLowerCase())
 	);
 
 	const sortedData = [...filteredData].sort((a, b) => {
@@ -117,7 +119,7 @@ function Schedulejob() {
 		else setSelectedRows(new Set(paginatedData.map((_, idx) => idx)));
 	};
 
-	const getStatusClass = (status) => "bg-green-100 text-green-800"; // All scheduled
+	
 
 	return (
 		<>
@@ -185,7 +187,7 @@ function Schedulejob() {
 											Sl.No {getSortIcon("id")}
 										</th>
 										<th
-											className="px-4 py-2 cursor-pointer w-50"
+											className="px-4 py-2 cursor-pointer w-60"
 											onClick={() => handleSort("scheduledate")}
 										>
 											Schedule Date Time {getSortIcon("scheduledate")}
@@ -246,7 +248,7 @@ function Schedulejob() {
 												<td className="px-4 py-2">{item.user}</td>
 												<td className="px-4 py-2">
 													<span
-														className={`inline-block px-4 py-1 rounded-md text-sm font-semibold ${getStatusClass(
+														className={`inline-block px-4 py-1 rounded-md font-semibold ${getStatusClass(
 															item.status
 														)}`}
 													>

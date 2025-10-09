@@ -57,7 +57,7 @@ function RecurringDBConnection() {
             {selectedSources.map((item) => (
               <div
                 key={item}
-                className="flex items-center bg-gray-100 text-gray-800 px-3 py-1 rounded-md text-sm shadow-sm"
+                className="flex items-center bg-gray-100 text-gray-800 px-3 py-1 rounded-md shadow-sm"
               >
                 <span>{item}</span>
                 <button

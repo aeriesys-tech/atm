@@ -6,6 +6,7 @@ import Inputform from "../../components/common/Inputform";
 import Button from "../../components/common/Button";
 import { FiCheckCircle } from "react-icons/fi";
 import RecurringMenubar from "../../components/common/RecurringMenubar";
+import { RxCross2 } from "react-icons/rx";
 
 function RecurringPreviewJobs() {
   const header = (
@@ -20,13 +21,27 @@ function RecurringPreviewJobs() {
     setShowModal(true);
   };
 
+  const [inputValue, setInputValue] = useState("");
+  const [items, setItems] = useState([]);
+
+  const handleAdd = () => {
+    if (inputValue.trim() === "") return;
+    setItems([...items, inputValue.trim()]);
+    setInputValue("");
+  };
+
+  const handleRemove = (index) => {
+    const newItems = items.filter((_, i) => i !== index);
+    setItems(newItems);
+  };
+
   return (
     <>
       <Layout header={header}>
         <RecurringMenubar />
         <div className="flex flex-col md:flex-row w-full mt-2 gap-4">
           {/* Left Side - Plant Info */}
-          <div className="w-full md:w-[40%]">
+          <div className="w-full md:w-[30%]">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 p-4 bg-white rounded-lg shadow border border-gray-200">
               {/* Plant Info */}
               <div className="flex flex-col gap-2 text-gray-700">
@@ -65,7 +80,7 @@ function RecurringPreviewJobs() {
           </div>
 
           {/* Right Side - Form */}
-          <div className="w-full md:w-[60%] bg-white p-4 space-y-4 rounded-lg shadow border border-gray-200">
+          <div className="w-full md:w-[70%] bg-white p-4 space-y-4 rounded-lg shadow border border-gray-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 ">
               <Inputform
                 type="text"
@@ -78,12 +93,58 @@ function RecurringPreviewJobs() {
               />
               <Inputform label="Data Length (minutes)" />
             </div>
-            <div className="flex justify-end">
-              <Button
-                onClick={handleCreateJob}
-                text="Run Recurring Job"
-                className="w-full md:w-auto"
-              />
+
+            <div className="grid grid-cols-12 gap-2 items-start">
+              {/* Left Section → Add Items (6 columns) */}
+              <div className="col-span-12 md:col-span-9">
+                <div className="relative flex gap-2">
+                  <Inputform
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAdd();
+                      }
+                    }}
+                    placeholder="Add Tags..."
+                  />
+                  <Button
+                    className="absolute right-0 top-1/2 transform -translate-y-1/2"
+                    text="Add"
+                    onClick={handleAdd}
+                  />
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {items.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1 rounded-md"
+                    >
+                      <span className="text-gray-700">{item}</span>
+                      <button
+                        onClick={() => handleRemove(index)}
+                        className="text-red-500 hover:text-red-700 font-bold"
+                        aria-label="Remove item"
+                      >
+                        <RxCross2 className="mt-1" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Section → Buttons (6 columns) */}
+              <div className="col-span-12 md:col-span-3 flex flex-col md:flex-row gap-2 justify-end">
+                <Button
+                  onClick={handleCreateJob}
+                  text="Run Recurring Job"
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
         </div>

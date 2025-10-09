@@ -168,177 +168,142 @@ function Attribute({ maxHeight = "calc(100vh - 315px)" }) {
           </div>
 
           {/* Table container with scrollable tbody */}
-          <div className="flex flex-col flex-1 overflow-hidden rounded-md">
-            <table
-              className="w-full border-collapse text-left"
-              style={{ tableLayout: "fixed" }}
-            >
-              <thead className="bg-gray-100 text-gray-600 sticky top-0 z-10">
-                <tr>
-                  <th
-                    className="px-4 py-2 border-b border-gray-200"
-                    style={{ width: "5%" }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedRows.size === paginatedData.length &&
-                        paginatedData.length > 0
-                      }
-                      onChange={toggleSelectAll}
-                    />
-                  </th>
-
-                  <th
-                    className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                    style={{ width: "5%" }}
-                  >
-                    #
-                  </th>
-
-                  <th
-                    className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                    onClick={() => handleSort("attributetype")}
-                    style={{ width: "25%" }}
-                  >
-                    <div className="flex items-center gap-1">
-                      Attribute Type {getSortIcon("attributetype")}
-                    </div>
-                  </th>
-
-                  <th
-                    className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                    onClick={() => handleSort("database")}
-                    style={{ width: "35%" }}
-                  >
-                    <div className="flex items-center gap-1">
-                      Database/DQ Rules {getSortIcon("database")}
-                    </div>
-                  </th>
-
-                  <th
-                    className="px-4 py-2 border-b border-gray-200 cursor-pointer"
-                    onClick={() => handleSort("fields")}
-                    style={{ width: "15%" }}
-                  >
-                    <div className="flex items-center gap-1">
-                      No.of.fields {getSortIcon("fields")}
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-2 border-b border-gray-200 text-center"
-                    style={{ width: "15%" }}
-                  >
-                    Status
-                  </th>
-
-                  <th
-                    className="px-4 py-2 border-b border-gray-200 text-center"
-                    style={{ width: "15%" }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-            </table>
-
-            {/* Scrollable tbody */}
-            <div
-              className="overflow-y-auto scrollbar"
-              style={{ maxHeight: maxHeight, borderTop: "1px solid #E5E7EB" }}
-            >
-              <table
-                className="w-full border-collapse text-left"
-                style={{ tableLayout: "fixed" }}
+          <div className="flex-1 rounded-md bg-white">
+            <div className="overflow-x-auto">
+              <div
+                className="inline-block min-w-full"
+                style={{ maxHeight: maxHeight || "calc(100vh - 250px)" }}
               >
-                <tbody>
-                  {paginatedData.length > 0 ? (
-                    paginatedData.map((item, idx) => {
-                      const globalIdx = (page - 1) * perPage + idx;
-                      return (
-                        <tr
-                          key={globalIdx}
-                          className="hover:bg-gray-50 border-b border-gray-100"
-                        >
-                          <td className="px-4 py-2" style={{ width: "5%" }}>
-                            <input
-                              type="checkbox"
-                              checked={selectedRows.has(idx)}
-                              onChange={() => toggleRowSelection(idx)}
-                            />
-                          </td>
-                          <td className="px-4 py-2" style={{ width: "5%" }}>
-                            {idx + 1}
-                          </td>
-
-                          <td className="px-4 py-2" style={{ width: "25%" }}>
-                            {item.database}
-                          </td>
-                          <td className="px-4 py-2" style={{ width: "35%" }}>
-                            {item.dqRules}
-                          </td>
-                          <td className="px-4 py-2" style={{ width: "15%" }}>
-                            {item.fields}
-                          </td>
-                          <td
-                            className="px-4 py-2 text-center"
-                            style={{ width: "15%" }}
-                          >
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setToggleStates((prev) => ({
-                                  ...prev,
-                                  [globalIdx]: !prev[globalIdx],
-                                }))
-                              }
-                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ${
-                                toggleStates[globalIdx]
-                                  ? "bg-green-500"
-                                  : "bg-gray-300"
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-300 ${
-                                  toggleStates[globalIdx]
-                                    ? "translate-x-5"
-                                    : "translate-x-1"
-                                }`}
-                              />
-                            </button>
-                          </td>
-
-                          <td
-                            className="px-4 py-2 text-center"
-                            style={{ width: "15%" }}
-                          >
-                            <div className="flex items-center justify-center gap-3">
-                              <button className="text-blue-500 hover:text-blue-700 cursor-pointer">
-                                <FiEdit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => alert("Delete single item")}
-                                className="text-red-500 hover:text-red-700 cursor-pointer"
-                              >
-                                <FiTrash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
+                <table className="min-w-[600px] w-full text-left border-collapse">
+                  <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                     <tr>
-                      <td
-                        colSpan="8"
-                        className="text-center py-6 text-gray-500"
+                      <th className="p-3 w-12 border-b border-gray-200">
+                        <input
+                          type="checkbox"
+                          checked={
+                            selectedRows.size === paginatedData.length &&
+                            paginatedData.length > 0
+                          }
+                          onChange={toggleSelectAll}
+                          aria-label="Select all rows"
+                        />
+                      </th>
+                      <th className="p-3 w-12 border-b border-gray-200">#</th>
+                      <th
+                        className="p-3 min-w-[150px] border-b border-gray-200 cursor-pointer"
+                        onClick={() => handleSort("dqRules")}
                       >
-                        No data available
-                      </td>
+                        <div className="flex items-center gap-1">
+                          Attribute Type {getSortIcon("dqRules")}
+                        </div>
+                      </th>
+                      <th
+                        className="p-3 min-w-[200px] border-b border-gray-200 cursor-pointer"
+                        onClick={() => handleSort("database")}
+                      >
+                        <div className="flex items-center gap-1">
+                          Database/DQ Rules {getSortIcon("database")}
+                        </div>
+                      </th>
+                      <th
+                        className="p-3 min-w-[100px] border-b border-gray-200 cursor-pointer"
+                        onClick={() => handleSort("fields")}
+                      >
+                        <div className="flex items-center gap-1">
+                          No.of.fields {getSortIcon("fields")}
+                        </div>
+                      </th>
+                      <th className="p-3 min-w-[100px] border-b border-gray-200 text-center">
+                        Status
+                      </th>
+                      <th className="p-3 min-w-[100px] border-b border-gray-200 text-center">
+                        Actions
+                      </th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedData.length > 0 ? (
+                      paginatedData.map((item, idx) => {
+                        const globalIdx = (page - 1) * perPage + idx;
+                        return (
+                          <tr
+                            key={globalIdx}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="p-3 w-12">
+                              <input
+                                type="checkbox"
+                                checked={selectedRows.has(idx)}
+                                onChange={() => toggleRowSelection(idx)}
+                                aria-label={`Select row ${idx + 1}`}
+                              />
+                            </td>
+                            <td className="p-3 w-12">{idx + 1}</td>
+                            <td className="p-3 min-w-[150px] break-words">
+                              {item.dqRules}
+                            </td>
+                            <td className="p-3 min-w-[200px] break-words">
+                              {item.database}
+                            </td>
+                            <td className="p-3 min-w-[100px]">{item.fields}</td>
+                            <td className="p-3 min-w-[100px] text-center">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setToggleStates((prev) => ({
+                                    ...prev,
+                                    [globalIdx]: !prev[globalIdx],
+                                  }))
+                                }
+                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ${
+                                  toggleStates[globalIdx]
+                                    ? "bg-green-500"
+                                    : "bg-gray-300"
+                                }`}
+                                aria-label={`Toggle status for row ${idx + 1}`}
+                              >
+                                <span
+                                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-300 ${
+                                    toggleStates[globalIdx]
+                                      ? "translate-x-5"
+                                      : "translate-x-1"
+                                  }`}
+                                />
+                              </button>
+                            </td>
+                            <td className="p-3 min-w-[100px] text-center">
+                              <div className="flex items-center justify-center gap-4">
+                                <button
+                                  className="text-blue-500 hover:text-blue-600 transition-colors"
+                                  aria-label="Edit item"
+                                >
+                                  <FiEdit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => alert("Delete single item")}
+                                  className="text-red-500 hover:text-red-600 transition-colors"
+                                  aria-label="Delete item"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          No data available
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 

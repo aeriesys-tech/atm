@@ -158,7 +158,7 @@ function DQRules({ maxHeight = "calc(100vh - 315px)" }) {
           {/* Table container with scrollable tbody */}
           <div className="flex flex-col flex-1 overflow-hidden rounded-md">
             <div className="overflow-y-auto scrollbar" style={{ maxHeight }}>
-             <table className="min-w-[600px] w-full text-left border-collapse table-fixed">
+              <table className="min-w-[600px] w-full text-left border-collapse table-fixed">
                 <thead className="bg-gray-100 text-gray-600 sticky top-0 z-10">
                   <tr>
                     <th
@@ -307,16 +307,61 @@ function DQRules({ maxHeight = "calc(100vh - 315px)" }) {
           <div className="p-4 overflow-y-auto flex flex-col ">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <Dropdown
-                options={["Row Count", "Flatline", "Stagnation", "Outlier", "Spike Index", "Saturation",]}
+                options={[
+                  "Row Count",
+                  "Flatline",
+                  "Stagnation",
+                  "Outlier",
+                  "Spike Index",
+                  "Saturation",
+                ]}
                 label="Select DQ Rule Attribute"
-                labelText={<>DQ Rule Attributes<span className="text-red-500">*</span></>}
+                labelText={
+                  <>
+                    DQ Rule Attributes<span className="text-red-500">*</span>
+                  </>
+                }
               />
-              <Inputform label={<>DQ Rule Name<span className="text-red-500">*</span></>} type="text" />
-              <Inputform label={<>Frequency<span className="text-red-500">*</span></>} type="text" />
-              <Inputform label={<>Cutoff<span className="text-red-500">*</span></>} type="text" />
-              <Inputform label={<>Tolerance<span className="text-red-500">*</span></>} type="text" />
-              <Inputform label={<>Window Period<span className="text-red-500">*</span></>} type="text" />
-              
+              <Inputform
+                label={
+                  <>
+                    DQ Rule Name<span className="text-red-500">*</span>
+                  </>
+                }
+                type="text"
+              />
+              <Inputform
+                label={
+                  <>
+                    Frequency<span className="text-red-500">*</span>
+                  </>
+                }
+                type="text"
+              />
+              <Inputform
+                label={
+                  <>
+                    Cutoff<span className="text-red-500">*</span>
+                  </>
+                }
+                type="text"
+              />
+              <Inputform
+                label={
+                  <>
+                    Tolerance<span className="text-red-500">*</span>
+                  </>
+                }
+                type="text"
+              />
+              <Inputform
+                label={
+                  <>
+                    Window Period<span className="text-red-500">*</span>
+                  </>
+                }
+                type="text"
+              />
             </div>
           </div>
 
