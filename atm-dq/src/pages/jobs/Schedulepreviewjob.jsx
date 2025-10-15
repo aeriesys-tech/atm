@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import Layout from "../../layout/Layout";
 import Dropdown from "../../components/common/Dropdown";
-import Menubar from "../../components/common/Menubar";
 import Headertext from "../../components/common/Headertext";
-import Inputform from "../../components/common/Inputform";
 import Button from "../../components/common/Button";
 import { FiEdit, FiEye, FiPlus, FiTrash2 } from "react-icons/fi";
 import SearchBar from "../../components/common/Searchbar";
 import Pagination from "../../components/common/Pagination";
 import { Link } from "react-router-dom";
-import { RxCross2 } from "react-icons/rx";
 import Downloadfile from "../../components/common/Downloadfile";
 import { GoArrowLeft } from "react-icons/go";
 

@@ -1,14 +1,5 @@
 import React, { useState } from "react";
-import {
-  FiChevronDown,
-  FiChevronUp,
-  FiEdit,
-  FiEye,
-  FiPlus,
-  FiTrash2,
-} from "react-icons/fi";
 import Layout from "../../layout/Layout";
-import Menubar from "../../components/common/Menubar";
 import Dropdown from "../../components/common/Dropdown";
 import Headertext from "../../components/common/Headertext";
 import Button from "../../components/common/Button";
@@ -16,7 +7,7 @@ import SearchBar from "../../components/common/Searchbar";
 import Pagination from "../../components/common/Pagination";
 import Inputform from "../../components/common/Inputform";
 import { Link } from "react-router-dom";
-import RecurringMenubar from "../../components/common/RecurringMenubar"
+import RecurringMenubar from "../../components/common/RecurringMenubar";
 
 function RecurringDQConfiguration() {
   const [sampleData] = useState([
@@ -26,11 +17,13 @@ function RecurringDQConfiguration() {
     },
     {
       name: "flat line",
-      parameter: "window period (minutes or hour), ,tolerance (percentage), cutoff (percentage)",
+      parameter:
+        "window period (minutes or hour), ,tolerance (percentage), cutoff (percentage)",
     },
     {
       name: "Stagnation",
-      parameter: "window period (minutes or hour), ,tolerance (percentage), cutoff (percentage)",
+      parameter:
+        "window period (minutes or hour), ,tolerance (percentage), cutoff (percentage)",
     },
     {
       name: "Outlier",
@@ -111,7 +104,6 @@ function RecurringDQConfiguration() {
           </div>
 
           <div className="flex items-center gap-3">
-           
             <SearchBar
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -123,7 +115,7 @@ function RecurringDQConfiguration() {
         </div>
 
         {/* Table container with scroll */}
-       <div className="flex flex-col flex-1 overflow-hidden rounded-md">
+        <div className="flex flex-col flex-1 overflow-hidden rounded-md">
           <div
             className="overflow-y-auto scrollbar"
             style={{ maxHeight: "calc(100vh - 390px)" }}
@@ -199,9 +191,7 @@ function RecurringDQConfiguration() {
 
                     return (
                       <React.Fragment key={globalIdx}>
-                        <tr
-                         
-                        >
+                        <tr>
                           {/* ✅ Checkbox per row */}
                           <td className="px-4 py-2">
                             <input
@@ -221,10 +211,8 @@ function RecurringDQConfiguration() {
                           </td>
                         </tr>
 
-                        {params.slice(1).map((param, i) => (
-                          <tr
-                            
-                          >
+                        {params.slice(1).map((param) => (
+                          <tr>
                             <td className="px-4 py-2"></td>
                             <td className="px-4 py-2"></td>
                             <td className="px-4 py-2"></td>

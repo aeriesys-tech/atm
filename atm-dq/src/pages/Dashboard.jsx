@@ -23,6 +23,7 @@ function Dashboard() {
       alert("Please select an option before submitting.");
     }
   };
+
   return (
     <>
       <Layout
@@ -40,10 +41,9 @@ function Dashboard() {
           </div>
         }
       >
-         <div className="flex flex-col h-full min-h-[calc(100vh-215px)] space-y-4">
+        <div className="flex flex-col h-full min-h-[calc(100vh-215px)] space-y-4">
           <h1 className="text-2xl font-semibold">Dashboard</h1>
-         </div>
-
+        </div>
       </Layout>
       <div
         className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300 ease-in-out ${
@@ -99,7 +99,6 @@ function Dashboard() {
           {/* Footer */}
           <div className="flex justify-end gap-3 p-4 border-t border-gray-200">
             <Button text="Cancel" variant="secondary" onClick={closeModal} />
-
             <Button text="Submit" variant="primary" onClick={handleSubmit} />
           </div>
         </div>

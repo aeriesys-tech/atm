@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import Layout from "../../layout/Layout";
-import Dropdown from "../../components/common/Dropdown";
-
 import Headertext from "../../components/common/Headertext";
 import RecurringMenubar from "../../components/common/RecurringMenubar";
 import SimpleDropdown from "../../components/common/SimpleDropdown";

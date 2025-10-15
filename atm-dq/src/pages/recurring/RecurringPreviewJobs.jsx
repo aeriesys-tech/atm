@@ -108,7 +108,7 @@ function RecurringPreviewJobs() {
                         handleAdd();
                       }
                     }}
-                    placeholder="Add Tags..."
+                    placeholder="Add Keyword..."
                   />
                   <Button
                     className="absolute right-0 top-1/2 transform -translate-y-1/2"

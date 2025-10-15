@@ -1,7 +1,6 @@
 // Parent component: DBConnection.jsx
 import React, { useState } from "react";
 import Layout from "../../layout/Layout";
-
 import Menubar from "../../components/common/Menubar";
 import Headertext from "../../components/common/Headertext";
 import Downloadfile from "../../components/common/Downloadfile";

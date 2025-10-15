@@ -1,16 +1,12 @@
 import React, { useState } from "react";
 import Layout from "../../layout/Layout";
-import Dropdown from "../../components/common/Dropdown";
 import Menubar from "../../components/common/Menubar";
 import Headertext from "../../components/common/Headertext";
 import Inputform from "../../components/common/Inputform";
 import Button from "../../components/common/Button";
-import { FiCheckCircle, FiEdit, FiEye, FiPlus, FiTrash2 } from "react-icons/fi";
-import SearchBar from "../../components/common/Searchbar";
-import Pagination from "../../components/common/Pagination";
+import { FiCheckCircle} from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { RxCross2 } from "react-icons/rx";
-import Downloadfile from "../../components/common/Downloadfile";
 
 function PreviewJob() {
   const header = (
@@ -118,7 +114,7 @@ function PreviewJob() {
                         handleAdd();
                       }
                     }}
-                    placeholder="Add Tags..."
+                    placeholder="Add Keywords..."
                   />
                   <Button
                     className="absolute right-0 top-1/2 transform -translate-y-1/2"
@@ -183,7 +179,6 @@ function PreviewJob() {
           </div>
 
           {/* Body */}
-
           <div className="p-4 overflow-y-auto flex gap-2 ">
             <Inputform label="Select Date" type="date" />
             <Inputform label="Select Time" type="time" />

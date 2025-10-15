@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { FiEdit, FiEye, FiPlus, FiTrash2 } from "react-icons/fi";
-
 import Layout from "../../layout/Layout";
 import Menubar from "../../components/common/Menubar";
 import Dropdown from "../../components/common/Dropdown";
