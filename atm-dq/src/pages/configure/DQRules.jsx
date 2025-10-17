@@ -318,7 +318,7 @@ function DQRules({ maxHeight = "calc(100vh - 315px)" }) {
                 label="Select DQ Rule Attribute"
                 labelText={
                   <>
-                    DQ Rule Attributes<span className="text-red-500">*</span>
+                    DQ Rule Type<span className="text-red-500">*</span>
                   </>
                 }
               />

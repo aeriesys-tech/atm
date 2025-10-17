@@ -3,14 +3,14 @@ import ReactDOM from "react-dom";
 import { FiChevronRight } from "react-icons/fi";
 
 const Dropdown = ({
-  label = "", // default value when uncontrolled
-  labelText = "", // visible label above dropdown
+  label = "",
+  labelText = "",
   options = [],
-  onSelect, // legacy prop (for compatibility)
-  onChange, // controlled form prop (recommended)
-  value, // controlled value
+  onSelect,
+  onChange,
+  value,
   width = "100%",
-  placeholder = "Select...", // fallback display when nothing selected
+  placeholder = "Select...",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [internalSelected, setInternalSelected] = useState(label);
@@ -26,9 +26,24 @@ const Dropdown = ({
       setInternalSelected(option);
     }
 
-    onSelect?.(option); // for backward compatibility
-    onChange?.(option); // preferred
+    onSelect?.(option);
+    onChange?.(option);
     setIsOpen(false);
+  };
+
+  // Toggle dropdown and calculate position before rendering
+  const toggleDropdown = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownStyles({
+        position: "absolute",
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+    setIsOpen((prev) => !prev);
   };
 
   // Close dropdown on outside click
@@ -46,20 +61,6 @@ const Dropdown = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Position dropdown absolutely (like a real popover)
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownStyles({
-        position: "absolute",
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-        zIndex: 9999,
-      });
-    }
-  }, [isOpen]);
-
   return (
     <>
       <div className="relative inline-block" style={{ width }}>
@@ -73,7 +74,7 @@ const Dropdown = ({
           <button
             type="button"
             className="w-full flex justify-between items-center px-2 py-1.5 border border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400"
-            onClick={() => setIsOpen((prev) => !prev)}
+            onClick={toggleDropdown}
           >
             <span className={selected ? "" : "text-gray-400"}>
               {selected || placeholder}

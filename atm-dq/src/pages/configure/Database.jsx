@@ -185,7 +185,7 @@ function Datbase({ maxHeight = "calc(100vh - 315px)" }) {
                         onClick={() => handleSort("database")}
                       >
                         <div className="flex items-center gap-1">
-                          Database name {getSortIcon("database")}
+                          Connection Name {getSortIcon("database")}
                         </div>
                       </th>
                       <th
@@ -320,7 +320,7 @@ function Datbase({ maxHeight = "calc(100vh - 315px)" }) {
               <Inputform
                 label={
                   <>
-                    Database Name<span className="text-red-500">*</span>
+                    Connection Name<span className="text-red-500">*</span>
                   </>
                 }
                 type="text"
@@ -346,7 +346,7 @@ function Datbase({ maxHeight = "calc(100vh - 315px)" }) {
                 label="Select Database Attributes"
                 labelText={
                   <>
-                    Database Attributes<span className="text-red-500">*</span>
+                    Database Type<span className="text-red-500">*</span>
                   </>
                 }
               />

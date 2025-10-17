@@ -40,9 +40,9 @@ function Attribute({ maxHeight = "calc(100vh - 315px)" }) {
   const [attributeType, setAttributeType] = useState("Database");
   const inputLabel =
     attributeType === "Database"
-      ? "Database Name"
+      ? "Database Type"
       : attributeType === "DQ Rules"
-      ? "DQ Rules Name"
+      ? "DQ Rule Type"
       : "Input";
   const [rows, setRows] = useState([{ id: 1 }]);
   const handleAddRow = () => {
